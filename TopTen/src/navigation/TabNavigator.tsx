@@ -13,27 +13,53 @@ import { colors } from '../theme';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+const sharedStackOptions = {
+  headerLargeTitle: true,
+  headerLargeTitleStyle: { fontFamily: 'System', fontWeight: '700' as const },
+  headerTitleStyle: { fontFamily: 'System', fontWeight: '600' as const },
+};
+
 const MyListsStack = () => (
-  <Stack.Navigator>
+  <Stack.Navigator screenOptions={sharedStackOptions}>
     <Stack.Screen
       name="MyListsHome"
       component={MyListsScreen}
-      options={{ title: 'My Lists', headerLargeTitle: true }}
+      options={{ title: 'My Lists' }}
     />
     <Stack.Screen
       name="ListDetail"
       component={ListDetailScreen}
-      options={{ title: 'List' }}
+      options={{ title: 'List', headerLargeTitle: false }}
     />
     <Stack.Screen
       name="CreateList"
       component={CreateListScreen}
-      options={{ presentation: 'modal', title: 'New List' }}
+      options={{ presentation: 'modal', title: 'New List', headerLargeTitle: false }}
     />
     <Stack.Screen
       name="Search"
       component={SearchScreen}
-      options={{ title: 'Search' }}
+      options={{ title: 'Search', headerLargeTitle: false }}
+    />
+  </Stack.Navigator>
+);
+
+const DiscoverStack = () => (
+  <Stack.Navigator screenOptions={sharedStackOptions}>
+    <Stack.Screen
+      name="DiscoverHome"
+      component={DiscoverScreen}
+      options={{ title: 'Discover' }}
+    />
+  </Stack.Navigator>
+);
+
+const SettingsStack = () => (
+  <Stack.Navigator screenOptions={sharedStackOptions}>
+    <Stack.Screen
+      name="SettingsHome"
+      component={SettingsScreen}
+      options={{ title: 'Settings' }}
     />
   </Stack.Navigator>
 );
@@ -58,9 +84,8 @@ export const TabNavigator = () => (
     />
     <Tab.Screen
       name="Discover"
-      component={DiscoverScreen}
+      component={DiscoverStack}
       options={{
-        headerShown: true,
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="compass-outline" size={size} color={color} />
         ),
@@ -68,9 +93,8 @@ export const TabNavigator = () => (
     />
     <Tab.Screen
       name="Settings"
-      component={SettingsScreen}
+      component={SettingsStack}
       options={{
-        headerShown: true,
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="settings-outline" size={size} color={color} />
         ),

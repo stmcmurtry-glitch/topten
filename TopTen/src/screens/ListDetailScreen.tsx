@@ -125,16 +125,16 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() => openChoiceSheet(index)}
-              style={styles.row}
+              style={[styles.row, isEmpty && styles.emptyRow]}
             >
-              <View style={styles.rankBadge}>
-                <Text style={styles.rankText}>{index + 1}</Text>
+              <View style={[styles.rankBadge, isEmpty && styles.emptyRankBadge]}>
+                <Text style={[styles.rankText, isEmpty && styles.emptyRankText]}>{index + 1}</Text>
               </View>
 
               {isEmpty ? (
                 <>
-                  <Text style={styles.emptyText}>Empty</Text>
-                  <Ionicons name="add-circle-outline" size={22} color={colors.secondaryText} />
+                  <Text style={styles.emptyText}>Add an item</Text>
+                  <Ionicons name="add" size={16} color={colors.border} />
                 </>
               ) : (
                 <>
@@ -270,6 +270,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.md,
   },
+  emptyRow: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+  },
   rankBadge: {
     width: 28,
     height: 28,
@@ -278,10 +284,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emptyRankBadge: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   rankText: {
     color: '#FFF',
     fontWeight: '700',
     fontSize: 14,
+  },
+  emptyRankText: {
+    color: colors.secondaryText,
+    fontWeight: '400',
   },
   title: {
     flex: 1,
