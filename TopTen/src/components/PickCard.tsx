@@ -24,7 +24,7 @@ export const PickCard: React.FC<PickCardProps> = ({ pick }) => {
       </View>
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>{pick.title}</Text>
-        <Text style={styles.meta}>Editor's Pick · 10 items</Text>
+        <Text style={styles.meta}>Featured · 10 items</Text>
       </View>
     </View>
   );

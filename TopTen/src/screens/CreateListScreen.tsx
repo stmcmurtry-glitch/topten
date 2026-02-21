@@ -1,18 +1,42 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
+import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius } from '../theme';
 
+const MASTER_CATEGORIES = [
+  { label: 'Movies', icon: 'film-outline' },
+  { label: 'TV', icon: 'tv-outline' },
+  { label: 'Sports', icon: 'trophy-outline' },
+  { label: 'Music', icon: 'musical-notes-outline' },
+  { label: 'Food', icon: 'restaurant-outline' },
+  { label: 'Drinks', icon: 'wine-outline' },
+];
+
 export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const [name, setName] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
+  const [isCustom, setIsCustom] = useState(false);
+  const [customName, setCustomName] = useState('');
   const { addList } = useListContext();
-  const inputRef = useRef<TextInput>(null);
+
+  const effectiveCategory = isCustom ? customCategory.trim() : selectedCategory;
+  const canCreate = effectiveCategory.length > 0;
+
+  const handleCreate = () => {
+    if (!canCreate) return;
+    const title = customName.trim() || undefined;
+    const id = addList(effectiveCategory, title);
+    navigation.replace('ListDetail', { listId: id });
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -23,45 +47,80 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       ),
       headerRight: () => (
         <TouchableOpacity
-          disabled={!name.trim()}
-          onPress={() => {
-            const id = addList(name.trim());
-            navigation.replace('ListDetail', { listId: id });
-          }}
+          disabled={!canCreate}
+          onPress={handleCreate}
         >
-          <Text style={[styles.headerButton, styles.createButton, !name.trim() && styles.disabled]}>
+          <Text style={[styles.headerButton, styles.createButton, !canCreate && styles.disabled]}>
             Create
           </Text>
         </TouchableOpacity>
       ),
       title: 'New List',
     });
-  }, [navigation, name, addList]);
-
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, []);
+  }, [navigation, canCreate, effectiveCategory, customName]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>List Name</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Text style={styles.label}>Category</Text>
+      <View style={styles.grid}>
+        {MASTER_CATEGORIES.map(({ label, icon }) => {
+          const active = !isCustom && selectedCategory === label;
+          const catColor = CATEGORY_COLORS[label] ?? '#AAAAAA';
+          return (
+            <TouchableOpacity
+              key={label}
+              style={[styles.chip, active && { borderColor: catColor, backgroundColor: catColor + '18' }]}
+              onPress={() => { setSelectedCategory(label); setIsCustom(false); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={icon as any} size={20} color={active ? catColor : colors.secondaryText} />
+              <Text style={[styles.chipText, active && { color: catColor, fontWeight: '600' }]}>{label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+        <TouchableOpacity
+          style={[styles.chip, isCustom && styles.chipActiveCustom]}
+          onPress={() => { setIsCustom(true); setSelectedCategory(''); }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="add-outline" size={20} color={isCustom ? colors.activeTab : colors.secondaryText} />
+          <Text style={[styles.chipText, isCustom && styles.chipTextActiveCustom]}>Custom</Text>
+        </TouchableOpacity>
+      </View>
+
+      {isCustom && (
+        <>
+          <Text style={[styles.label, { marginTop: spacing.xl }]}>Custom Category</Text>
+          <TextInput
+            style={styles.input}
+            value={customCategory}
+            onChangeText={setCustomCategory}
+            placeholder="e.g. Podcasts, Restaurants…"
+            placeholderTextColor={colors.secondaryText}
+            autoCapitalize="words"
+            autoFocus
+            returnKeyType="next"
+          />
+        </>
+      )}
+
+      <Text style={[styles.label, { marginTop: spacing.xl }]}>List Name (optional)</Text>
       <TextInput
-        ref={inputRef}
         style={styles.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="e.g. Restaurants, Albums, TV Shows…"
+        value={customName}
+        onChangeText={setCustomName}
+        placeholder={effectiveCategory ? `My Top 10 ${effectiveCategory}` : 'Auto-generated from category'}
         placeholderTextColor={colors.secondaryText}
         autoCapitalize="words"
         returnKeyType="done"
-        onSubmitEditing={() => {
-          if (name.trim()) {
-            const id = addList(name.trim());
-            navigation.replace('ListDetail', { listId: id });
-          }
-        }}
+        onSubmitEditing={handleCreate}
       />
-    </View>
+      <Text style={styles.hint}>Leave blank to use the default name</Text>
+    </ScrollView>
   );
 };
 
@@ -69,7 +128,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  content: {
     padding: spacing.xl,
+    paddingBottom: spacing.xxl,
   },
   label: {
     fontSize: 13,
@@ -77,7 +139,36 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.cardBackground,
+  },
+  chipText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.secondaryText,
+  },
+  chipActiveCustom: {
+    borderColor: colors.activeTab,
+    backgroundColor: colors.activeTab + '18',
+  },
+  chipTextActiveCustom: {
+    color: colors.activeTab,
+    fontWeight: '600',
   },
   input: {
     backgroundColor: colors.cardBackground,
@@ -85,6 +176,12 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     fontSize: 17,
     color: colors.primaryText,
+  },
+  hint: {
+    fontSize: 13,
+    color: colors.secondaryText,
+    marginTop: spacing.xs,
+    marginLeft: spacing.xs,
   },
   headerButton: {
     fontSize: 17,

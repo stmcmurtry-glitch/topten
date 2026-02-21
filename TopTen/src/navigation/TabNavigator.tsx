@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { MyListsScreen } from '../screens/MyListsScreen';
 import { ListDetailScreen } from '../screens/ListDetailScreen';
 import { CreateListScreen } from '../screens/CreateListScreen';
+import { AllListsScreen } from '../screens/AllListsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { DiscoverScreen } from '../screens/DiscoverScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -35,6 +36,11 @@ const MyListsStack = () => (
       name="CreateList"
       component={CreateListScreen}
       options={{ presentation: 'modal', title: 'New List', headerLargeTitle: false }}
+    />
+    <Stack.Screen
+      name="AllLists"
+      component={AllListsScreen}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="Search"

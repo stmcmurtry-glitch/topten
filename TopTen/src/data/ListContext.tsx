@@ -5,11 +5,25 @@ import { seedLists } from './seedData';
 
 const STORAGE_KEY = '@topten_lists';
 
+const CATEGORY_ICONS: Record<string, string> = {
+  Movies: 'film-outline',
+  TV: 'tv-outline',
+  Sports: 'trophy-outline',
+  Music: 'musical-notes-outline',
+  Food: 'restaurant-outline',
+  Drinks: 'wine-outline',
+  Books: 'book-outline',
+  Foods: 'restaurant-outline',
+  Golf: 'golf-outline',
+  Wine: 'wine-outline',
+};
+
 interface ListContextType {
   lists: TopTenList[];
-  addList: (category: string) => string;
+  addList: (category: string, title?: string) => string;
   updateListItems: (listId: string, items: TopTenItem[]) => void;
   deleteList: (listId: string) => void;
+  reorderLists: (newOrder: TopTenList[]) => void;
 }
 
 const ListContext = createContext<ListContextType>({
@@ -17,6 +31,7 @@ const ListContext = createContext<ListContextType>({
   addList: () => '',
   updateListItems: () => {},
   deleteList: () => {},
+  reorderLists: () => {},
 });
 
 export const useListContext = () => useContext(ListContext);
@@ -46,13 +61,13 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLists));
   }, []);
 
-  const addList = useCallback((category: string): string => {
+  const addList = useCallback((category: string, title?: string): string => {
     const id = Date.now().toString();
     const newList: TopTenList = {
       id,
       category,
-      title: `My Top 10 ${category}`,
-      icon: 'list-outline',
+      title: title ?? `My Top 10 ${category}`,
+      icon: CATEGORY_ICONS[category] ?? 'list-outline',
       items: [],
       createdAt: new Date().toISOString(),
       isCustom: true,
@@ -60,6 +75,10 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     persist([...lists, newList]);
     return id;
   }, [lists, persist]);
+
+  const reorderLists = useCallback((newOrder: TopTenList[]) => {
+    persist(newOrder);
+  }, [persist]);
 
   const updateListItems = useCallback((listId: string, items: TopTenItem[]) => {
     const updated = lists.map((l) => (l.id === listId ? { ...l, items } : l));
@@ -72,7 +91,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [lists, persist]);
 
   return (
-    <ListContext.Provider value={{ lists, addList, updateListItems, deleteList }}>
+    <ListContext.Provider value={{ lists, addList, updateListItems, deleteList, reorderLists }}>
       {children}
     </ListContext.Provider>
   );
