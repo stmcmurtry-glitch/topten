@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TextInput,
+  FlatList,
   TouchableOpacity,
   Modal,
   Alert,
@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
-import { RankItem } from '../components/RankItem';
 import { TopTenItem } from '../data/schema';
 import { colors, spacing, borderRadius } from '../theme';
 
@@ -37,6 +36,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [slots, setSlots] = useState<string[]>(buildSlots);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [showTypeModal, setShowTypeModal] = useState(false);
+  const [typeSlotIndex, setTypeSlotIndex] = useState<number | null>(null);
   const [typedValue, setTypedValue] = useState('');
 
   useEffect(() => {
@@ -49,11 +49,8 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
     }
   }, [list, navigation]);
 
-  const setSlotValue = (index: number, text: string) => {
-    const updated = [...slots];
-    updated[index] = text;
+  const persistSlots = (updated: string[]) => {
     setSlots(updated);
-
     const items: TopTenItem[] = updated
       .map((title, i) => ({
         id: `${listId}-${i + 1}`,
@@ -61,49 +58,30 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         title,
       }))
       .filter((item) => item.title.trim() !== '');
-
     updateListItems(listId, items);
   };
 
-  const handleSlotPress = (index: number) => {
+  const setSlotValue = (index: number, text: string) => {
+    const updated = [...slots];
+    updated[index] = text;
+    persistSlots(updated);
+  };
+
+  const moveSlot = (from: number, to: number) => {
+    if (to < 0 || to >= 10) return;
+    const updated = [...slots];
+    const [moved] = updated.splice(from, 1);
+    updated.splice(to, 0, moved);
+    persistSlots(updated);
+  };
+
+  const openChoiceSheet = (index: number) => {
     setActiveSlot(index);
   };
 
-  const handleTypeItem = () => {
-    if (activeSlot === null) return;
-    setActiveSlot(null);
-    setTypedValue('');
-    setShowTypeModal(true);
-  };
-
-  const handleFindItem = () => {
-    if (activeSlot === null) return;
-    const rank = activeSlot + 1;
-    const category = list?.category ?? '';
-    const slotIndex = activeSlot;
-    setActiveSlot(null);
-    navigation.navigate('Search', { listId, rank, category });
-  };
-
-  const handleTypeSave = () => {
-    if (activeSlot === null && !showTypeModal) return;
-    if (typedValue.trim()) {
-      // activeSlot was saved before opening type modal, use the stored ref
-      const idx = typeSlotRef;
-      if (idx !== null) {
-        setSlotValue(idx, typedValue.trim());
-      }
-    }
-    setShowTypeModal(false);
-    setTypedValue('');
-  };
-
-  // We need a ref to track which slot the type modal is for
-  const [typeSlotRef, setTypeSlotRef] = useState<number | null>(null);
-
   const openTypeModal = (index: number) => {
     setActiveSlot(null);
-    setTypeSlotRef(index);
+    setTypeSlotIndex(index);
     setTypedValue('');
     setShowTypeModal(true);
   };
@@ -141,14 +119,55 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         data={slots}
         keyExtractor={(_, i) => i.toString()}
         contentContainerStyle={styles.list}
-        renderItem={({ item, index }) => (
-          <RankItem
-            rank={index + 1}
-            title={item}
-            isEmpty={!item}
-            onPress={() => handleSlotPress(index)}
-          />
-        )}
+        renderItem={({ item, index }) => {
+          const isEmpty = !item;
+          return (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => openChoiceSheet(index)}
+              style={styles.row}
+            >
+              <View style={styles.rankBadge}>
+                <Text style={styles.rankText}>{index + 1}</Text>
+              </View>
+
+              {isEmpty ? (
+                <>
+                  <Text style={styles.emptyText}>Empty</Text>
+                  <Ionicons name="add-circle-outline" size={22} color={colors.secondaryText} />
+                </>
+              ) : (
+                <>
+                  <Text style={styles.title} numberOfLines={1}>{item}</Text>
+                  <View style={styles.moveButtons}>
+                    <TouchableOpacity
+                      onPress={() => moveSlot(index, index - 1)}
+                      disabled={index === 0}
+                      hitSlop={8}
+                    >
+                      <Ionicons
+                        name="chevron-up"
+                        size={20}
+                        color={index === 0 ? colors.border : colors.secondaryText}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => moveSlot(index, index + 1)}
+                      disabled={index === 9}
+                      hitSlop={8}
+                    >
+                      <Ionicons
+                        name="chevron-down"
+                        size={20}
+                        color={index === 9 ? colors.border : colors.secondaryText}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </TouchableOpacity>
+          );
+        }}
         ListFooterComponent={
           <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteList}>
             <Text style={styles.deleteText}>Delete List</Text>
@@ -159,7 +178,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
       {/* Choice Modal — Type or Find */}
       <Modal visible={activeSlot !== null} transparent animationType="fade">
         <Pressable style={styles.overlay} onPress={() => setActiveSlot(null)}>
-          <View style={styles.sheet}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>
               Rank #{activeSlot !== null ? activeSlot + 1 : ''}
             </Text>
@@ -186,16 +205,16 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
             >
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
 
       {/* Type Item Modal */}
       <Modal visible={showTypeModal} transparent animationType="fade">
         <Pressable style={styles.overlay} onPress={() => setShowTypeModal(false)}>
-          <View style={styles.sheet}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>
-              Enter item for #{typeSlotRef !== null ? typeSlotRef + 1 : ''}
+              Enter item for #{typeSlotIndex !== null ? typeSlotIndex + 1 : ''}
             </Text>
             <TextInput
               style={styles.typeInput}
@@ -206,8 +225,8 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
               autoFocus
               returnKeyType="done"
               onSubmitEditing={() => {
-                if (typedValue.trim() && typeSlotRef !== null) {
-                  setSlotValue(typeSlotRef, typedValue.trim());
+                if (typedValue.trim() && typeSlotIndex !== null) {
+                  setSlotValue(typeSlotIndex, typedValue.trim());
                   setShowTypeModal(false);
                   setTypedValue('');
                 }
@@ -217,8 +236,8 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
               style={[styles.saveButton, !typedValue.trim() && styles.saveDisabled]}
               disabled={!typedValue.trim()}
               onPress={() => {
-                if (typeSlotRef !== null) {
-                  setSlotValue(typeSlotRef, typedValue.trim());
+                if (typeSlotIndex !== null) {
+                  setSlotValue(typeSlotIndex, typedValue.trim());
                   setShowTypeModal(false);
                   setTypedValue('');
                 }
@@ -226,7 +245,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
             >
               <Text style={styles.saveText}>Save</Text>
             </TouchableOpacity>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>
@@ -240,6 +259,43 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingVertical: spacing.md,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.sm,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.xs,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  rankBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.activeTab,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  title: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.primaryText,
+  },
+  emptyText: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.secondaryText,
+  },
+  moveButtons: {
+    alignItems: 'center',
+    gap: 2,
   },
   deleteButton: {
     alignItems: 'center',
