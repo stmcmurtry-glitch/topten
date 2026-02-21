@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +13,7 @@ import { useListContext } from '../data/ListContext';
 import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
 import { PickCard, EditorsPick } from '../components/PickCard';
 import { colors, spacing, borderRadius, shadow } from '../theme';
+import { fetchCategoryImage } from '../services/imageService';
 
 const MASTER_CATEGORIES = ['Movies', 'TV', 'Sports', 'Music', 'Food', 'Drinks'];
 
@@ -31,20 +33,32 @@ interface CollectionCardProps {
 }
 
 const CollectionCard: React.FC<CollectionCardProps> = ({ category, count, onPress }) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const catColor = CATEGORY_COLORS[category] ?? '#AAAAAA';
-  const iconMap: Record<string, string> = {
-    Movies: 'film-outline', TV: 'tv-outline', Sports: 'trophy-outline',
-    Music: 'musical-notes-outline', Food: 'restaurant-outline', Drinks: 'wine-outline',
-    Books: 'book-outline', Foods: 'restaurant-outline', Golf: 'golf-outline', Wine: 'wine-outline',
-  };
-  const icon = iconMap[category] ?? 'list-outline';
+
+  useEffect(() => {
+    fetchCategoryImage(category).then(setImageUrl);
+  }, [category]);
+
   return (
-    <TouchableOpacity style={styles.collectionCard} onPress={onPress} activeOpacity={0.75}>
-      <View style={[styles.collectionIcon, { backgroundColor: catColor }]}>
-        <Ionicons name={icon as any} size={22} color="#FFF" />
+    <TouchableOpacity style={styles.collectionCard} onPress={onPress} activeOpacity={0.8}>
+      {/* Full-bleed background */}
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={[StyleSheet.absoluteFill, styles.collectionBg]}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: catColor }]} />
+      )}
+      {/* Dark scrim so text is always legible */}
+      <View style={[StyleSheet.absoluteFill, styles.collectionScrim]} />
+      {/* Text overlay */}
+      <View style={styles.collectionOverlay}>
+        <Text style={styles.collectionCategory} numberOfLines={1}>{category}</Text>
+        <Text style={styles.collectionCount}>{count} list{count !== 1 ? 's' : ''}</Text>
       </View>
-      <Text style={styles.collectionCategory} numberOfLines={1}>{category}</Text>
-      <Text style={styles.collectionCount}>{count} list{count !== 1 ? 's' : ''}</Text>
     </TouchableOpacity>
   );
 };
@@ -349,33 +363,33 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   collectionCard: {
-    width: 110,
-    backgroundColor: colors.cardBackground,
+    width: 130,
+    height: 90,
     borderRadius: borderRadius.squircle,
-    padding: spacing.md,
-    alignItems: 'center',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
     ...shadow,
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.15,
   },
-  collectionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
+  collectionBg: {
+    borderRadius: borderRadius.squircle,
+  },
+  collectionScrim: {
+    backgroundColor: 'rgba(0,0,0,0.38)',
+  },
+  collectionOverlay: {
+    padding: spacing.sm,
   },
   collectionCategory: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.primaryText,
-    textAlign: 'center',
-    marginBottom: 2,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.1,
   },
   collectionCount: {
-    fontSize: 12,
-    color: colors.secondaryText,
-    textAlign: 'center',
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: 1,
   },
   addButton: {
     flexDirection: 'row',

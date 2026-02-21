@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TopTenList } from '../data/schema';
 import { colors, spacing, borderRadius, shadow } from '../theme';
+import { ListThumbnail } from './ListThumbnail';
 
 export const CATEGORY_COLORS: Record<string, string> = {
   Movies: '#FF6B6B',
@@ -31,9 +32,7 @@ export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat }) => {
   if (flat) {
     return (
       <TouchableOpacity style={styles.flatRow} onPress={onPress} activeOpacity={0.6}>
-        <View style={[styles.flatThumbnail, { backgroundColor: thumbColor }]}>
-          <Ionicons name={list.icon as any} size={22} color="#FFF" />
-        </View>
+        <ListThumbnail list={list} size={50} radius={10} />
         <View style={styles.info}>
           <Text style={styles.flatTitle} numberOfLines={1}>{list.title}</Text>
           <Text style={styles.subtitle}>{filled} of 10 filled</Text>
