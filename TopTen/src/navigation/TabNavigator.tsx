@@ -55,7 +55,7 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="DiscoverHome"
       component={DiscoverScreen}
-      options={{ headerShown: false }}
+      options={{ headerShown: false, title: 'Discover' }}
     />
     <Stack.Screen
       name="ListDetail"

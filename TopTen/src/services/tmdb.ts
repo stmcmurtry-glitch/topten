@@ -89,6 +89,16 @@ export async function searchMovies(query: string): Promise<MovieResult[]> {
   return fetchResults(url, key, toMovieResult);
 }
 
+export async function getTopRatedMovies(): Promise<MovieResult[]> {
+  const url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=1`;
+  return fetchResults(url, 'movies-top-rated', toMovieResult);
+}
+
+export async function getTopRatedTVShows(): Promise<MovieResult[]> {
+  const url = `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=1`;
+  return fetchResults(url, 'tv-top-rated', toTVResult);
+}
+
 export async function getPopularTVShows(): Promise<MovieResult[]> {
   const url = `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=en-US&page=1`;
   return fetchResults(url, 'tv-popular', toTVResult);

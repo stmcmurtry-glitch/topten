@@ -23,21 +23,25 @@ interface FeedRowProps {
   list: TopTenList;
   onPress: () => void;
   flat?: boolean;
+  rank?: number;
 }
 
-export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat }) => {
+export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank }) => {
   const thumbColor = CATEGORY_COLORS[list.category] ?? '#AAAAAA';
   const filled = list.items.length;
 
   if (flat) {
     return (
       <TouchableOpacity style={styles.flatRow} onPress={onPress} activeOpacity={0.6}>
-        <ListThumbnail list={list} size={50} radius={10} />
+        {rank !== undefined && (
+          <Text style={styles.rankNumber}>{rank}</Text>
+        )}
+        <ListThumbnail list={list} size={44} radius={9} />
         <View style={styles.info}>
           <Text style={styles.flatTitle} numberOfLines={1}>{list.title}</Text>
           <Text style={styles.subtitle}>{filled} of 10 filled</Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={colors.border} />
+        <Ionicons name="chevron-forward" size={14} color={colors.border} />
       </TouchableOpacity>
     );
   }
@@ -72,9 +76,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 9,
+    gap: spacing.sm + 2,
+  },
+  rankNumber: {
+    width: 16,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.secondaryText,
+    textAlign: 'right',
+    opacity: 0.6,
+    flexShrink: 0,
   },
   thumbnail: {
     width: 60,
@@ -100,13 +113,13 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   flatTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.primaryText,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.secondaryText,
   },
 });

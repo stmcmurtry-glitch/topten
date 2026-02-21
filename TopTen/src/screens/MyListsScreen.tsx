@@ -74,14 +74,10 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     (c) => !MASTER_CATEGORIES.includes(c)
   )];
 
-  // Sort by most recently created (latest first)
-  const sortedLists = [...lists].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
+  // Respect the user-defined order (set via All Lists reorder)
   const filteredLists = activeCategory === 'All'
-    ? sortedLists
-    : sortedLists.filter((l) => l.category === activeCategory);
+    ? lists
+    : lists.filter((l) => l.category === activeCategory);
 
   const displayLists = filteredLists.slice(0, 10);
   const hasMore = filteredLists.length > 10;
@@ -148,8 +144,13 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       {/* Thin divider */}
       <View style={styles.divider} />
 
-      {/* My Top Ten Lists */}
-      <Text style={styles.sectionHeader}>My Top Ten Lists</Text>
+      {/* My Top Ten */}
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionHeaderInline}>My Top Ten</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('AllLists')} activeOpacity={0.7}>
+          <Text style={styles.manageButton}>Manage</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.feedCard}>
         {displayLists.map((list, index) => (
@@ -158,6 +159,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
               list={list}
               onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
               flat
+              rank={index + 1}
             />
             {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
           </React.Fragment>
@@ -300,6 +302,24 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.md,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  sectionHeaderInline: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  manageButton: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.activeTab,
+  },
   allListsLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -333,7 +353,7 @@ const styles = StyleSheet.create({
   rowDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
-    marginLeft: spacing.lg + 50 + spacing.md,
+    marginLeft: spacing.md + 16 + (spacing.sm + 2) + 44 + (spacing.sm + 2),
     marginRight: 0,
   },
   emptyContainer: {

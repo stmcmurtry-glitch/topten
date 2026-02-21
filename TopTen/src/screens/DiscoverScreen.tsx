@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   FlatList,
   ScrollView,
@@ -11,14 +12,20 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
-import { FEATURED_LISTS, FeaturedList } from '../data/featuredLists';
-import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
-import { TopTenList } from '../data/schema';
+import { FEATURED_LISTS, POPULAR_LISTS, STARTER_LISTS, FeaturedList, PopularList } from '../data/featuredLists';
+import { fetchFeaturedItems, fetchFeaturedImage } from '../services/featuredContentService';
+import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
 export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { lists } = useListContext();
+  const { lists, addList } = useListContext();
+
+  const handlePopularPress = useCallback((item: PopularList) => {
+    const existing = lists.find(l => l.title === item.title);
+    const listId = existing ? existing.id : addList(item.category, item.title);
+    navigation.navigate('ListDetail', { listId });
+  }, [lists, addList, navigation]);
   const [query, setQuery] = useState('');
 
   const q = query.toLowerCase().trim();
@@ -28,13 +35,6 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q)
     ) : FEATURED_LISTS,
     [q]
-  );
-
-  const filteredUserLists = useMemo(() =>
-    q ? lists.filter(l =>
-      l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q)
-    ) : lists,
-    [q, lists]
   );
 
   const isSearching = q.length > 0;
@@ -66,11 +66,8 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       {isSearching ? (
         /* ── Search results: flat combined list ── */
         <FlatList
-          data={[
-            ...filteredFeatured.map(l => ({ ...l, _type: 'featured' as const })),
-            ...filteredUserLists.map(l => ({ ...l, _type: 'user' as const })),
-          ]}
-          keyExtractor={(item) => `${item._type}-${item.id}`}
+          data={filteredFeatured}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.searchResults}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
@@ -79,16 +76,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               <Text style={styles.emptyText}>No lists matching "{query}"</Text>
             </View>
           }
-          renderItem={({ item }) =>
-            item._type === 'featured' ? (
-              <FeaturedRow list={item as FeaturedList} />
-            ) : (
-              <FeedRow
-                list={item as TopTenList}
-                onPress={() => navigation.navigate('ListDetail', { listId: item.id })}
-              />
-            )
-          }
+          renderItem={({ item }) => <FeaturedRow list={item} />}
         />
       ) : (
         /* ── Default browse view ── */
@@ -105,18 +93,27 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             ))}
           </ScrollView>
 
-          {/* Your Lists */}
-          <Text style={styles.sectionHeader}>Your Lists</Text>
-          {lists.map(list => (
-            <FeedRow
-              key={list.id}
-              list={list}
-              onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
-            />
-          ))}
-          {lists.length === 0 && (
-            <Text style={styles.emptyText}>No lists yet — create one on the Lists tab.</Text>
-          )}
+          {/* Popular */}
+          <Text style={styles.sectionHeader}>Popular</Text>
+          <View style={styles.popularCard}>
+            {POPULAR_LISTS.map((list, index) => (
+              <React.Fragment key={list.id}>
+                <PopularRow list={list} onPress={() => handlePopularPress(list)} />
+                {index < POPULAR_LISTS.length - 1 && <View style={styles.popularDivider} />}
+              </React.Fragment>
+            ))}
+          </View>
+
+          {/* Starters */}
+          <Text style={styles.sectionHeader}>Starters</Text>
+          <View style={styles.popularCard}>
+            {STARTER_LISTS.map((list, index) => (
+              <React.Fragment key={list.id}>
+                <PopularRow list={list} onPress={() => handlePopularPress(list)} />
+                {index < STARTER_LISTS.length - 1 && <View style={styles.popularDivider} />}
+              </React.Fragment>
+            ))}
+          </View>
         </ScrollView>
       )}
     </View>
@@ -124,22 +121,48 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 };
 
 /* ── Featured Card (carousel) ── */
-const FeaturedCard: React.FC<{ list: FeaturedList }> = ({ list }) => (
-  <View style={styles.card}>
-    <View style={[styles.cardHeader, { backgroundColor: list.color }]}>
-      <Text style={styles.cardCategory}>{list.category.toUpperCase()}</Text>
-      <Ionicons name={list.icon as any} size={32} color="#FFF" />
+const FeaturedCard: React.FC<{ list: FeaturedList }> = ({ list }) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [items, setItems] = useState<string[]>(list.previewItems);
+
+  useEffect(() => {
+    fetchFeaturedImage(list).then(setImageUrl);
+    fetchFeaturedItems(list).then((fetched) => {
+      if (fetched.length > 0) setItems(fetched);
+    });
+  }, [list.id]);
+
+  return (
+    <View style={styles.card}>
+      <View style={[styles.cardHeader, { backgroundColor: list.color }]}>
+        {imageUrl && (
+          <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        )}
+        <View style={[StyleSheet.absoluteFill, styles.cardHeaderScrim]} />
+        <Text style={styles.cardCategory}>{list.category.toUpperCase()}</Text>
+        <Ionicons name={list.icon as any} size={28} color="#FFF" />
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={styles.cardTitle} numberOfLines={2}>{list.title}</Text>
+        <Text style={styles.cardAuthor}>{list.author}</Text>
+        {items.slice(0, 5).map((item, i) => (
+          <Text key={i} style={styles.cardItem} numberOfLines={1}>
+            {i + 1}. {item}
+          </Text>
+        ))}
+      </View>
     </View>
-    <View style={styles.cardBody}>
-      <Text style={styles.cardTitle} numberOfLines={2}>{list.title}</Text>
-      <Text style={styles.cardAuthor}>{list.author}</Text>
-      {list.previewItems.slice(0, 3).map((item, i) => (
-        <Text key={i} style={styles.cardItem} numberOfLines={1}>
-          {i + 1}. {item}
-        </Text>
-      ))}
-    </View>
-  </View>
+  );
+};
+
+/* ── Popular Row (thin card inside grouped container) ── */
+const PopularRow: React.FC<{ list: PopularList; onPress: () => void }> = ({ list, onPress }) => (
+  <TouchableOpacity style={styles.popularRow} onPress={onPress} activeOpacity={0.6}>
+    <View style={[styles.popularDot, { backgroundColor: list.color }]} />
+    <Text style={styles.popularTitle} numberOfLines={1}>{list.title}</Text>
+    <Text style={styles.popularCategory}>{list.category}</Text>
+    <Ionicons name="chevron-forward" size={14} color={colors.border} />
+  </TouchableOpacity>
 );
 
 /* ── Featured Row (search results) ── */
@@ -216,10 +239,14 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   cardHeader: {
-    height: 90,
+    height: 110,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
+    overflow: 'hidden',
+  },
+  cardHeaderScrim: {
+    backgroundColor: 'rgba(0,0,0,0.32)',
   },
   cardCategory: {
     fontSize: 10,
@@ -246,6 +273,44 @@ const styles = StyleSheet.create({
   cardItem: {
     fontSize: 11,
     color: colors.secondaryText,
+  },
+  /* Popular */
+  popularCard: {
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.squircle,
+    overflow: 'hidden',
+    ...shadow,
+    shadowOpacity: 0.06,
+  },
+  popularRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 11,
+    gap: spacing.md,
+  },
+  popularDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    flexShrink: 0,
+  },
+  popularTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.primaryText,
+  },
+  popularCategory: {
+    fontSize: 12,
+    color: colors.secondaryText,
+    flexShrink: 0,
+  },
+  popularDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: spacing.md + 10 + spacing.md,
   },
   /* Search results */
   searchResults: {

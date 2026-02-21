@@ -40,6 +40,7 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           style={styles.rowContent}
           activeOpacity={0.7}
         >
+          <Text style={styles.rankNumber}>{index + 1}</Text>
           <View style={[styles.thumbnail, { backgroundColor: thumbColor }]}>
             <Ionicons name={item.icon as any} size={22} color="#FFF" />
           </View>
@@ -139,6 +140,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.md,
     gap: spacing.md,
+  },
+  rankNumber: {
+    width: 20,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.secondaryText,
+    textAlign: 'right',
+    flexShrink: 0,
   },
   thumbnail: {
     width: 48,
