@@ -9,6 +9,8 @@ import {
   Alert,
   StyleSheet,
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
@@ -211,6 +213,10 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
       {/* Type Item Modal */}
       <Modal visible={showTypeModal} transparent animationType="fade">
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
         <Pressable style={styles.overlay} onPress={() => setShowTypeModal(false)}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>
@@ -247,6 +253,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
             </TouchableOpacity>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -324,6 +331,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.danger,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   overlay: {
     flex: 1,
