@@ -41,44 +41,33 @@ export const DiscoverScreen: React.FC = () => {
     debounceRef.current = setTimeout(() => doSearch(text), 400);
   };
 
-  const clearQuery = () => {
-    setQuery('');
-    doSearch('');
-  };
-
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
-
-      {/* Logo */}
-      <View style={styles.logoRow}>
-        <Text style={styles.logoTop}>Discover</Text>
-        <Text style={styles.logoAccent}>Movies</Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header bar */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Discover</Text>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={16} color={colors.secondaryText} />
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={handleQueryChange}
+            placeholder="Search movies…"
+            placeholderTextColor={colors.secondaryText}
+            returnKeyType="search"
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => { setQuery(''); doSearch(''); }}>
+              <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
+            </TouchableOpacity>
+          )}
+        </View>
+        <Text style={styles.sectionLabel}>
+          {query.trim() ? 'Results' : 'Popular Right Now'}
+        </Text>
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={18} color={colors.secondaryText} />
-        <TextInput
-          style={styles.searchInput}
-          value={query}
-          onChangeText={handleQueryChange}
-          placeholder="Search any movie…"
-          placeholderTextColor={colors.secondaryText}
-          returnKeyType="search"
-        />
-        {query.length > 0 && (
-          <TouchableOpacity onPress={clearQuery}>
-            <Ionicons name="close-circle" size={18} color={colors.secondaryText} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Section label */}
-      <Text style={styles.sectionLabel}>
-        {query.trim() ? 'Search Results' : 'Popular Right Now'}
-      </Text>
-
-      {/* States */}
+      {/* Content */}
       {loading ? (
         <ActivityIndicator style={styles.loader} color={colors.activeTab} />
       ) : error ? (
@@ -129,31 +118,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+  header: {
+    backgroundColor: colors.background,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
-    gap: 6,
   },
-  logoTop: {
+  headerTitle: {
     fontSize: 34,
-    fontWeight: '300',
+    fontWeight: '700',
     color: colors.primaryText,
     letterSpacing: -0.5,
-  },
-  logoAccent: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#CC0000',
-    letterSpacing: -0.5,
+    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
@@ -171,9 +152,8 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
   loader: {
     marginTop: spacing.xxl,

@@ -49,7 +49,7 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="DiscoverHome"
       component={DiscoverScreen}
-      options={{ title: 'Discover' }}
+      options={{ headerShown: false }}
     />
   </Stack.Navigator>
 );
@@ -59,7 +59,7 @@ const SettingsStack = () => (
     <Stack.Screen
       name="SettingsHome"
       component={SettingsScreen}
-      options={{ title: 'Settings' }}
+      options={{ headerShown: false }}
     />
   </Stack.Navigator>
 );
@@ -68,7 +68,7 @@ export const TabNavigator = () => (
   <Tab.Navigator
     screenOptions={{
       headerShown: false,
-      tabBarShowLabel: false,
+      tabBarShowLabel: true,
       tabBarActiveTintColor: colors.activeTab,
       tabBarInactiveTintColor: colors.inactiveTab,
     }}
@@ -77,6 +77,7 @@ export const TabNavigator = () => (
       name="MyLists"
       component={MyListsStack}
       options={{
+        tabBarLabel: 'Lists',
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="list" size={size} color={color} />
         ),
@@ -86,6 +87,7 @@ export const TabNavigator = () => (
       name="Discover"
       component={DiscoverStack}
       options={{
+        tabBarLabel: 'Discover',
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="compass-outline" size={size} color={color} />
         ),
@@ -95,6 +97,7 @@ export const TabNavigator = () => (
       name="Settings"
       component={SettingsStack}
       options={{
+        tabBarLabel: 'Settings',
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="settings-outline" size={size} color={color} />
         ),

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, SectionList } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius } from '../theme';
 
 const sections = [
@@ -20,11 +21,18 @@ const sections = [
 ];
 
 export const SettingsScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
+
   return (
     <SectionList
       style={styles.container}
       sections={sections}
       keyExtractor={(item) => item.label}
+      ListHeaderComponent={
+        <View style={[styles.titleBar, { paddingTop: insets.top + spacing.sm }]}>
+          <Text style={styles.title}>Settings</Text>
+        </View>
+      }
       renderSectionHeader={({ section }) => (
         <Text style={styles.sectionHeader}>{section.title}</Text>
       )}
@@ -46,6 +54,17 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: spacing.xxl,
+  },
+  titleBar: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.background,
+  },
+  title: {
+    fontSize: 34,
+    fontWeight: '700',
+    color: colors.primaryText,
+    letterSpacing: -0.5,
   },
   sectionHeader: {
     fontSize: 13,
