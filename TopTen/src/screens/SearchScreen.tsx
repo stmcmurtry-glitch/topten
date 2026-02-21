@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
-import { searchSuggestions } from '../data/suggestions';
+import { searchSuggestions, isApiCategory } from '../data/suggestions';
 import { TopTenItem } from '../data/schema';
 import { colors, spacing, borderRadius } from '../theme';
 
@@ -57,6 +57,27 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     updateListItems(listId, [...existing, newItem]);
     navigation.goBack();
   };
+
+  if (!isApiCategory(category)) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.comingSoon}>
+          <Ionicons name="construct-outline" size={48} color={colors.secondaryText} />
+          <Text style={styles.comingSoonTitle}>Coming Soon</Text>
+          <Text style={styles.comingSoonBody}>
+            We're working on building a curated list for {category}. Stay tuned!
+          </Text>
+          <Text style={styles.comingSoonHint}>
+            In the meantime, add items to your list manually.
+          </Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="pencil-outline" size={18} color="#FFF" />
+            <Text style={styles.backButtonText}>Type an item instead</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -143,5 +164,45 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     marginTop: spacing.xxl,
     fontSize: 15,
+  },
+  comingSoon: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+    gap: spacing.md,
+  },
+  comingSoonTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.primaryText,
+    marginTop: spacing.md,
+  },
+  comingSoonBody: {
+    fontSize: 16,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  comingSoonHint: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.activeTab,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.lg,
+  },
+  backButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
