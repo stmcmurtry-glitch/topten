@@ -3,7 +3,7 @@ export const colors = {
   cardBackground: '#FFFFFF',
   primaryText: '#000000',
   secondaryText: '#8E8E93',
-  activeTab: '#007AFF',
+  activeTab: '#CC0000',
   inactiveTab: '#8E8E93',
   border: '#E5E5EA',
   danger: '#FF3B30',
@@ -22,6 +22,7 @@ export const borderRadius = {
   sm: 8,
   md: 12,
   lg: 16,
+  squircle: 20,
 };
 
 export const shadow = {
