@@ -1,4 +1,4 @@
-const TMDB_API_KEY = '0be08905ddb2c05e17e3ed29150e6ad3';
+import { searchMovieTitles } from '../services/tmdb';
 
 const foods = [
   'Pizza', 'Sushi', 'Tacos', 'Pasta', 'Burgers', 'Ramen', 'Steak',
@@ -6,34 +6,13 @@ const foods = [
   'Dumplings', 'Fish and Chips', 'Chocolate Cake',
 ];
 
-const generic = [
-  'Option A', 'Option B', 'Option C', 'Option D', 'Option E',
-];
-
 const staticLists: Record<string, string[]> = {
   Foods: foods,
 };
 
-async function searchMovies(query: string): Promise<string[]> {
-  if (!query.trim()) {
-    const res = await fetch(
-      `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`
-    );
-    const data = await res.json();
-    return (data.results ?? []).map((m: any) => m.title);
-  }
-  const res = await fetch(
-    `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&language=en-US&query=${encodeURIComponent(query)}&page=1`
-  );
-  const data = await res.json();
-  return (data.results ?? []).map((m: any) => m.title);
-}
-
 async function searchBooks(query: string): Promise<string[]> {
   if (!query.trim()) {
-    const res = await fetch(
-      'https://openlibrary.org/trending/yearly.json?limit=20'
-    );
+    const res = await fetch('https://openlibrary.org/trending/yearly.json?limit=20');
     const data = await res.json();
     return (data.works ?? []).map((b: any) => b.title);
   }
@@ -45,7 +24,7 @@ async function searchBooks(query: string): Promise<string[]> {
 }
 
 function searchStatic(category: string, query: string): string[] {
-  const list = staticLists[category] ?? generic;
+  const list = staticLists[category] ?? [];
   if (!query.trim()) return list;
   const q = query.toLowerCase();
   return list.filter((s) => s.toLowerCase().includes(q));
@@ -60,7 +39,7 @@ export async function searchSuggestions(
   category: string,
   query: string,
 ): Promise<string[]> {
-  if (category === 'Movies') return searchMovies(query);
+  if (category === 'Movies') return searchMovieTitles(query);
   if (category === 'Books') return searchBooks(query);
   return searchStatic(category, query);
 }
