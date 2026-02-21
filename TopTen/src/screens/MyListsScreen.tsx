@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
@@ -24,6 +25,7 @@ const EDITORS_PICKS: EditorsPick[] = [
 export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { lists } = useListContext();
   const [activeCategory, setActiveCategory] = useState('All');
+  const insets = useSafeAreaInsets();
 
   const filteredLists = activeCategory === 'All'
     ? lists
@@ -32,9 +34,15 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
       showsVerticalScrollIndicator={false}
     >
+      {/* App Logo */}
+      <View style={styles.logoRow}>
+        <Text style={styles.logoTop}>Top</Text>
+        <Text style={styles.logoTen}>Ten</Text>
+      </View>
+
       {/* Category Pill Bar */}
       <ScrollView
         horizontal
@@ -102,6 +110,25 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: spacing.xxl,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: 4,
+  },
+  logoTop: {
+    fontSize: 34,
+    fontWeight: '300',
+    color: colors.primaryText,
+    letterSpacing: -0.5,
+  },
+  logoTen: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#CC0000',
+    letterSpacing: -0.5,
   },
   pillBar: {
     paddingHorizontal: spacing.lg,

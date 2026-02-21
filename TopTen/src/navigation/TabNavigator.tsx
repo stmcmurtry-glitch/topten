@@ -24,7 +24,7 @@ const MyListsStack = () => (
     <Stack.Screen
       name="MyListsHome"
       component={MyListsScreen}
-      options={{ title: 'My Lists' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="ListDetail"
