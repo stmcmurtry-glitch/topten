@@ -51,6 +51,11 @@ const DiscoverStack = () => (
       component={DiscoverScreen}
       options={{ headerShown: false }}
     />
+    <Stack.Screen
+      name="ListDetail"
+      component={ListDetailScreen}
+      options={{ title: 'List', headerLargeTitle: false }}
+    />
   </Stack.Navigator>
 );
 
