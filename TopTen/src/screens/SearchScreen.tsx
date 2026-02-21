@@ -4,13 +4,14 @@ import {
   Text,
   TextInput,
   FlatList,
+  Image,
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
-import { searchSuggestions, isApiCategory } from '../data/suggestions';
+import { searchSuggestions, isApiCategory, SearchResult } from '../data/suggestions';
 import { TopTenItem } from '../data/schema';
 import { colors, spacing, borderRadius } from '../theme';
 
@@ -20,7 +21,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
 }) => {
   const { listId, rank, category } = route.params;
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<string[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const { updateListItems, lists } = useListContext();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -28,12 +29,11 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   const doSearch = (q: string) => {
     setLoading(true);
     searchSuggestions(category, q)
-      .then((items) => setResults(items))
+      .then(setResults)
       .catch(() => setResults([]))
       .finally(() => setLoading(false));
   };
 
-  // Load initial results (popular/trending)
   useEffect(() => {
     doSearch('');
   }, [category]);
@@ -44,15 +44,15 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     debounceRef.current = setTimeout(() => doSearch(text), 400);
   };
 
-  const handleSelect = (title: string) => {
+  const handleSelect = (result: SearchResult) => {
     const list = lists.find((l) => l.id === listId);
     if (!list) return;
-
     const existing = list.items.filter((item) => item.rank !== rank);
     const newItem: TopTenItem = {
       id: `${listId}-${rank}`,
       rank,
-      title,
+      title: result.title,
+      imageUrl: result.imageUrl,
     };
     updateListItems(listId, [...existing, newItem]);
     navigation.goBack();
@@ -104,11 +104,21 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       ) : (
         <FlatList
           data={results}
-          keyExtractor={(item, i) => `${item}-${i}`}
+          keyExtractor={(item, i) => `${item.title}-${i}`}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.row} onPress={() => handleSelect(item)}>
-              <Text style={styles.rowText}>{item}</Text>
+              {item.imageUrl ? (
+                <Image source={{ uri: item.imageUrl }} style={styles.poster} />
+              ) : (
+                <View style={styles.posterPlaceholder}>
+                  <Ionicons name="film-outline" size={20} color={colors.secondaryText} />
+                </View>
+              )}
+              <View style={styles.rowInfo}>
+                <Text style={styles.rowText} numberOfLines={2}>{item.title}</Text>
+                {item.year ? <Text style={styles.rowYear}>{item.year}</Text> : null}
+              </View>
               <Ionicons name="add-circle-outline" size={22} color={colors.activeTab} />
             </TouchableOpacity>
           )}
@@ -147,17 +157,38 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: colors.cardBackground,
     marginHorizontal: spacing.lg,
     marginBottom: 1,
-    paddingHorizontal: spacing.lg,
+    paddingRight: spacing.lg,
+    gap: spacing.md,
+    overflow: 'hidden',
+  },
+  poster: {
+    width: 44,
+    height: 66,
+  },
+  posterPlaceholder: {
+    width: 44,
+    height: 66,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowInfo: {
+    flex: 1,
     paddingVertical: spacing.md,
   },
   rowText: {
-    fontSize: 16,
+    fontSize: 15,
     color: colors.primaryText,
-    flex: 1,
+    fontWeight: '500',
+  },
+  rowYear: {
+    fontSize: 12,
+    color: '#CC0000',
+    fontWeight: '600',
+    marginTop: 2,
   },
   empty: {
     textAlign: 'center',

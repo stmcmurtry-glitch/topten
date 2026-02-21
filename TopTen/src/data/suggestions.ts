@@ -1,4 +1,10 @@
-import { searchMovieTitles } from '../services/tmdb';
+import { searchMovies } from '../services/tmdb';
+
+export interface SearchResult {
+  title: string;
+  imageUrl?: string;
+  year?: string;
+}
 
 const foods = [
   'Pizza', 'Sushi', 'Tacos', 'Pasta', 'Burgers', 'Ramen', 'Steak',
@@ -10,24 +16,25 @@ const staticLists: Record<string, string[]> = {
   Foods: foods,
 };
 
-async function searchBooks(query: string): Promise<string[]> {
+async function searchBooks(query: string): Promise<SearchResult[]> {
   if (!query.trim()) {
     const res = await fetch('https://openlibrary.org/trending/yearly.json?limit=20');
     const data = await res.json();
-    return (data.works ?? []).map((b: any) => b.title);
+    return (data.works ?? []).map((b: any) => ({ title: b.title }));
   }
   const res = await fetch(
     `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20&fields=title`
   );
   const data = await res.json();
-  return (data.docs ?? []).map((b: any) => b.title);
+  return (data.docs ?? []).map((b: any) => ({ title: b.title }));
 }
 
-function searchStatic(category: string, query: string): string[] {
+function searchStatic(category: string, query: string): SearchResult[] {
   const list = staticLists[category] ?? [];
-  if (!query.trim()) return list;
-  const q = query.toLowerCase();
-  return list.filter((s) => s.toLowerCase().includes(q));
+  const filtered = query.trim()
+    ? list.filter((s) => s.toLowerCase().includes(query.toLowerCase()))
+    : list;
+  return filtered.map((title) => ({ title }));
 }
 
 export type SearchCategory = 'Movies' | 'Books' | string;
@@ -38,8 +45,11 @@ export const isApiCategory = (category: string): boolean =>
 export async function searchSuggestions(
   category: string,
   query: string,
-): Promise<string[]> {
-  if (category === 'Movies') return searchMovieTitles(query);
+): Promise<SearchResult[]> {
+  if (category === 'Movies') {
+    const movies = await searchMovies(query);
+    return movies.map((m) => ({ title: m.title, imageUrl: m.imageUrl, year: m.year }));
+  }
   if (category === 'Books') return searchBooks(query);
   return searchStatic(category, query);
 }
