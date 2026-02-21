@@ -49,32 +49,54 @@ export function toTopTenItem(movie: MovieResult, rank: number): TopTenItem {
 
 const cache = new Map<string, MovieResult[]>();
 
-async function fetchMovies(url: string, key: string): Promise<MovieResult[]> {
+async function fetchResults(
+  url: string,
+  key: string,
+  mapper: (item: any) => MovieResult,
+): Promise<MovieResult[]> {
   if (cache.has(key)) return cache.get(key)!;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`TMDB ${res.status}`);
   const data = await res.json();
-  const results: MovieResult[] = (data.results ?? []).map(toMovieResult);
+  const results: MovieResult[] = (data.results ?? []).map(mapper);
   cache.set(key, results);
   return results;
+}
+
+// ── TV mapping ─────────────────────────────────────────────────────────────
+
+function toTVResult(show: any): MovieResult {
+  return {
+    id: String(show.id),
+    title: show.name,
+    imageUrl: show.poster_path ? `${IMAGE_BASE}${show.poster_path}` : undefined,
+    year: show.first_air_date ? show.first_air_date.slice(0, 4) : '',
+    overview: show.overview ?? '',
+  };
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────
 
 export async function getPopularMovies(): Promise<MovieResult[]> {
   const url = `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=en-US&page=1`;
-  return fetchMovies(url, 'popular');
+  return fetchResults(url, 'popular', toMovieResult);
 }
 
 export async function searchMovies(query: string): Promise<MovieResult[]> {
   if (!query.trim()) return getPopularMovies();
-  const key = `search:${query.toLowerCase().trim()}`;
+  const key = `movie-search:${query.toLowerCase().trim()}`;
   const url = `${BASE_URL}/search/movie?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(query)}&page=1`;
-  return fetchMovies(url, key);
+  return fetchResults(url, key, toMovieResult);
 }
 
-/** Convenience: returns just titles (for slot-filling SearchScreen) */
-export async function searchMovieTitles(query: string): Promise<string[]> {
-  const results = await searchMovies(query);
-  return results.map((m) => m.title);
+export async function getPopularTVShows(): Promise<MovieResult[]> {
+  const url = `${BASE_URL}/tv/popular?api_key=${API_KEY}&language=en-US&page=1`;
+  return fetchResults(url, 'tv-popular', toTVResult);
+}
+
+export async function searchTVShows(query: string): Promise<MovieResult[]> {
+  if (!query.trim()) return getPopularTVShows();
+  const key = `tv-search:${query.toLowerCase().trim()}`;
+  const url = `${BASE_URL}/search/tv?api_key=${API_KEY}&language=en-US&query=${encodeURIComponent(query)}&page=1`;
+  return fetchResults(url, key, toTVResult);
 }

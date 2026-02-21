@@ -13,13 +13,14 @@ import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
 import { PickCard, EditorsPick } from '../components/PickCard';
 import { colors, spacing, borderRadius } from '../theme';
 
-const CATEGORIES = ['All', 'Movies', 'Books', 'Golf', 'Wine'];
+const CATEGORIES = ['All', 'Movies', 'TV', 'Books', 'Golf', 'Wine'];
 
 const EDITORS_PICKS: EditorsPick[] = [
   { id: 'ep-1', title: 'Top 10 Films of All Time', category: 'Movies', icon: 'film-outline', color: CATEGORY_COLORS.Movies },
-  { id: 'ep-2', title: 'Books Everyone Should Read', category: 'Books', icon: 'book-outline', color: CATEGORY_COLORS.Books },
-  { id: 'ep-3', title: 'World\'s Greatest Golf Courses', category: 'Golf', icon: 'golf-outline', color: CATEGORY_COLORS.Golf },
-  { id: 'ep-4', title: 'Wines Worth Every Sip', category: 'Wine', icon: 'wine-outline', color: CATEGORY_COLORS.Wine },
+  { id: 'ep-2', title: 'Best TV Shows Ever Made', category: 'TV', icon: 'tv-outline', color: CATEGORY_COLORS.TV },
+  { id: 'ep-3', title: 'Books Everyone Should Read', category: 'Books', icon: 'book-outline', color: CATEGORY_COLORS.Books },
+  { id: 'ep-4', title: 'World\'s Greatest Golf Courses', category: 'Golf', icon: 'golf-outline', color: CATEGORY_COLORS.Golf },
+  { id: 'ep-5', title: 'Wines Worth Every Sip', category: 'Wine', icon: 'wine-outline', color: CATEGORY_COLORS.Wine },
 ];
 
 export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {

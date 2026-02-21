@@ -12,6 +12,18 @@ export interface FeaturedList {
 
 export const FEATURED_LISTS: FeaturedList[] = [
   {
+    id: 'f-0',
+    title: 'Best TV Shows Ever Made',
+    category: 'TV',
+    icon: 'tv-outline',
+    color: CATEGORY_COLORS.TV,
+    author: 'Top Ten Editors',
+    previewItems: [
+      'The Wire', 'Breaking Bad', 'The Sopranos',
+      'Succession', 'Band of Brothers',
+    ],
+  },
+  {
     id: 'f-1',
     title: 'Top 10 Films of All Time',
     category: 'Movies',

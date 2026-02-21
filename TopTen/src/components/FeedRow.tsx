@@ -10,6 +10,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Foods: '#FFB347',
   Golf: '#6BCB77',
   Wine: '#C084D8',
+  TV: '#5B8DEF',
 };
 
 interface FeedRowProps {

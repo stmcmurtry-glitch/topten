@@ -27,7 +27,16 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((data) => {
       if (data) {
-        setLists(JSON.parse(data));
+        const stored: TopTenList[] = JSON.parse(data);
+        const storedIds = new Set(stored.map((l) => l.id));
+        const newSeeds = seedLists.filter((s) => !storedIds.has(s.id));
+        if (newSeeds.length > 0) {
+          const merged = [...stored, ...newSeeds];
+          setLists(merged);
+          AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        } else {
+          setLists(stored);
+        }
       }
     });
   }, []);

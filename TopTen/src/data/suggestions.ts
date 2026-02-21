@@ -1,4 +1,4 @@
-import { searchMovies } from '../services/tmdb';
+import { searchMovies, searchTVShows } from '../services/tmdb';
 
 export interface SearchResult {
   title: string;
@@ -40,7 +40,7 @@ function searchStatic(category: string, query: string): SearchResult[] {
 export type SearchCategory = 'Movies' | 'Books' | string;
 
 export const isApiCategory = (category: string): boolean =>
-  category === 'Movies' || category === 'Books';
+  category === 'Movies' || category === 'TV' || category === 'Books';
 
 export async function searchSuggestions(
   category: string,
@@ -49,6 +49,10 @@ export async function searchSuggestions(
   if (category === 'Movies') {
     const movies = await searchMovies(query);
     return movies.map((m) => ({ title: m.title, imageUrl: m.imageUrl, year: m.year }));
+  }
+  if (category === 'TV') {
+    const shows = await searchTVShows(query);
+    return shows.map((s) => ({ title: s.title, imageUrl: s.imageUrl, year: s.year }));
   }
   if (category === 'Books') return searchBooks(query);
   return searchStatic(category, query);
