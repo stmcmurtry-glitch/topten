@@ -23,14 +23,16 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
   const { updateListItems, lists } = useListContext();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doSearch = (q: string) => {
     setLoading(true);
+    setApiError(false);
     searchSuggestions(category, q)
-      .then(setResults)
-      .catch(() => setResults([]))
+      .then((r) => { setResults(r); })
+      .catch(() => { setResults([]); setApiError(true); })
       .finally(() => setLoading(false));
   };
 
@@ -101,6 +103,15 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
 
       {loading ? (
         <ActivityIndicator style={styles.loader} color={colors.activeTab} />
+      ) : apiError ? (
+        <View style={styles.errorState}>
+          <Ionicons name="cloud-offline-outline" size={44} color={colors.secondaryText} />
+          <Text style={styles.errorTitle}>Couldn't load results</Text>
+          <Text style={styles.errorBody}>
+            The {category} search requires a valid API key.{'\n'}
+            Add EXPO_PUBLIC_TMDB_API_KEY to your .env file.
+          </Text>
+        </View>
       ) : (
         <FlatList
           data={results}
@@ -195,6 +206,24 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     marginTop: spacing.xxl,
     fontSize: 15,
+  },
+  errorState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxl,
+    gap: spacing.md,
+  },
+  errorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  errorBody: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   comingSoon: {
     flex: 1,

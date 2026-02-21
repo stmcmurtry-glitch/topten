@@ -1,6 +1,6 @@
 import { TopTenItem } from '../data/schema';
 
-const API_KEY = '0be08905ddb2c05e17e3ed29150e6ad3';
+const API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY ?? '';
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w185';
 
