@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
+import { useCommunity } from '../context/CommunityContext';
 import { searchSuggestions, isApiCategory, SearchResult } from '../data/suggestions';
 import { TopTenItem } from '../data/schema';
 import { colors, spacing, borderRadius } from '../theme';
@@ -19,12 +20,14 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
   navigation,
 }) => {
-  const { listId, rank, category } = route.params;
+  const { listId, rank, category, communityListId, slotIndex } = route.params;
+  const isCommunity = !!communityListId;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
   const { updateListItems, lists } = useListContext();
+  const { userRankings, setUserSlots } = useCommunity();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doSearch = (q: string) => {
@@ -47,6 +50,14 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   };
 
   const handleSelect = (result: SearchResult) => {
+    if (isCommunity) {
+      const existing = userRankings[communityListId]?.slots ?? Array(10).fill('');
+      const updated = [...existing];
+      updated[slotIndex] = result.title;
+      setUserSlots(communityListId, updated);
+      navigation.goBack();
+      return;
+    }
     const list = lists.find((l) => l.id === listId);
     if (!list) return;
     const existing = list.items.filter((item) => item.rank !== rank);

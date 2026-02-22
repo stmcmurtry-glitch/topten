@@ -29,6 +29,10 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const list = COMMUNITY_LISTS.find((l) => l.id === communityListId);
   const [activeTab, setActiveTab] = useState<'community' | 'yours'>('community');
+
+  // Choice sheet (tap a slot)
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  // Type modal
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [typeSlotIndex, setTypeSlotIndex] = useState<number | null>(null);
   const [typedValue, setTypedValue] = useState('');
@@ -38,9 +42,8 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const userSlots: string[] = useMemo(() => {
     if (ranking?.slots?.length === 10) return ranking.slots;
-    // Fall back to default: community item titles in seed order
-    return list ? list.items.map((i) => i.title) : Array(10).fill('');
-  }, [ranking, list]);
+    return Array(10).fill('');
+  }, [ranking]);
 
   const liveScores = useMemo(
     () => getLiveScores(communityListId),
@@ -50,7 +53,6 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   if (!list) return null;
 
-  // Community tab: items sorted by live score desc
   const communityRanked = [...list.items].sort(
     (a, b) => (liveScores[b.id] ?? 0) - (liveScores[a.id] ?? 0)
   );
@@ -58,10 +60,23 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   // ── Yours tab helpers ────────────────────────────────────────────────────
 
+  const openChoiceSheet = (index: number) => setActiveSlot(index);
+
   const openTypeModal = (index: number) => {
+    setActiveSlot(null);
     setTypeSlotIndex(index);
-    setTypedValue(userSlots[index]);
+    setTypedValue('');
     setShowTypeModal(true);
+  };
+
+  const openSearch = (index: number) => {
+    setActiveSlot(null);
+    navigation.navigate('Search', {
+      communityListId,
+      slotIndex: index,
+      rank: index + 1,
+      category: list.category,
+    });
   };
 
   const saveSlot = () => {
@@ -83,7 +98,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const participantDisplay = list.participantCount.toLocaleString();
 
-  // ── Hero ────────────────────────────────────────────────────────────────
+  // ── Hero ─────────────────────────────────────────────────────────────────
 
   const Hero = (
     <View style={[styles.hero, { paddingTop: insets.top + 46 }]}>
@@ -114,7 +129,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     </View>
   );
 
-  // ── Tab switcher ─────────────────────────────────────────────────────────
+  // ── Tab switcher ──────────────────────────────────────────────────────────
 
   const TabSwitcher = (
     <View style={styles.tabRow}>
@@ -172,7 +187,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                 <TouchableOpacity
                   key={idx}
                   activeOpacity={0.7}
-                  onPress={() => openTypeModal(idx)}
+                  onPress={() => openChoiceSheet(idx)}
                   style={[styles.yoursRow, isEmpty && styles.yoursRowEmpty]}
                 >
                   <Text style={[styles.rankNum, isEmpty && styles.rankNumEmpty]}>{idx + 1}</Text>
@@ -227,6 +242,34 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
         )}
       </ScrollView>
 
+      {/* ── Choice sheet ── */}
+      <Modal visible={activeSlot !== null} transparent animationType="fade">
+        <Pressable style={styles.overlay} onPress={() => setActiveSlot(null)}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.sheetTitle}>
+              Rank #{activeSlot !== null ? activeSlot + 1 : ''}
+            </Text>
+            <TouchableOpacity
+              style={styles.sheetOption}
+              onPress={() => activeSlot !== null && openTypeModal(activeSlot)}
+            >
+              <Ionicons name="pencil-outline" size={22} color={colors.activeTab} />
+              <Text style={styles.sheetOptionText}>Type an item</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sheetOption}
+              onPress={() => activeSlot !== null && openSearch(activeSlot)}
+            >
+              <Ionicons name="search-outline" size={22} color={colors.activeTab} />
+              <Text style={styles.sheetOptionText}>Find your item in a list</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setActiveSlot(null)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* ── Type modal ── */}
       <Modal visible={showTypeModal} transparent animationType="fade">
         <KeyboardAvoidingView
@@ -236,22 +279,24 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           <Pressable style={styles.overlay} onPress={() => setShowTypeModal(false)}>
             <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
               <Text style={styles.sheetTitle}>
-                {typeSlotIndex !== null ? `Rank #${typeSlotIndex + 1}` : ''}
+                Enter item for #{typeSlotIndex !== null ? typeSlotIndex + 1 : ''}
               </Text>
               <TextInput
                 style={styles.typeInput}
                 value={typedValue}
                 onChangeText={setTypedValue}
-                placeholder="Type anything…"
+                placeholder="Type a name…"
                 placeholderTextColor={colors.secondaryText}
                 autoFocus
                 returnKeyType="done"
-                onSubmitEditing={saveSlot}
+                onSubmitEditing={() => { if (typedValue.trim()) saveSlot(); }}
               />
-              <TouchableOpacity style={styles.saveButton} onPress={saveSlot}>
-                <Text style={styles.saveText}>
-                  {typedValue.trim() ? 'Save' : 'Clear'}
-                </Text>
+              <TouchableOpacity
+                style={[styles.saveButton, !typedValue.trim() && styles.saveDisabled]}
+                disabled={!typedValue.trim()}
+                onPress={saveSlot}
+              >
+                <Text style={styles.saveText}>Save</Text>
               </TouchableOpacity>
             </Pressable>
           </Pressable>
@@ -268,12 +313,8 @@ const styles = StyleSheet.create({
   },
 
   /* ── Hero ── */
-  hero: {
-    justifyContent: 'flex-end',
-  },
-  heroScrim: {
-    backgroundColor: 'rgba(0,0,0,0.22)',
-  },
+  hero: { justifyContent: 'flex-end' },
+  heroScrim: { backgroundColor: 'rgba(0,0,0,0.22)' },
   heroNav: {
     position: 'absolute',
     left: 0,
@@ -299,32 +340,21 @@ const styles = StyleSheet.create({
     color: '#FFF',
     letterSpacing: -0.2,
   },
-  heroBadge: {
-    width: 80,
-    alignItems: 'flex-end',
-  },
+  heroBadge: { width: 80, alignItems: 'flex-end' },
   votedBadge: {
     backgroundColor: '#2ECC71',
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: borderRadius.lg,
   },
-  votedBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#FFF',
-  },
+  votedBadgeText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
   countBadge: {
     backgroundColor: 'rgba(0,0,0,0.25)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: borderRadius.lg,
   },
-  countBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.9)',
-  },
+  countBadgeText: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.9)' },
   heroContent: {
     paddingHorizontal: spacing.lg,
     paddingBottom: 18,
@@ -337,7 +367,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  /* ── Tab switcher ── */
+  /* ── Tabs ── */
   tabRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -352,23 +382,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.cardBackground,
   },
-  tabPillActive: {
-    backgroundColor: '#CC0000',
-    borderColor: '#CC0000',
-  },
-  tabPillText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primaryText,
-  },
-  tabPillTextActive: {
-    color: '#FFF',
-  },
+  tabPillActive: { backgroundColor: '#CC0000', borderColor: '#CC0000' },
+  tabPillText: { fontSize: 14, fontWeight: '600', color: colors.primaryText },
+  tabPillTextActive: { color: '#FFF' },
 
   /* ── Shared ── */
-  section: {
-    marginHorizontal: spacing.lg,
-  },
+  section: { marginHorizontal: spacing.lg },
 
   /* ── Community tab ── */
   communityRow: {
@@ -391,30 +410,11 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     flexShrink: 0,
   },
-  rankNumEmpty: {
-    opacity: 0.4,
-  },
-  communityItemTitle: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.primaryText,
-  },
-  scoreCol: {
-    alignItems: 'flex-end',
-    gap: 3,
-  },
-  scoreBar: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#CC0000',
-    minWidth: 4,
-  },
-  scorePts: {
-    fontSize: 11,
-    color: colors.secondaryText,
-    fontWeight: '500',
-  },
+  rankNumEmpty: { opacity: 0.4 },
+  communityItemTitle: { flex: 1, fontSize: 15, fontWeight: '500', color: colors.primaryText },
+  scoreCol: { alignItems: 'flex-end', gap: 3 },
+  scoreBar: { height: 4, borderRadius: 2, backgroundColor: '#CC0000', minWidth: 4 },
+  scorePts: { fontSize: 11, color: colors.secondaryText, fontWeight: '500' },
 
   /* ── Yours tab ── */
   yoursRow: {
@@ -437,20 +437,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
-  yoursItemTitle: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.primaryText,
-  },
-  emptyText: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.secondaryText,
-  },
-  moveButtons: {
-    alignItems: 'center',
-    gap: 2,
-  },
+  yoursItemTitle: { flex: 1, fontSize: 16, color: colors.primaryText },
+  emptyText: { flex: 1, fontSize: 16, color: colors.secondaryText },
+  moveButtons: { alignItems: 'center', gap: 2 },
   submitButton: {
     backgroundColor: '#CC0000',
     borderRadius: borderRadius.sm,
@@ -458,13 +447,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.lg,
   },
-  submitButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  submitButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 
-  /* ── Type modal ── */
+  /* ── Modals ── */
   keyboardAvoid: { flex: 1 },
   overlay: {
     flex: 1,
@@ -485,6 +470,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
+  sheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  sheetOptionText: { fontSize: 17, color: colors.primaryText },
+  cancelButton: { marginTop: spacing.lg, alignItems: 'center', paddingVertical: spacing.md },
+  cancelText: { fontSize: 17, color: colors.secondaryText },
   typeInput: {
     backgroundColor: colors.background,
     borderRadius: borderRadius.sm,
@@ -499,9 +495,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     alignItems: 'center',
   },
-  saveText: {
-    color: '#FFF',
-    fontSize: 17,
-    fontWeight: '600',
-  },
+  saveDisabled: { opacity: 0.4 },
+  saveText: { color: '#FFF', fontSize: 17, fontWeight: '600' },
 });

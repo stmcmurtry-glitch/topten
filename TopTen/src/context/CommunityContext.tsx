@@ -18,11 +18,9 @@ interface CommunityContextType {
 
 const CommunityContext = createContext<CommunityContextType | null>(null);
 
-const buildDefaultRanking = (listId: string): UserCommunityRanking => {
-  const list = COMMUNITY_LISTS.find((l) => l.id === listId);
+const buildDefaultRanking = (_listId: string): UserCommunityRanking => {
   return {
-    // Pre-populate with community item titles so there's a useful starting point
-    slots: list ? list.items.map((i) => i.title) : Array(10).fill(''),
+    slots: Array(10).fill(''),
     submitted: false,
   };
 };
@@ -38,17 +36,11 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           // Migrate old orderedIds format to slots
           const migrated: Record<string, UserCommunityRanking> = {};
           for (const [listId, ranking] of Object.entries(parsed as Record<string, any>)) {
-            if (ranking.orderedIds && !ranking.slots) {
-              const list = COMMUNITY_LISTS.find((l) => l.id === listId);
-              const idToTitle: Record<string, string> = {};
-              list?.items.forEach((i) => { idToTitle[i.id] = i.title; });
-              migrated[listId] = {
-                slots: ranking.orderedIds.map((id: string) => idToTitle[id] ?? ''),
-                submitted: ranking.submitted ?? false,
-              };
-            } else {
-              migrated[listId] = ranking as UserCommunityRanking;
-            }
+            // Migrate old orderedIds format: drop pre-filled titles, start fresh
+            migrated[listId] = {
+              slots: Array.isArray(ranking.slots) ? ranking.slots : Array(10).fill(''),
+              submitted: ranking.submitted ?? false,
+            };
           }
           setUserRankings(migrated);
         } catch {
