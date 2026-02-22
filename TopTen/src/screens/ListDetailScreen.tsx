@@ -373,6 +373,7 @@ const styles = StyleSheet.create({
   /* ── Hero ── */
   hero: {
     justifyContent: 'flex-end',
+    marginBottom: spacing.md,
   },
   heroScrim: {
     backgroundColor: 'rgba(0,0,0,0.22)',

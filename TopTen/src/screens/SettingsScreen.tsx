@@ -20,6 +20,12 @@ const BASIC_LIMIT = 10;
 
 const sections = [
   {
+    title: 'Preferences',
+    data: [
+      { label: 'Notifications', route: 'Notifications' },
+    ],
+  },
+  {
     title: 'App',
     data: [
       { label: 'Version', value: '1.0.0' },
@@ -166,7 +172,7 @@ const FeedbackCard: React.FC = () => {
 };
 
 /* ── Main Screen ── */
-export const SettingsScreen: React.FC = () => {
+export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [plansVisible, setPlansVisible] = useState(false);
 
@@ -195,6 +201,18 @@ export const SettingsScreen: React.FC = () => {
           )}
           renderItem={({ item, index, section }) => {
             const isLast = index === section.data.length - 1;
+            if (item.route) {
+              return (
+                <TouchableOpacity
+                  style={[styles.row, isLast && styles.rowLast]}
+                  onPress={() => navigation.navigate(item.route)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.label}>{item.label}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+                </TouchableOpacity>
+              );
+            }
             return (
               <View style={[styles.row, isLast && styles.rowLast]}>
                 <Text style={styles.label}>{item.label}</Text>

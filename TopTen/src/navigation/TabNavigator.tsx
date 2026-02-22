@@ -9,6 +9,7 @@ import { AllListsScreen } from '../screens/AllListsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { DiscoverScreen } from '../screens/DiscoverScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { FeaturedListScreen } from '../screens/FeaturedListScreen';
 import { CommunityListScreen } from '../screens/CommunityListScreen';
 import { colors } from '../theme';
@@ -32,7 +33,7 @@ const MyListsStack = () => (
     <Stack.Screen
       name="ListDetail"
       component={ListDetailScreen}
-      options={{ headerShown: false }}
+      options={{ headerShown: false, title: '' }}
     />
     <Stack.Screen
       name="CreateList"
@@ -47,7 +48,7 @@ const MyListsStack = () => (
     <Stack.Screen
       name="Search"
       component={SearchScreen}
-      options={{ title: 'Search', headerLargeTitle: false }}
+      options={{ title: 'Search', headerLargeTitle: false, headerBackTitle: '' }}
     />
     <Stack.Screen
       name="FeaturedList"
@@ -88,6 +89,11 @@ const SettingsStack = () => (
       name="SettingsHome"
       component={SettingsScreen}
       options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="Notifications"
+      component={NotificationsScreen}
+      options={{ title: 'Notifications', headerLargeTitle: false }}
     />
   </Stack.Navigator>
 );

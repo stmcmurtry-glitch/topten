@@ -17,17 +17,30 @@ const staticLists: Record<string, string[]> = {
   Foods: foods,
 };
 
+const COVERS_BASE = 'https://covers.openlibrary.org/b/id';
+
+function coverUrl(coverId: number | undefined): string | undefined {
+  return coverId ? `${COVERS_BASE}/${coverId}-M.jpg` : undefined;
+}
+
 async function searchBooks(query: string): Promise<SearchResult[]> {
   if (!query.trim()) {
     const res = await fetch('https://openlibrary.org/trending/yearly.json?limit=20');
     const data = await res.json();
-    return (data.works ?? []).map((b: any) => ({ title: b.title }));
+    return (data.works ?? []).map((b: any) => ({
+      title: b.title,
+      imageUrl: coverUrl(b.cover_i),
+    }));
   }
   const res = await fetch(
-    `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20&fields=title`
+    `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20&fields=title,cover_i,first_publish_year`
   );
   const data = await res.json();
-  return (data.docs ?? []).map((b: any) => ({ title: b.title }));
+  return (data.docs ?? []).map((b: any) => ({
+    title: b.title,
+    imageUrl: coverUrl(b.cover_i),
+    year: b.first_publish_year ? String(b.first_publish_year) : undefined,
+  }));
 }
 
 function searchStatic(category: string, query: string): SearchResult[] {
