@@ -15,8 +15,9 @@ const UNSPLASH_KEY =
 const BASE = 'https://images.unsplash.com/photo-';
 const PARAMS = '?auto=format&fit=crop&w=400';
 const STATIC_IMAGE_URLS: Record<string, string> = {
-  Movies:            `${BASE}1489599849927-2ee91cede3ba${PARAMS}`, // red cinema seats
+  Movies:             `${BASE}1489599849927-2ee91cede3ba${PARAMS}`, // red cinema seats
   'community-movies': `${BASE}1489599849927-2ee91cede3ba${PARAMS}`,
+  'community-tv':     `${BASE}1461151304267-38535e780c79${PARAMS}`, // dark room TV watching
 };
 
 const CATEGORY_QUERIES: Record<string, string> = {
