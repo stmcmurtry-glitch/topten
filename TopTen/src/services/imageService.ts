@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TopTenList } from '../data/schema';
 
 // Bump this version string whenever queries change — invalidates stored cache
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const STORAGE_PREFIX = `@topten_img_${CACHE_VERSION}_`;
 
 // Hardcoded fallback so the key is never lost across hot reloads
@@ -15,12 +15,12 @@ const CATEGORY_QUERIES: Record<string, string> = {
   TV:      'television streaming series',
   Sports:  'sports athlete stadium action',
   Music:   'music concert live performance',
-  Food:    'fine dining plating restaurant',
-  Drinks:  'cocktail craft bar drink',
-  Books:   'cozy bookshelf library warm',
-  Golf:    'golf hole fairway landscape scenic',
-  Wine:    'wine bottle glass table',
-  Foods:   'fine dining plating restaurant',
+  Food:    'restaurant meal delicious',
+  Drinks:  'cocktail bar drink',
+  Books:   'bookshelf library reading',
+  Golf:    'golf course green fairway',
+  Wine:    'wine glass bottle',
+  Foods:   'restaurant meal delicious',
   // Community list images — keyed by list id
   'community-movies':   'hollywood golden age film reel noir',
   'community-tv':       'dramatic tv series dark cinematic',
