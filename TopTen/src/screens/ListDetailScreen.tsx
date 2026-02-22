@@ -15,6 +15,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { TopTenItem } from '../data/schema';
@@ -172,8 +173,12 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
       {/* Nav bar: back button + category label */}
       <View style={[styles.heroNav, { top: insets.top + 6 }]}>
-        <TouchableOpacity style={styles.heroNavBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={26} color="#FFF" />
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
+          <BlurView intensity={60} tint="dark" style={styles.heroNavBtn}>
+            <View style={styles.heroNavBtnInner}>
+              <Ionicons name="chevron-back" size={26} color="#FFF" />
+            </View>
+          </BlurView>
         </TouchableOpacity>
         <Text style={styles.heroNavCategory}>{list.category.toUpperCase()}</Text>
         <View style={{ width: 36 }} />
@@ -391,7 +396,10 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.20)',
+    overflow: 'hidden',
+  },
+  heroNavBtnInner: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

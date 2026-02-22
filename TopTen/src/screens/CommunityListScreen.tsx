@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { COMMUNITY_LISTS } from '../data/communityLists';
 import { useCommunity } from '../context/CommunityContext';
@@ -158,15 +159,19 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   // ── Hero ─────────────────────────────────────────────────────────────────
 
   const Hero = (
-    <View style={[styles.hero, { paddingTop: insets.top + 46 }]}>
+    <View style={[styles.hero, { paddingTop: insets.top + 70 }]}>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: list.color }]} />
       <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
 
       <View style={[styles.heroNav, { top: insets.top + 6 }]}>
-        <TouchableOpacity style={styles.heroNavBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={26} color="#FFF" />
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={44}>
+          <BlurView intensity={60} tint="dark" style={styles.heroNavBtn}>
+            <View style={styles.heroNavBtnInner}>
+              <Ionicons name="chevron-back" size={26} color="#FFF" />
+            </View>
+          </BlurView>
         </TouchableOpacity>
-        <Text style={styles.heroNavTitle} numberOfLines={1}>{list.title}</Text>
+        <Text style={styles.heroNavCategory} numberOfLines={1}>{list.category.toUpperCase()}</Text>
         <View style={styles.heroBadge}>
           {submitted ? (
             <View style={styles.votedBadge}>
@@ -181,6 +186,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       </View>
 
       <View style={styles.heroContent}>
+        <Text style={styles.heroTitle} numberOfLines={2}>{list.title}</Text>
         <Text style={styles.heroDescription}>{list.description}</Text>
       </View>
     </View>
@@ -389,22 +395,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heroNavBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.20)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  heroNavBtnInner: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroNavTitle: {
+  heroNavCategory: {
     position: 'absolute',
     left: 0,
     right: 0,
     textAlign: 'center',
-    fontSize: 15,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#FFF',
-    letterSpacing: -0.2,
+    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 1.5,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    lineHeight: 26,
+    marginBottom: 4,
   },
   heroBadge: { flexShrink: 0, alignItems: 'flex-end' },
   votedBadge: {

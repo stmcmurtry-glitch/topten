@@ -85,7 +85,7 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
         >
           <Ionicons name="chevron-back" size={28} color={colors.activeTab} />
         </TouchableOpacity>

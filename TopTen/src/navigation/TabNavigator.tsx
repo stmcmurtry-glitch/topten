@@ -48,7 +48,7 @@ const MyListsStack = () => (
     <Stack.Screen
       name="Search"
       component={SearchScreen}
-      options={{ title: 'Search', headerLargeTitle: false, headerBackTitle: '' }}
+      options={{ title: 'Search', headerLargeTitle: false }}
     />
     <Stack.Screen
       name="FeaturedList"

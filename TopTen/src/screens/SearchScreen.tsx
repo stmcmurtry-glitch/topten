@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,19 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   navigation,
 }) => {
   const { listId, rank, category, communityListId, slotIndex } = route.params;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+        >
+          <Ionicons name="chevron-back" size={28} color={colors.activeTab} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
   const isCommunity = !!communityListId;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
