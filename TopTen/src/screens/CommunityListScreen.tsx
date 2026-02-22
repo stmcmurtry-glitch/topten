@@ -10,6 +10,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -231,7 +232,19 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
             <TouchableOpacity
               style={styles.submitButton}
-              onPress={() => submitRanking(communityListId)}
+              onPress={() => {
+                submitRanking(communityListId);
+                Alert.alert(
+                  submitted ? 'Ranking Updated' : 'Ranking Submitted!',
+                  submitted
+                    ? 'Your updated votes have been applied to the community scores.'
+                    : 'Your votes have been added to the community scores. See how the rankings stacked up!',
+                  [{
+                    text: 'See Community Rankings',
+                    onPress: () => setActiveTab('community'),
+                  }]
+                );
+              }}
               activeOpacity={0.8}
             >
               <Text style={styles.submitButtonText}>
