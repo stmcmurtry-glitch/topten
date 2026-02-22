@@ -13,4 +13,6 @@ export interface TopTenList {
   items: TopTenItem[];
   createdAt: string;
   isCustom: boolean;
+  description?: string;
+  customIcon?: string;
 }

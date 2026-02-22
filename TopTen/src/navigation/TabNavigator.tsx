@@ -9,6 +9,8 @@ import { AllListsScreen } from '../screens/AllListsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { DiscoverScreen } from '../screens/DiscoverScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { FeaturedListScreen } from '../screens/FeaturedListScreen';
+import { CommunityListScreen } from '../screens/CommunityListScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -30,7 +32,7 @@ const MyListsStack = () => (
     <Stack.Screen
       name="ListDetail"
       component={ListDetailScreen}
-      options={{ title: 'List', headerLargeTitle: false }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="CreateList"
@@ -47,6 +49,16 @@ const MyListsStack = () => (
       component={SearchScreen}
       options={{ title: 'Search', headerLargeTitle: false }}
     />
+    <Stack.Screen
+      name="FeaturedList"
+      component={FeaturedListScreen}
+      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
+    />
+    <Stack.Screen
+      name="CommunityList"
+      component={CommunityListScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -60,7 +72,12 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="ListDetail"
       component={ListDetailScreen}
-      options={{ title: 'List', headerLargeTitle: false }}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="FeaturedList"
+      component={FeaturedListScreen}
+      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
     />
   </Stack.Navigator>
 );
@@ -108,9 +125,9 @@ export const TabNavigator = () => (
       name="Settings"
       component={SettingsStack}
       options={{
-        tabBarLabel: 'Settings',
+        tabBarLabel: 'Account',
         tabBarIcon: ({ color, size }) => (
-          <Ionicons name="settings-outline" size={size} color={color} />
+          <Ionicons name="person-circle-outline" size={size} color={color} />
         ),
       }}
     />

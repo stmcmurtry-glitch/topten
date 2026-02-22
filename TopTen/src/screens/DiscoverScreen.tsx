@@ -17,13 +17,34 @@ import { fetchFeaturedItems, fetchFeaturedImage } from '../services/featuredCont
 import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
+const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
+  'Greatest Athletes of All Time': 'The greatest competitors across all sports, ranked by career dominance, legacy, and cultural impact.',
+  'Best Restaurants in the World': 'Culinary destinations ranked by Michelin recognition, chef innovation, and world-class dining experience.',
+  'Greatest Songs Ever Recorded': 'Songs that defined generations, ranked by cultural impact, chart longevity, and lasting influence.',
+  'Most Iconic Movie Villains': 'The most memorable antagonists in cinema, ranked by menace, complexity, and cultural footprint.',
+  'Novels That Changed the World': 'Books that shifted perspectives and shaped culture, ranked by literary legacy and enduring relevance.',
+  'Classic Cocktails Everyone Should Know': 'The essential cocktail canon, ranked by timelessness, balance, and bartender consensus.',
+  'Most Binge-Worthy TV Series': 'The shows you can\'t stop watching, ranked by episode hooks, story arcs, and cultural obsession.',
+  'Comfort Foods for Any Occasion': 'Dishes that feel like a warm hug, ranked by universal appeal, simplicity, and pure soul.',
+  'Albums You Must Hear Before You Die': 'Records that demand to be heard front to back, ranked by artistry, influence, and staying power.',
+  'Most Thrilling Sporting Events Ever': 'The moments that made hearts race worldwide, ranked by stakes, drama, and all-time greatness.',
+  'My Favorite Foods': 'Your personal food hall of fame. Add the dishes and flavors you\'d never want to live without.',
+  'My Favorite Movies': 'The films that stuck with you. Build your definitive personal top ten.',
+  'My Favorite TV Shows': 'The series you\'d watch on repeat. Your personal streaming hall of fame.',
+  'My Favorite Animals': 'From beloved pets to wildlife wonders — rank your favorite creatures on the planet.',
+  'My Favorite Colors': 'Every palette tells a story. Which colors speak to you most?',
+  'My Favorite Songs': 'The tracks that live rent-free in your head. Build your ultimate personal playlist.',
+  'My Favorite Sports Teams': 'Your allegiances, ranked. Which teams have your heart through the wins and losses?',
+  'My Favorite Drinks': 'From morning coffee to evening cocktails — rank your all-time favorite sips.',
+};
+
 export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { lists, addList } = useListContext();
 
   const handlePopularPress = useCallback((item: PopularList) => {
     const existing = lists.find(l => l.title === item.title);
-    const listId = existing ? existing.id : addList(item.category, item.title);
+    const listId = existing ? existing.id : addList(item.category, item.title, TEMPLATE_DESCRIPTIONS[item.title]);
     navigation.navigate('ListDetail', { listId });
   }, [lists, addList, navigation]);
   const [query, setQuery] = useState('');
@@ -76,7 +97,9 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               <Text style={styles.emptyText}>No lists matching "{query}"</Text>
             </View>
           }
-          renderItem={({ item }) => <FeaturedRow list={item} />}
+          renderItem={({ item }) => (
+            <FeaturedRow list={item} onPress={() => navigation.navigate('FeaturedList', { featuredId: item.id })} />
+          )}
         />
       ) : (
         /* ── Default browse view ── */
@@ -89,7 +112,11 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             contentContainerStyle={styles.carousel}
           >
             {FEATURED_LISTS.map(list => (
-              <FeaturedCard key={list.id} list={list} />
+              <FeaturedCard
+                key={list.id}
+                list={list}
+                onPress={() => navigation.navigate('FeaturedList', { featuredId: list.id })}
+              />
             ))}
           </ScrollView>
 
@@ -121,7 +148,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 };
 
 /* ── Featured Card (carousel) ── */
-const FeaturedCard: React.FC<{ list: FeaturedList }> = ({ list }) => {
+const FeaturedCard: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ list, onPress }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [items, setItems] = useState<string[]>(list.previewItems);
 
@@ -133,7 +160,7 @@ const FeaturedCard: React.FC<{ list: FeaturedList }> = ({ list }) => {
   }, [list.id]);
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <View style={[styles.cardHeader, { backgroundColor: list.color }]}>
         {imageUrl && (
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -145,13 +172,13 @@ const FeaturedCard: React.FC<{ list: FeaturedList }> = ({ list }) => {
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={2}>{list.title}</Text>
         <Text style={styles.cardAuthor}>{list.author}</Text>
-        {items.slice(0, 5).map((item, i) => (
+        {items.slice(0, 3).map((item, i) => (
           <Text key={i} style={styles.cardItem} numberOfLines={1}>
             {i + 1}. {item}
           </Text>
         ))}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -166,8 +193,8 @@ const PopularRow: React.FC<{ list: PopularList; onPress: () => void }> = ({ list
 );
 
 /* ── Featured Row (search results) ── */
-const FeaturedRow: React.FC<{ list: FeaturedList }> = ({ list }) => (
-  <View style={styles.featuredRow}>
+const FeaturedRow: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ list, onPress }) => (
+  <TouchableOpacity style={styles.featuredRow} onPress={onPress} activeOpacity={0.8}>
     <View style={[styles.featuredThumb, { backgroundColor: list.color }]}>
       <Ionicons name={list.icon as any} size={26} color="#FFF" />
     </View>
@@ -175,8 +202,8 @@ const FeaturedRow: React.FC<{ list: FeaturedList }> = ({ list }) => (
       <Text style={styles.featuredTitle} numberOfLines={1}>{list.title}</Text>
       <Text style={styles.featuredMeta}>{list.category} · {list.author}</Text>
     </View>
-    <Ionicons name="star" size={14} color="#CC0000" />
-  </View>
+    <Ionicons name="chevron-forward" size={14} color={colors.border} />
+  </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
@@ -239,7 +266,7 @@ const styles = StyleSheet.create({
     ...shadow,
   },
   cardHeader: {
-    height: 110,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,

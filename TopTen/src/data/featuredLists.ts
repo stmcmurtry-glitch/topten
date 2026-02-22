@@ -9,6 +9,7 @@ export interface FeaturedList {
   author: string;
   previewItems: string[];
   imageQuery: string;
+  description: string;
 }
 
 export interface PopularList {
@@ -53,6 +54,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'television drama dark moody cinematic',
     previewItems: ['The Wire', 'Breaking Bad', 'The Sopranos', 'Succession', 'Band of Brothers'],
+    description: 'Ranked by a combined score drawn from TMDB audience ratings, Rotten Tomatoes critic consensus, and Emmy Award recognition across a show\'s full run.',
   },
   {
     id: 'f-1',
@@ -63,6 +65,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'classic cinema vintage film projector',
     previewItems: ['The Godfather', 'Schindler\'s List', 'Citizen Kane', 'Casablanca', '2001: A Space Odyssey'],
+    description: 'Ranked by a weighted combination of TMDB audience score, Metacritic critic score, and all-time global box office revenue adjusted for inflation.',
   },
   {
     id: 'f-2',
@@ -73,6 +76,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'vintage books library antique warm',
     previewItems: ['To Kill a Mockingbird', '1984', 'The Great Gatsby', 'Pride and Prejudice', 'One Hundred Years of Solitude'],
+    description: 'Ranked by cultural and literary impact, Goodreads community ratings, and enduring critical reputation sustained across multiple decades.',
   },
   {
     id: 'f-3',
@@ -83,6 +87,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'sports stadium crowd championship',
     previewItems: ['Jesse Owens, 1936 Berlin Olympics', 'Miracle on Ice 1980', 'Ali vs. Foreman, Rumble in the Jungle', 'Michael Jordan\'s Last Shot', 'Usain Bolt 9.58s World Record'],
+    description: 'Ranked by historical significance, global broadcast viewership at the time, and long-term influence on the sport and the era it defined.',
   },
   {
     id: 'f-4',
@@ -93,6 +98,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'vinyl record music concert stage',
     previewItems: ['Thriller — Michael Jackson', 'Nevermind — Nirvana', 'The Dark Side of the Moon — Pink Floyd', 'Rumours — Fleetwood Mac', 'Kind of Blue — Miles Davis'],
+    description: 'Ranked by cultural impact, combined critical scores from Rolling Stone and Pitchfork, and certified units sold worldwide across all formats.',
   },
   {
     id: 'f-5',
@@ -103,6 +109,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'fine dining gourmet plating chef',
     previewItems: ['Omakase Sushi, Tokyo', 'Peking Duck, Beijing', 'Neapolitan Pizza, Naples', 'Wagyu Beef, Kobe', 'Fresh Truffle Pasta, Alba'],
+    description: 'Ranked by Michelin recognition, ingredient rarity and technical craftsmanship, and the dish\'s cultural significance to its region of origin.',
   },
   {
     id: 'f-6',
@@ -113,5 +120,6 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'cocktail wine bar elegant dark',
     previewItems: ['Château Pétrus 2000', 'Pappy Van Winkle 23yr', 'Dom Pérignon 2008', 'Yamazaki 18yr', 'Romanée-Conti Grand Cru'],
+    description: 'Ranked by vintage rarity and scarcity, collector market demand, and scores from leading industry critics and sommeliers worldwide.',
   },
 ];

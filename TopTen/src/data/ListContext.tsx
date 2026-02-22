@@ -20,8 +20,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 interface ListContextType {
   lists: TopTenList[];
-  addList: (category: string, title?: string) => string;
+  addList: (category: string, title?: string, description?: string) => string;
   updateListItems: (listId: string, items: TopTenItem[]) => void;
+  updateListMeta: (listId: string, meta: { description?: string; customIcon?: string }) => void;
   deleteList: (listId: string) => void;
   reorderLists: (newOrder: TopTenList[]) => void;
 }
@@ -30,6 +31,7 @@ const ListContext = createContext<ListContextType>({
   lists: [],
   addList: () => '',
   updateListItems: () => {},
+  updateListMeta: () => {},
   deleteList: () => {},
   reorderLists: () => {},
 });
@@ -61,7 +63,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLists));
   }, []);
 
-  const addList = useCallback((category: string, title?: string): string => {
+  const addList = useCallback((category: string, title?: string, description?: string): string => {
     const id = Date.now().toString();
     const newList: TopTenList = {
       id,
@@ -71,9 +73,15 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
       items: [],
       createdAt: new Date().toISOString(),
       isCustom: true,
+      description,
     };
     persist([...lists, newList]);
     return id;
+  }, [lists, persist]);
+
+  const updateListMeta = useCallback((listId: string, meta: { description?: string; customIcon?: string }) => {
+    const updated = lists.map((l) => l.id === listId ? { ...l, ...meta } : l);
+    persist(updated);
   }, [lists, persist]);
 
   const reorderLists = useCallback((newOrder: TopTenList[]) => {
@@ -91,7 +99,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [lists, persist]);
 
   return (
-    <ListContext.Provider value={{ lists, addList, updateListItems, deleteList, reorderLists }}>
+    <ListContext.Provider value={{ lists, addList, updateListItems, updateListMeta, deleteList, reorderLists }}>
       {children}
     </ListContext.Provider>
   );

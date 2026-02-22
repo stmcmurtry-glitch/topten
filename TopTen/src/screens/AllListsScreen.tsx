@@ -16,6 +16,9 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { lists, reorderLists } = useListContext();
   const insets = useSafeAreaInsets();
+  const [showAll, setShowAll] = React.useState(false);
+
+  const visibleLists = showAll ? lists : lists.slice(0, 10);
 
   const moveUp = (index: number) => {
     if (index === 0) return;
@@ -86,16 +89,24 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         >
           <Ionicons name="chevron-back" size={28} color={colors.activeTab} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>All Lists</Text>
+        <Text style={styles.headerTitle}>My Lists</Text>
         <View style={{ width: 28 }} />
       </View>
       <FlatList
-        data={lists}
+        data={visibleLists}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListFooterComponent={
+          !showAll && lists.length > 10 ? (
+            <TouchableOpacity style={styles.seeMore} onPress={() => setShowAll(true)} activeOpacity={0.7}>
+              <Text style={styles.seeMoreText}>See more</Text>
+              <Ionicons name="chevron-down" size={14} color={colors.activeTab} />
+            </TouchableOpacity>
+          ) : null
+        }
       />
     </View>
   );
@@ -112,9 +123,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.cardBackground,
   },
   headerTitle: {
     fontSize: 18,
@@ -176,5 +184,17 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: spacing.sm,
+  },
+  seeMore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: spacing.lg,
+  },
+  seeMoreText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.activeTab,
   },
 });

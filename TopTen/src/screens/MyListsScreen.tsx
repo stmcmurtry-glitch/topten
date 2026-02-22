@@ -11,20 +11,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
-import { PickCard, EditorsPick } from '../components/PickCard';
+import { PickCard } from '../components/PickCard';
+import { FEATURED_LISTS } from '../data/featuredLists';
+import { COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
+import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { fetchCategoryImage } from '../services/imageService';
 
 const MASTER_CATEGORIES = ['Movies', 'TV', 'Sports', 'Music', 'Food', 'Drinks'];
-
-const FEATURED_PICKS: EditorsPick[] = [
-  { id: 'ep-1', title: 'Top 10 Films of All Time', category: 'Movies', icon: 'film-outline', color: CATEGORY_COLORS.Movies },
-  { id: 'ep-2', title: 'Best TV Shows Ever Made', category: 'TV', icon: 'tv-outline', color: CATEGORY_COLORS.TV },
-  { id: 'ep-3', title: 'Greatest Sports Moments', category: 'Sports', icon: 'trophy-outline', color: CATEGORY_COLORS.Sports },
-  { id: 'ep-4', title: 'Albums That Defined a Decade', category: 'Music', icon: 'musical-notes-outline', color: CATEGORY_COLORS.Music },
-  { id: 'ep-5', title: 'Dishes to Try Before You Die', category: 'Food', icon: 'restaurant-outline', color: CATEGORY_COLORS.Food },
-  { id: 'ep-6', title: 'Wines Worth Every Sip', category: 'Drinks', icon: 'wine-outline', color: CATEGORY_COLORS.Drinks },
-];
 
 interface CollectionCardProps {
   category: string;
@@ -63,8 +57,44 @@ const CollectionCard: React.FC<CollectionCardProps> = ({ category, count, onPres
   );
 };
 
+interface CommunityCardProps {
+  list: CommunityList;
+  submitted: boolean;
+  onPress: () => void;
+}
+
+const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress }) => {
+  const top3 = list.items.slice(0, 3);
+  return (
+    <TouchableOpacity style={styles.communityCard} onPress={onPress} activeOpacity={0.8}>
+      {/* Colored header */}
+      <View style={[styles.communityCardHeader, { backgroundColor: list.color }]}>
+        <Ionicons name={list.icon as any} size={28} color="#FFF" />
+        {submitted && (
+          <View style={styles.communityCheckBadge}>
+            <Text style={styles.communityCheckText}>✓</Text>
+          </View>
+        )}
+      </View>
+      {/* Body */}
+      <View style={styles.communityCardBody}>
+        <Text style={styles.communityCardTitle} numberOfLines={2}>{list.title}</Text>
+        <Text style={styles.communityCardCount}>
+          {list.participantCount.toLocaleString()} voted
+        </Text>
+        {top3.map((item, idx) => (
+          <Text key={item.id} style={styles.communityCardItem} numberOfLines={1}>
+            {idx + 1}. {item.title}
+          </Text>
+        ))}
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { lists } = useListContext();
+  const { userRankings } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
   const insets = useSafeAreaInsets();
 
@@ -136,8 +166,30 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.carousel}
       >
-        {FEATURED_PICKS.map((pick) => (
-          <PickCard key={pick.id} pick={pick} />
+        {FEATURED_LISTS.map((list) => (
+          <PickCard
+            key={list.id}
+            pick={list}
+            onPress={() => navigation.navigate('FeaturedList', { featuredId: list.id })}
+          />
+        ))}
+      </ScrollView>
+
+      {/* Community Lists */}
+      <View style={styles.divider} />
+      <Text style={styles.sectionHeader}>Community Lists</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.carousel}
+      >
+        {COMMUNITY_LISTS.map((cl) => (
+          <CommunityCard
+            key={cl.id}
+            list={cl}
+            submitted={userRankings[cl.id]?.submitted ?? false}
+            onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
+          />
         ))}
       </ScrollView>
 
@@ -423,5 +475,58 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.activeTab,
+  },
+
+  /* ── Community Card ── */
+  communityCard: {
+    width: 170,
+    borderRadius: borderRadius.squircle,
+    backgroundColor: colors.cardBackground,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    ...shadow,
+    shadowOpacity: 0.08,
+  },
+  communityCardHeader: {
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  communityCheckBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#2ECC71',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  communityCheckText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  communityCardBody: {
+    padding: spacing.md,
+    gap: 2,
+  },
+  communityCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primaryText,
+    marginBottom: 2,
+  },
+  communityCardCount: {
+    fontSize: 11,
+    color: colors.secondaryText,
+    marginBottom: spacing.xs,
+  },
+  communityCardItem: {
+    fontSize: 11,
+    color: colors.secondaryText,
+    lineHeight: 16,
   },
 });
