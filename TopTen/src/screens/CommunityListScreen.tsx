@@ -5,6 +5,11 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Modal,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,68 +25,82 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 }) => {
   const { communityListId } = route.params as { communityListId: string };
   const insets = useSafeAreaInsets();
-  const { userRankings, getLiveScores, setUserOrder, submitRanking } = useCommunity();
+  const { userRankings, getLiveScores, setUserSlots, submitRanking } = useCommunity();
 
   const list = COMMUNITY_LISTS.find((l) => l.id === communityListId);
   const [activeTab, setActiveTab] = useState<'community' | 'yours'>('community');
+  const [showTypeModal, setShowTypeModal] = useState(false);
+  const [typeSlotIndex, setTypeSlotIndex] = useState<number | null>(null);
+  const [typedValue, setTypedValue] = useState('');
 
   const ranking = userRankings[communityListId];
   const submitted = ranking?.submitted ?? false;
 
-  const userOrderedIds: string[] = useMemo(() => {
-    if (ranking?.orderedIds?.length) return ranking.orderedIds;
-    return list ? list.items.map((i) => i.id) : [];
+  const userSlots: string[] = useMemo(() => {
+    if (ranking?.slots?.length === 10) return ranking.slots;
+    // Fall back to default: community item titles in seed order
+    return list ? list.items.map((i) => i.title) : Array(10).fill('');
   }, [ranking, list]);
 
   const liveScores = useMemo(
     () => getLiveScores(communityListId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [getLiveScores, communityListId, ranking]
   );
 
   if (!list) return null;
 
   // Community tab: items sorted by live score desc
-  const communityRanked = useMemo(() => {
-    return [...list.items].sort((a, b) => (liveScores[b.id] ?? 0) - (liveScores[a.id] ?? 0));
-  }, [list, liveScores]);
-
+  const communityRanked = [...list.items].sort(
+    (a, b) => (liveScores[b.id] ?? 0) - (liveScores[a.id] ?? 0)
+  );
   const maxScore = communityRanked.length > 0 ? (liveScores[communityRanked[0].id] ?? 1) : 1;
 
-  // Yours tab: items in user's current order
-  const yoursItems = useMemo(() => {
-    return userOrderedIds
-      .map((id) => list.items.find((i) => i.id === id))
-      .filter(Boolean) as typeof list.items;
-  }, [userOrderedIds, list]);
+  // ── Yours tab helpers ────────────────────────────────────────────────────
 
-  const moveItem = (from: number, to: number) => {
-    if (to < 0 || to >= yoursItems.length) return;
-    const updated = [...userOrderedIds];
+  const openTypeModal = (index: number) => {
+    setTypeSlotIndex(index);
+    setTypedValue(userSlots[index]);
+    setShowTypeModal(true);
+  };
+
+  const saveSlot = () => {
+    if (typeSlotIndex === null) return;
+    const updated = [...userSlots];
+    updated[typeSlotIndex] = typedValue.trim();
+    setUserSlots(communityListId, updated);
+    setShowTypeModal(false);
+    setTypedValue('');
+  };
+
+  const moveSlot = (from: number, to: number) => {
+    if (to < 0 || to >= 10) return;
+    const updated = [...userSlots];
     const [moved] = updated.splice(from, 1);
     updated.splice(to, 0, moved);
-    setUserOrder(communityListId, updated);
+    setUserSlots(communityListId, updated);
   };
 
   const participantDisplay = list.participantCount.toLocaleString();
+
+  // ── Hero ────────────────────────────────────────────────────────────────
 
   const Hero = (
     <View style={[styles.hero, { paddingTop: insets.top + 46 }]}>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: list.color }]} />
       <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
 
-      {/* Nav bar */}
       <View style={[styles.heroNav, { top: insets.top + 6 }]}>
         <TouchableOpacity style={styles.heroNavBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={26} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.heroNavTitle} numberOfLines={1}>{list.title}</Text>
         <View style={styles.heroBadge}>
-          {submitted && (
+          {submitted ? (
             <View style={styles.votedBadge}>
               <Text style={styles.votedBadgeText}>Voted ✓</Text>
             </View>
-          )}
-          {!submitted && (
+          ) : (
             <View style={styles.countBadge}>
               <Text style={styles.countBadgeText}>{participantDisplay} voted</Text>
             </View>
@@ -89,33 +108,28 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
         </View>
       </View>
 
-      {/* Description */}
       <View style={styles.heroContent}>
         <Text style={styles.heroDescription}>{list.description}</Text>
       </View>
     </View>
   );
 
+  // ── Tab switcher ─────────────────────────────────────────────────────────
+
   const TabSwitcher = (
     <View style={styles.tabRow}>
-      <TouchableOpacity
-        style={[styles.tabPill, activeTab === 'community' && styles.tabPillActive]}
-        onPress={() => setActiveTab('community')}
-        activeOpacity={0.8}
-      >
-        <Text style={[styles.tabPillText, activeTab === 'community' && styles.tabPillTextActive]}>
-          Community
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.tabPill, activeTab === 'yours' && styles.tabPillActive]}
-        onPress={() => setActiveTab('yours')}
-        activeOpacity={0.8}
-      >
-        <Text style={[styles.tabPillText, activeTab === 'yours' && styles.tabPillTextActive]}>
-          Yours
-        </Text>
-      </TouchableOpacity>
+      {(['community', 'yours'] as const).map((tab) => (
+        <TouchableOpacity
+          key={tab}
+          style={[styles.tabPill, activeTab === tab && styles.tabPillActive]}
+          onPress={() => setActiveTab(tab)}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.tabPillText, activeTab === tab && styles.tabPillTextActive]}>
+            {tab === 'community' ? 'Community' : 'Yours'}
+          </Text>
+        </TouchableOpacity>
+      ))}
     </View>
   );
 
@@ -124,10 +138,12 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {Hero}
         {TabSwitcher}
 
+        {/* ── Community tab ── */}
         {activeTab === 'community' && (
           <View style={styles.section}>
             {communityRanked.map((item, idx) => {
@@ -147,38 +163,56 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           </View>
         )}
 
+        {/* ── Yours tab ── */}
         {activeTab === 'yours' && (
           <View style={styles.section}>
-            {yoursItems.map((item, idx) => (
-              <View key={item.id} style={styles.yoursRow}>
-                <Text style={styles.rankNum}>{idx + 1}</Text>
-                <Text style={styles.yoursItemTitle} numberOfLines={1}>{item.title}</Text>
-                <View style={styles.moveButtons}>
-                  <TouchableOpacity
-                    onPress={() => moveItem(idx, idx - 1)}
-                    disabled={idx === 0}
-                    hitSlop={8}
-                  >
-                    <Ionicons
-                      name="chevron-up"
-                      size={20}
-                      color={idx === 0 ? colors.border : colors.secondaryText}
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => moveItem(idx, idx + 1)}
-                    disabled={idx === yoursItems.length - 1}
-                    hitSlop={8}
-                  >
-                    <Ionicons
-                      name="chevron-down"
-                      size={20}
-                      color={idx === yoursItems.length - 1 ? colors.border : colors.secondaryText}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+            {userSlots.map((slotTitle, idx) => {
+              const isEmpty = !slotTitle.trim();
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  activeOpacity={0.7}
+                  onPress={() => openTypeModal(idx)}
+                  style={[styles.yoursRow, isEmpty && styles.yoursRowEmpty]}
+                >
+                  <Text style={[styles.rankNum, isEmpty && styles.rankNumEmpty]}>{idx + 1}</Text>
+                  {isEmpty ? (
+                    <>
+                      <Text style={styles.emptyText}>Add an item</Text>
+                      <Ionicons name="add" size={16} color={colors.border} />
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.yoursItemTitle} numberOfLines={1}>{slotTitle}</Text>
+                      <View style={styles.moveButtons}>
+                        <TouchableOpacity
+                          onPress={() => moveSlot(idx, idx - 1)}
+                          disabled={idx === 0}
+                          hitSlop={8}
+                        >
+                          <Ionicons
+                            name="chevron-up"
+                            size={20}
+                            color={idx === 0 ? colors.border : colors.secondaryText}
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => moveSlot(idx, idx + 1)}
+                          disabled={idx === 9}
+                          hitSlop={8}
+                        >
+                          <Ionicons
+                            name="chevron-down"
+                            size={20}
+                            color={idx === 9 ? colors.border : colors.secondaryText}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
 
             <TouchableOpacity
               style={styles.submitButton}
@@ -192,6 +226,37 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           </View>
         )}
       </ScrollView>
+
+      {/* ── Type modal ── */}
+      <Modal visible={showTypeModal} transparent animationType="fade">
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <Pressable style={styles.overlay} onPress={() => setShowTypeModal(false)}>
+            <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+              <Text style={styles.sheetTitle}>
+                {typeSlotIndex !== null ? `Rank #${typeSlotIndex + 1}` : ''}
+              </Text>
+              <TextInput
+                style={styles.typeInput}
+                value={typedValue}
+                onChangeText={setTypedValue}
+                placeholder="Type anything…"
+                placeholderTextColor={colors.secondaryText}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={saveSlot}
+              />
+              <TouchableOpacity style={styles.saveButton} onPress={saveSlot}>
+                <Text style={styles.saveText}>
+                  {typedValue.trim() ? 'Save' : 'Clear'}
+                </Text>
+              </TouchableOpacity>
+            </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -300,7 +365,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
 
-  /* ── Shared section ── */
+  /* ── Shared ── */
   section: {
     marginHorizontal: spacing.lg,
   },
@@ -325,6 +390,9 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     textAlign: 'right',
     flexShrink: 0,
+  },
+  rankNumEmpty: {
+    opacity: 0.4,
   },
   communityItemTitle: {
     flex: 1,
@@ -361,10 +429,23 @@ const styles = StyleSheet.create({
     ...shadow,
     shadowOpacity: 0.05,
   },
+  yoursRowEmpty: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   yoursItemTitle: {
     flex: 1,
     fontSize: 16,
     color: colors.primaryText,
+  },
+  emptyText: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.secondaryText,
   },
   moveButtons: {
     alignItems: 'center',
@@ -381,5 +462,46 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  /* ── Type modal ── */
+  keyboardAvoid: { flex: 1 },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.cardBackground,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    padding: spacing.xl,
+    paddingBottom: spacing.xxl + 8,
+  },
+  sheetTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.primaryText,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  typeInput: {
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.sm,
+    padding: spacing.lg,
+    fontSize: 17,
+    color: colors.primaryText,
+    marginBottom: spacing.lg,
+  },
+  saveButton: {
+    backgroundColor: colors.activeTab,
+    borderRadius: borderRadius.sm,
+    padding: spacing.lg,
+    alignItems: 'center',
+  },
+  saveText: {
+    color: '#FFF',
+    fontSize: 17,
+    fontWeight: '600',
   },
 });
