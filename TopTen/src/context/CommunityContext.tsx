@@ -1,8 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
+import * as Crypto from 'expo-crypto';
 import { COMMUNITY_LISTS } from '../data/communityLists';
+import { supabase } from '../services/supabase';
+import { containsProfanity } from '../services/profanityFilter';
 
 const STORAGE_KEY = '@topten_community';
+const DEVICE_ID_KEY = '@topten_device_id';
 
 export interface UserCommunityRanking {
   slots: string[]; // 10 free-form text slots; empty string = unfilled
@@ -11,9 +16,12 @@ export interface UserCommunityRanking {
 
 interface CommunityContextType {
   userRankings: Record<string, UserCommunityRanking>;
-  getLiveScores: (listId: string) => Record<string, number>;
+  deviceId: string | null;
+  liveScoreCache: Record<string, Record<string, number>>;
+  participantCounts: Record<string, number>;
+  fetchLiveScores: (listId: string) => Promise<void>;
   setUserSlots: (listId: string, slots: string[]) => void;
-  submitRanking: (listId: string) => void;
+  submitRanking: (listId: string) => Promise<void>;
 }
 
 const CommunityContext = createContext<CommunityContextType | null>(null);
@@ -27,16 +35,18 @@ const buildDefaultRanking = (_listId: string): UserCommunityRanking => {
 
 export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userRankings, setUserRankings] = useState<Record<string, UserCommunityRanking>>({});
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [liveScoreCache, setLiveScoreCache] = useState<Record<string, Record<string, number>>>({});
+  const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
 
+  // Load persisted rankings
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
       if (raw) {
         try {
           const parsed = JSON.parse(raw);
-          // Migrate old orderedIds format to slots
           const migrated: Record<string, UserCommunityRanking> = {};
           for (const [listId, ranking] of Object.entries(parsed as Record<string, any>)) {
-            // Migrate old orderedIds format: drop pre-filled titles, start fresh
             migrated[listId] = {
               slots: Array.isArray(ranking.slots) ? ranking.slots : Array(10).fill(''),
               submitted: ranking.submitted ?? false,
@@ -50,46 +60,70 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   }, []);
 
+  // Load or generate stable device ID
+  useEffect(() => {
+    AsyncStorage.getItem(DEVICE_ID_KEY).then(async (stored) => {
+      if (stored) {
+        setDeviceId(stored);
+      } else {
+        const newId = Crypto.randomUUID();
+        await AsyncStorage.setItem(DEVICE_ID_KEY, newId);
+        setDeviceId(newId);
+      }
+    });
+  }, []);
+
   const persist = useCallback((next: Record<string, UserCommunityRanking>) => {
     setUserRankings(next);
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
 
-  const getLiveScores = useCallback(
-    (listId: string): Record<string, number> => {
-      const list = COMMUNITY_LISTS.find((l) => l.id === listId);
-      if (!list) return {};
+  const fetchLiveScores = useCallback(async (listId: string) => {
+    const list = COMMUNITY_LISTS.find((l) => l.id === listId);
+    if (!list || !supabase) return;
 
-      const scores: Record<string, number> = {};
+    try {
+      const { data, error } = await supabase
+        .from('community_scores')
+        .select('item_title, total_score, participant_count')
+        .eq('list_id', listId);
+
+      if (error || !data || data.length === 0) return;
+
+      // Build seed fallback map: normalized title → seedScore
+      const seedByTitle: Record<string, number> = {};
       list.items.forEach((item) => {
-        scores[item.id] = item.seedScore;
+        seedByTitle[item.title.toLowerCase().trim()] = item.seedScore;
       });
 
-      const ranking = userRankings[listId];
-      if (ranking?.submitted) {
-        // Build normalized title → id map so we can match free-form text
-        const titleToId: Record<string, string> = {};
-        list.items.forEach((item) => {
-          titleToId[item.title.trim().toLowerCase()] = item.id;
-        });
+      const scores: Record<string, number> = {};
+      let maxParticipants = 0;
 
-        ranking.slots.forEach((slotTitle, idx) => {
-          if (!slotTitle.trim()) return;
-          const itemId = titleToId[slotTitle.trim().toLowerCase()];
-          const pts = 10 - idx; // rank 1 = 10 pts … rank 10 = 1 pt
-          if (pts > 0 && itemId && scores[itemId] !== undefined) {
-            scores[itemId] += pts;
-          }
-        });
+      data.forEach((row: { item_title: string; total_score: number; participant_count: number }) => {
+        const key = row.item_title.toLowerCase().trim();
+        scores[key] = row.total_score;
+        if (row.participant_count > maxParticipants) {
+          maxParticipants = row.participant_count;
+        }
+      });
+
+      setLiveScoreCache((prev) => ({ ...prev, [listId]: scores }));
+      if (maxParticipants > 0) {
+        setParticipantCounts((prev) => ({ ...prev, [listId]: maxParticipants }));
       }
-
-      return scores;
-    },
-    [userRankings]
-  );
+    } catch {
+      // Network error — silently fall back to seed scores
+    }
+  }, []);
 
   const setUserSlots = useCallback(
     (listId: string, slots: string[]) => {
+      // Profanity check on changed slots
+      const dirty = slots.find((s) => s.trim() && containsProfanity(s));
+      if (dirty) {
+        Alert.alert('Inappropriate Content', 'Please keep your entries respectful.');
+        return;
+      }
       const current = userRankings[listId] ?? buildDefaultRanking(listId);
       persist({ ...userRankings, [listId]: { ...current, slots } });
     },
@@ -97,15 +131,49 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   const submitRanking = useCallback(
-    (listId: string) => {
+    async (listId: string) => {
       const current = userRankings[listId] ?? buildDefaultRanking(listId);
+
+      // Profanity check all filled slots
+      const badSlot = current.slots.find((s) => s.trim() && containsProfanity(s));
+      if (badSlot) {
+        Alert.alert('Inappropriate Content', 'Please remove inappropriate entries before submitting.');
+        return;
+      }
+
+      // Persist locally first
       persist({ ...userRankings, [listId]: { ...current, submitted: true } });
+
+      // Upsert to Supabase if we have a device ID and client is configured
+      if (deviceId && supabase) {
+        try {
+          await supabase.from('community_votes').upsert(
+            { device_id: deviceId, list_id: listId, slots: current.slots, submitted_at: new Date().toISOString() },
+            { onConflict: 'device_id,list_id' }
+          );
+        } catch {
+          // Non-fatal — local state already saved
+        }
+      }
+
+      // Optimistically refresh scores
+      await fetchLiveScores(listId);
     },
-    [userRankings, persist]
+    [userRankings, deviceId, persist, fetchLiveScores]
   );
 
   return (
-    <CommunityContext.Provider value={{ userRankings, getLiveScores, setUserSlots, submitRanking }}>
+    <CommunityContext.Provider
+      value={{
+        userRankings,
+        deviceId,
+        liveScoreCache,
+        participantCounts,
+        fetchLiveScores,
+        setUserSlots,
+        submitRanking,
+      }}
+    >
       {children}
     </CommunityContext.Provider>
   );

@@ -102,7 +102,6 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
           onChangeText={handleQueryChange}
           placeholder={`Search ${category.toLowerCase()}…`}
           placeholderTextColor={colors.secondaryText}
-          autoFocus
           returnKeyType="search"
         />
         {query.length > 0 && (
@@ -134,7 +133,11 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
                 <Image source={{ uri: item.imageUrl }} style={styles.poster} />
               ) : (
                 <View style={styles.posterPlaceholder}>
-                  <Ionicons name="film-outline" size={20} color={colors.secondaryText} />
+                  <Ionicons
+                    name={category === 'Sports' ? 'trophy-outline' : 'film-outline'}
+                    size={20}
+                    color={colors.secondaryText}
+                  />
                 </View>
               )}
               <View style={styles.rowInfo}>

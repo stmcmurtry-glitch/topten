@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,10 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  ActivityIndicator,
+  Animated,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COMMUNITY_LISTS } from '../data/communityLists';
@@ -26,10 +28,21 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 }) => {
   const { communityListId } = route.params as { communityListId: string };
   const insets = useSafeAreaInsets();
-  const { userRankings, getLiveScores, setUserSlots, submitRanking } = useCommunity();
+  const {
+    userRankings,
+    liveScoreCache,
+    participantCounts,
+    fetchLiveScores,
+    setUserSlots,
+    submitRanking,
+  } = useCommunity();
 
   const list = COMMUNITY_LISTS.find((l) => l.id === communityListId);
   const [activeTab, setActiveTab] = useState<'community' | 'yours'>('community');
+  const [loadingScores, setLoadingScores] = useState(true);
+  const [submitConfirmed, setSubmitConfirmed] = useState(false);
+  const hasFetched = useRef(false);
+  const buttonScale = useRef(new Animated.Value(1)).current;
 
   // Choice sheet (tap a slot)
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
@@ -46,18 +59,47 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     return Array(10).fill('');
   }, [ranking]);
 
-  const liveScores = useMemo(
-    () => getLiveScores(communityListId),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [getLiveScores, communityListId, ranking]
-  );
+  // Set navigator title so the Search screen back button reads the list name
+  useEffect(() => {
+    if (list) navigation.setOptions({ title: list.title });
+  }, [list, navigation]);
+
+  // Fetch scores on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetchLiveScores(communityListId).finally(() => {
+      if (!cancelled) {
+        hasFetched.current = true;
+        setLoadingScores(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [communityListId, fetchLiveScores]);
+
+  // Re-fetch when switching to community tab (after first mount)
+  useEffect(() => {
+    if (activeTab === 'community' && hasFetched.current) {
+      fetchLiveScores(communityListId);
+    }
+  }, [activeTab, communityListId, fetchLiveScores]);
 
   if (!list) return null;
 
-  const communityRanked = [...list.items].sort(
-    (a, b) => (liveScores[b.id] ?? 0) - (liveScores[a.id] ?? 0)
-  );
-  const maxScore = communityRanked.length > 0 ? (liveScores[communityRanked[0].id] ?? 1) : 1;
+  // Score lookup: liveScoreCache keyed by lower(trim(title)), fallback to seedScore
+  const cachedScores = liveScoreCache[communityListId];
+  const getScore = (itemTitle: string): number => {
+    const key = itemTitle.toLowerCase().trim();
+    if (cachedScores && cachedScores[key] !== undefined) return cachedScores[key];
+    const item = list.items.find((i) => i.title.toLowerCase().trim() === key);
+    return item?.seedScore ?? 0;
+  };
+
+  const communityRanked = [...list.items].sort((a, b) => getScore(b.title) - getScore(a.title));
+  const maxScore = communityRanked.length > 0 ? (getScore(communityRanked[0].title) || 1) : 1;
+
+  const participantDisplay = (
+    participantCounts[communityListId] ?? list.participantCount
+  ).toLocaleString();
 
   // ── Yours tab helpers ────────────────────────────────────────────────────
 
@@ -97,7 +139,21 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     setUserSlots(communityListId, updated);
   };
 
-  const participantDisplay = list.participantCount.toLocaleString();
+  const handleSubmit = async () => {
+    await submitRanking(communityListId);
+
+    // Haptic + quick visual confirm, then flip to Community tab
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Animated.sequence([
+      Animated.spring(buttonScale, { toValue: 0.94, useNativeDriver: true, speed: 40 }),
+      Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true, speed: 20 }),
+    ]).start();
+    setSubmitConfirmed(true);
+    setTimeout(() => {
+      setSubmitConfirmed(false);
+      setActiveTab('community');
+    }, 1200);
+  };
 
   // ── Hero ─────────────────────────────────────────────────────────────────
 
@@ -162,20 +218,28 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
         {/* ── Community tab ── */}
         {activeTab === 'community' && (
           <View style={styles.section}>
-            {communityRanked.map((item, idx) => {
-              const score = liveScores[item.id] ?? 0;
-              const barWidth = (score / maxScore) * SCORE_BAR_MAX_WIDTH;
-              return (
-                <View key={item.id} style={styles.communityRow}>
-                  <Text style={styles.rankNum}>{idx + 1}</Text>
-                  <Text style={styles.communityItemTitle} numberOfLines={1}>{item.title}</Text>
-                  <View style={styles.scoreCol}>
-                    <View style={[styles.scoreBar, { width: barWidth }]} />
-                    <Text style={styles.scorePts}>{score.toLocaleString()} pts</Text>
+            {loadingScores ? (
+              <ActivityIndicator
+                size="large"
+                color={colors.activeTab}
+                style={styles.loadingIndicator}
+              />
+            ) : (
+              communityRanked.map((item, idx) => {
+                const score = getScore(item.title);
+                const barWidth = (score / maxScore) * SCORE_BAR_MAX_WIDTH;
+                return (
+                  <View key={item.id} style={styles.communityRow}>
+                    <Text style={styles.rankNum}>{idx + 1}</Text>
+                    <Text style={styles.communityItemTitle} numberOfLines={1}>{item.title}</Text>
+                    <View style={styles.scoreCol}>
+                      <View style={[styles.scoreBar, { width: barWidth }]} />
+                      <Text style={styles.scorePts}>{score.toLocaleString()} pts</Text>
+                    </View>
                   </View>
-                </View>
-              );
-            })}
+                );
+              })
+            )}
           </View>
         )}
 
@@ -230,26 +294,12 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
               );
             })}
 
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={() => {
-                submitRanking(communityListId);
-                Alert.alert(
-                  submitted ? 'Ranking Updated' : 'Ranking Submitted!',
-                  submitted
-                    ? 'Your updated votes have been applied to the community scores.'
-                    : 'Your votes have been added to the community scores. See how the rankings stacked up!',
-                  [{
-                    text: 'See Community Rankings',
-                    onPress: () => setActiveTab('community'),
-                  }]
-                );
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.submitButtonText}>
-                {submitted ? 'Update My Ranking' : 'Submit My Ranking'}
-              </Text>
+            <TouchableOpacity onPress={handleSubmit} activeOpacity={0.9} disabled={submitConfirmed}>
+              <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: submitConfirmed ? '#2ECC71' : '#CC0000' }]}>
+                <Text style={styles.submitButtonText}>
+                  {submitConfirmed ? '✓ Submitted!' : submitted ? 'Update My Ranking' : 'Submit My Ranking'}
+                </Text>
+              </Animated.View>
             </TouchableOpacity>
           </View>
         )}
@@ -336,6 +386,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   heroNavBtn: {
     width: 36,
@@ -346,14 +397,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heroNavTitle: {
-    flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
     textAlign: 'center',
     fontSize: 15,
     fontWeight: '700',
     color: '#FFF',
     letterSpacing: -0.2,
   },
-  heroBadge: { width: 80, alignItems: 'flex-end' },
+  heroBadge: { flexShrink: 0, alignItems: 'flex-end' },
   votedBadge: {
     backgroundColor: '#2ECC71',
     paddingHorizontal: spacing.sm,
@@ -401,6 +454,7 @@ const styles = StyleSheet.create({
 
   /* ── Shared ── */
   section: { marginHorizontal: spacing.lg },
+  loadingIndicator: { marginTop: spacing.xxl },
 
   /* ── Community tab ── */
   communityRow: {
