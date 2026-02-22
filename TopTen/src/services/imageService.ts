@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TopTenList } from '../data/schema';
 
 // Bump this version string whenever queries change — invalidates stored cache
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const STORAGE_PREFIX = `@topten_img_${CACHE_VERSION}_`;
 
 // Hardcoded fallback so the key is never lost across hot reloads
@@ -11,22 +11,22 @@ const UNSPLASH_KEY =
   'unqrIzAOMjppLYzOuOau81W5fKHuaUpyo8QPy8jesZI';
 
 const CATEGORY_QUERIES: Record<string, string> = {
-  Movies:  'vintage film camera cinema',
-  TV:      'television streaming series',
-  Sports:  'sports athlete stadium action',
-  Music:   'music concert live performance',
-  Food:    'restaurant meal delicious',
-  Drinks:  'cocktail bar drink',
-  Books:   'bookshelf library reading',
-  Golf:    'golf course green fairway',
-  Wine:    'wine glass bottle',
-  Foods:   'restaurant meal delicious',
+  Movies:  'cinema film',
+  TV:      'television',
+  Sports:  'athlete stadium',
+  Music:   'concert music',
+  Food:    'food',
+  Drinks:  'cocktail',
+  Books:   'books library',
+  Golf:    'golfer',
+  Wine:    'wine',
+  Foods:   'food',
   // Community list images — keyed by list id
-  'community-movies':   'hollywood golden age film reel noir',
-  'community-tv':       'dramatic tv series dark cinematic',
-  'community-songs':    'rock concert stage lights crowd music',
-  'community-athletes': 'olympic athlete victory podium stadium',
-  'community-books':    'classic novels open book reading warm light',
+  'community-movies':   'cinema film',
+  'community-tv':       'television',
+  'community-songs':    'concert music',
+  'community-athletes': 'athlete sport',
+  'community-books':    'books library',
 };
 
 // In-memory layer (fast path within a session)
@@ -52,7 +52,6 @@ export async function fetchCategoryImage(category: string): Promise<string | nul
     const url =
       `https://api.unsplash.com/photos/random` +
       `?query=${encodeURIComponent(query)}` +
-      `&orientation=squarish` +
       `&client_id=${UNSPLASH_KEY}`;
 
     const res = await fetch(url);
