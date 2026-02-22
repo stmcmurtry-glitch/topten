@@ -10,6 +10,15 @@ const UNSPLASH_KEY =
   process.env.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY ||
   'unqrIzAOMjppLYzOuOau81W5fKHuaUpyo8QPy8jesZI';
 
+// Hardcoded images for categories where we want a specific, curated photo.
+// These bypass the Unsplash API entirely — no rate limits, always reliable.
+const BASE = 'https://images.unsplash.com/photo-';
+const PARAMS = '?auto=format&fit=crop&w=400';
+const STATIC_IMAGE_URLS: Record<string, string> = {
+  Movies:            `${BASE}1489599849927-2ee91cede3ba${PARAMS}`, // red cinema seats
+  'community-movies': `${BASE}1489599849927-2ee91cede3ba${PARAMS}`,
+};
+
 const CATEGORY_QUERIES: Record<string, string> = {
   Movies:  'cinema film',
   TV:      'television',
@@ -33,6 +42,9 @@ const CATEGORY_QUERIES: Record<string, string> = {
 const memCache = new Map<string, string | null>();
 
 export async function fetchCategoryImage(category: string): Promise<string | null> {
+  // 0. Static override — curated photo, no API call needed
+  if (STATIC_IMAGE_URLS[category]) return STATIC_IMAGE_URLS[category];
+
   // 1. Memory cache (fastest)
   if (memCache.has(category)) return memCache.get(category)!;
 
