@@ -21,6 +21,12 @@ const CATEGORY_QUERIES: Record<string, string> = {
   Golf:    'golf hole fairway landscape scenic',
   Wine:    'wine bottle glass table',
   Foods:   'fine dining plating restaurant',
+  // Community list images — keyed by list id
+  'community-movies':   'hollywood golden age film reel noir',
+  'community-tv':       'dramatic tv series dark cinematic',
+  'community-songs':    'rock concert stage lights crowd music',
+  'community-athletes': 'olympic athlete victory podium stadium',
+  'community-books':    'classic novels open book reading warm light',
 };
 
 // In-memory layer (fast path within a session)

@@ -64,11 +64,22 @@ interface CommunityCardProps {
 }
 
 const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress }) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const top3 = list.items.slice(0, 3);
+
+  useEffect(() => {
+    fetchCategoryImage(list.id).then(setImageUrl);
+  }, [list.id]);
+
   return (
-    <TouchableOpacity style={styles.communityCard} onPress={onPress} activeOpacity={0.8}>
-      {/* Colored header */}
+    <TouchableOpacity style={styles.communityCard} onPress={onPress} activeOpacity={0.85}>
+      {/* Header — mirrors PickCard exactly */}
       <View style={[styles.communityCardHeader, { backgroundColor: list.color }]}>
+        {imageUrl && (
+          <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        )}
+        <View style={[StyleSheet.absoluteFill, styles.communityCardScrim]} />
+        <Text style={styles.communityCardCategory}>{list.category.toUpperCase()}</Text>
         <Ionicons name={list.icon as any} size={28} color="#FFF" />
         {submitted && (
           <View style={styles.communityCheckBadge}>
@@ -477,45 +488,55 @@ const styles = StyleSheet.create({
     color: colors.activeTab,
   },
 
-  /* ── Community Card ── */
+  /* ── Community Card — matches PickCard dimensions exactly ── */
   communityCard: {
-    width: 170,
+    width: 155,
     borderRadius: borderRadius.squircle,
-    backgroundColor: colors.cardBackground,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.cardBackground,
     overflow: 'hidden',
+    marginRight: spacing.md,
     ...shadow,
-    shadowOpacity: 0.08,
   },
   communityCardHeader: {
-    height: 80,
+    height: 75,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing.xs,
+    overflow: 'hidden',
+  },
+  communityCardScrim: {
+    backgroundColor: 'rgba(0,0,0,0.30)',
+  },
+  communityCardCategory: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.85)',
+    letterSpacing: 1,
   },
   communityCheckBadge: {
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#2ECC71',
     alignItems: 'center',
     justifyContent: 'center',
   },
   communityCheckText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FFF',
   },
   communityCardBody: {
-    padding: spacing.md,
-    gap: 2,
+    padding: spacing.sm + 2,
   },
   communityCardTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.primaryText,
     marginBottom: 2,
   },
