@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import * as Crypto from 'expo-crypto';
+import { usePostHog } from 'posthog-react-native';
 import { COMMUNITY_LISTS, LOCAL_COMMUNITY_LISTS } from '../data/communityLists';
 
 const ALL_COMMUNITY_LISTS = [...COMMUNITY_LISTS, ...LOCAL_COMMUNITY_LISTS];
@@ -40,6 +41,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [liveScoreCache, setLiveScoreCache] = useState<Record<string, Record<string, number>>>({});
   const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
+  const posthog = usePostHog();
 
   // Load persisted rankings
   useEffect(() => {
@@ -145,6 +147,8 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       // Persist locally first
       persist({ ...userRankings, [listId]: { ...current, submitted: true } });
+      const filledCount = current.slots.filter((s) => s.trim()).length;
+      posthog?.capture('community_vote_submitted', { list_id: listId, filled_slots: filledCount });
 
       // Upsert to Supabase if we have a device ID and client is configured
       if (deviceId && supabase) {

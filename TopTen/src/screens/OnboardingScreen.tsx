@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import { colors, spacing, borderRadius } from '../theme';
 
 const { width } = Dimensions.get('window');
@@ -47,6 +48,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onDone }) => {
   const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const posthog = usePostHog();
 
   const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const index = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -57,6 +59,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onDone }) => {
     if (activeIndex < SLIDES.length - 1) {
       flatListRef.current?.scrollToIndex({ index: activeIndex + 1, animated: true });
     } else {
+      posthog?.capture('onboarding_completed', { method: 'completed' });
       onDone();
     }
   };
@@ -118,7 +121,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onDone }) => {
 
       {/* Skip on first two slides */}
       {!isLast && (
-        <TouchableOpacity style={styles.skip} onPress={onDone} activeOpacity={0.6}>
+        <TouchableOpacity style={styles.skip} onPress={() => { posthog?.capture('onboarding_completed', { method: 'skipped', slide_reached: activeIndex }); onDone(); }} activeOpacity={0.6}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       )}

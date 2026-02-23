@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import { useListContext } from '../data/ListContext';
 import { TopTenItem } from '../data/schema';
 import { CATEGORY_COLORS } from '../components/FeedRow';
@@ -63,6 +64,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const { listId } = route.params;
   const { lists, updateListItems, updateListMeta, deleteList } = useListContext();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const list = lists.find((l) => l.id === listId);
 
   const buildSlots = useCallback((): string[] => {
@@ -106,6 +108,11 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   };
 
   const setSlotValue = (index: number, text: string) => {
+    const wasEmpty = !slots[index]?.trim();
+    const isNowFilled = !!text.trim();
+    if (wasEmpty && isNowFilled) {
+      posthog?.capture('list_item_added', { category: list?.category, rank: index + 1 });
+    }
     const updated = [...slots];
     updated[index] = text;
     persistSlots(updated);

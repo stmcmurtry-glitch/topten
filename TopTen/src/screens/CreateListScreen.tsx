@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import { useListContext } from '../data/ListContext';
 import { CATEGORIES } from '../data/categories';
 import { colors, spacing, borderRadius } from '../theme';
@@ -16,6 +17,7 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
   const [selectedCategory, setSelectedCategory] = useState('');
   const [customName, setCustomName] = useState('');
   const { addList } = useListContext();
+  const posthog = usePostHog();
 
   const canCreate = selectedCategory.length > 0;
 
@@ -23,6 +25,7 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
     if (!canCreate) return;
     const title = customName.trim() || undefined;
     const id = addList(selectedCategory, title);
+    posthog?.capture('list_created', { category: selectedCategory, has_custom_name: !!title });
     navigation.replace('ListDetail', { listId: id });
   };
 
