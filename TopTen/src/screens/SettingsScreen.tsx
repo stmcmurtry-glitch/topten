@@ -203,6 +203,12 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         { label: 'About', route: 'About' },
       ],
     },
+    {
+      title: 'Data',
+      data: [
+        { label: 'Delete My Data', route: 'Contact', routeParams: { subject: 'Data Deletion Request' }, isDestructive: true },
+      ],
+    },
   ];
 
   return (
@@ -249,10 +255,12 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               return (
                 <TouchableOpacity
                   style={[styles.row, isLast && styles.rowLast]}
-                  onPress={() => navigation.navigate(item.route)}
+                  onPress={() => navigation.navigate(item.route, item.routeParams)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.label}>{item.label}</Text>
+                  <Text style={[styles.label, item.isDestructive && styles.labelDestructive]}>
+                    {item.label}
+                  </Text>
                   <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
                 </TouchableOpacity>
               );
@@ -329,6 +337,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     color: colors.primaryText,
+  },
+  labelDestructive: {
+    color: '#FF3B30',
   },
   value: {
     fontSize: 16,

@@ -16,11 +16,12 @@ import { ActivityIndicator } from 'react-native';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { sendContactEmail } from '../services/emailService';
 
-export const ContactScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const ContactScreen: React.FC<{ navigation: any; route: any }> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const prefillSubject = route?.params?.subject ?? '';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(prefillSubject ? `Subject: ${prefillSubject}\n\n` : '');
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
