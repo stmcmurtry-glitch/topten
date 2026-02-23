@@ -14,8 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.toptenapp.topten"
+      "bundleIdentifier": "com.toptenapp.topten",
+      "privacyManifests": {}
     },
+    "privacyPolicyUrl": "https://sites.google.com/view/toptenapp-privacy/home",
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

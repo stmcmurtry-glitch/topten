@@ -5,6 +5,8 @@ import {
   Switch,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -101,8 +103,15 @@ export const PrivacyPolicyScreen: React.FC = () => {
         ))}
       </View>
 
+      <TouchableOpacity
+        onPress={() => Linking.openURL('https://sites.google.com/view/toptenapp-privacy/home')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.footerLink}>View full privacy policy ↗</Text>
+      </TouchableOpacity>
+
       <Text style={styles.footer}>
-        Questions about this policy? Contact us at privacy@topten.app
+        Questions? Contact us at stmcmurtry@gmail.com
       </Text>
     </ScrollView>
   );
@@ -213,6 +222,13 @@ const styles = StyleSheet.create({
   },
 
   /* ── Footer ── */
+  footerLink: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.activeTab,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
   footer: {
     fontSize: 12,
     color: colors.secondaryText,
