@@ -319,16 +319,6 @@ const styles = StyleSheet.create({
     color: '#CC0000',
     letterSpacing: -0.5,
   },
-  addIconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.cardBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadow,
-    shadowOpacity: 0.06,
-  },
   pillBar: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
