@@ -1,41 +1,57 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
-import { CATEGORY_COLORS } from '../components/FeedRow';
 import { TopTenList } from '../data/schema';
+import { ListThumbnail } from '../components/ListThumbnail';
+import { CATEGORIES, CATEGORY_COLORS } from '../data/categories';
+
+const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
+const ALL_PILLS = ['All', ...ALL_CATEGORY_LABELS];
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
 export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { lists, reorderLists } = useListContext();
   const insets = useSafeAreaInsets();
+  const [activeCategory, setActiveCategory] = useState('All');
   const [showAll, setShowAll] = React.useState(false);
 
-  const visibleLists = showAll ? lists : lists.slice(0, 10);
+  // Reset pagination when filter changes
+  useEffect(() => { setShowAll(false); }, [activeCategory]);
 
-  const moveUp = (index: number) => {
-    if (index === 0) return;
+  const filteredLists = activeCategory === 'All'
+    ? lists
+    : lists.filter((l) => l.category === activeCategory);
+
+  const visibleLists = showAll ? filteredLists : filteredLists.slice(0, 10);
+
+  // Reorder operates on the global `lists` array using the item's actual position
+  const moveUp = (itemId: string) => {
+    const idx = lists.findIndex((l) => l.id === itemId);
+    if (idx <= 0) return;
     const next = [...lists];
-    [next[index - 1], next[index]] = [next[index], next[index - 1]];
+    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
     reorderLists(next);
   };
 
-  const moveDown = (index: number) => {
-    if (index === lists.length - 1) return;
+  const moveDown = (itemId: string) => {
+    const idx = lists.findIndex((l) => l.id === itemId);
+    if (idx >= lists.length - 1) return;
     const next = [...lists];
-    [next[index], next[index + 1]] = [next[index + 1], next[index]];
+    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
     reorderLists(next);
   };
 
-  const renderItem = ({ item, index }: { item: TopTenList; index: number }) => {
-    const thumbColor = CATEGORY_COLORS[item.category] ?? '#AAAAAA';
+  const renderItem = ({ item }: { item: TopTenList }) => {
+    const globalIndex = lists.findIndex((l) => l.id === item.id);
     return (
       <View style={styles.row}>
         <TouchableOpacity
@@ -43,10 +59,8 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           style={styles.rowContent}
           activeOpacity={0.7}
         >
-          <Text style={styles.rankNumber}>{index + 1}</Text>
-          <View style={[styles.thumbnail, { backgroundColor: thumbColor }]}>
-            <Ionicons name={item.icon as any} size={22} color="#FFF" />
-          </View>
+          <Text style={styles.rankNumber}>{globalIndex + 1}</Text>
+          <ListThumbnail list={item} size={48} radius={10} />
           <View style={styles.info}>
             <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.items.length} of 10 filled</Text>
@@ -54,31 +68,54 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         </TouchableOpacity>
         <View style={styles.reorderButtons}>
           <TouchableOpacity
-            onPress={() => moveUp(index)}
-            disabled={index === 0}
+            onPress={() => moveUp(item.id)}
+            disabled={globalIndex === 0}
             hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
           >
             <Ionicons
               name="chevron-up"
               size={20}
-              color={index === 0 ? colors.border : colors.secondaryText}
+              color={globalIndex === 0 ? colors.border : colors.secondaryText}
             />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => moveDown(index)}
-            disabled={index === lists.length - 1}
+            onPress={() => moveDown(item.id)}
+            disabled={globalIndex === lists.length - 1}
             hitSlop={{ top: 4, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
               name="chevron-down"
               size={20}
-              color={index === lists.length - 1 ? colors.border : colors.secondaryText}
+              color={globalIndex === lists.length - 1 ? colors.border : colors.secondaryText}
             />
           </TouchableOpacity>
         </View>
       </View>
     );
   };
+
+  const PillBar = (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.pillBar}
+    >
+      {ALL_PILLS.map((cat) => {
+        const active = cat === activeCategory;
+        const accent = cat === 'All' ? colors.activeTab : (CATEGORY_COLORS[cat] ?? colors.activeTab);
+        return (
+          <TouchableOpacity
+            key={cat}
+            style={[styles.pill, active && { backgroundColor: accent, borderColor: accent }]}
+            onPress={() => setActiveCategory(cat)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.pillText, active && styles.pillTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -92,6 +129,7 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         <Text style={styles.headerTitle}>My Lists</Text>
         <View style={{ width: 28 }} />
       </View>
+
       <FlatList
         data={visibleLists}
         keyExtractor={(item) => item.id}
@@ -99,13 +137,21 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={PillBar}
         ListFooterComponent={
-          !showAll && lists.length > 10 ? (
+          !showAll && filteredLists.length > 10 ? (
             <TouchableOpacity style={styles.seeMore} onPress={() => setShowAll(true)} activeOpacity={0.7}>
               <Text style={styles.seeMoreText}>See more</Text>
               <Ionicons name="chevron-down" size={14} color={colors.activeTab} />
             </TouchableOpacity>
           ) : null
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {activeCategory === 'All' ? 'No lists yet.' : `No ${activeCategory} lists.`}
+            </Text>
+          </View>
         }
       />
     </View>
@@ -128,6 +174,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: colors.primaryText,
+  },
+  pillBar: {
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  pill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cardBackground,
+    marginRight: spacing.xs,
+  },
+  pillText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.primaryText,
+  },
+  pillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   listContent: {
     paddingHorizontal: spacing.lg,
@@ -156,13 +224,6 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     textAlign: 'right',
     flexShrink: 0,
-  },
-  thumbnail: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   info: {
     flex: 1,
@@ -196,5 +257,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.activeTab,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: colors.secondaryText,
   },
 });

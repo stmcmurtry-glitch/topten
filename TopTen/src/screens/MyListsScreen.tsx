@@ -13,49 +13,19 @@ import { useListContext } from '../data/ListContext';
 import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
 import { PickCard } from '../components/PickCard';
 import { FEATURED_LISTS } from '../data/featuredLists';
-import { COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
+import { COMMUNITY_LISTS, LOCAL_COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
 import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { fetchCategoryImage } from '../services/imageService';
+import { CATEGORIES } from '../data/categories';
+import {
+  getDetectedLocation,
+  regionMatches,
+  DetectedLocation,
+} from '../services/locationService';
 
-const MASTER_CATEGORIES = ['Movies', 'TV', 'Sports', 'Music', 'Food', 'Drinks'];
+const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 
-interface CollectionCardProps {
-  category: string;
-  count: number;
-  onPress: () => void;
-}
-
-const CollectionCard: React.FC<CollectionCardProps> = ({ category, count, onPress }) => {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const catColor = CATEGORY_COLORS[category] ?? '#AAAAAA';
-
-  useEffect(() => {
-    fetchCategoryImage(category).then(setImageUrl);
-  }, [category]);
-
-  return (
-    <TouchableOpacity style={styles.collectionCard} onPress={onPress} activeOpacity={0.8}>
-      {/* Full-bleed background */}
-      {imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={[StyleSheet.absoluteFill, styles.collectionBg]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: catColor }]} />
-      )}
-      {/* Dark scrim so text is always legible */}
-      <View style={[StyleSheet.absoluteFill, styles.collectionScrim]} />
-      {/* Text overlay */}
-      <View style={styles.collectionOverlay}>
-        <Text style={styles.collectionCategory} numberOfLines={1}>{category}</Text>
-        <Text style={styles.collectionCount}>{count} list{count !== 1 ? 's' : ''}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-};
 
 interface CommunityCardProps {
   list: CommunityList;
@@ -107,13 +77,15 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
   const { lists } = useListContext();
   const { userRankings } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
+  // undefined = still detecting, null = failed / no match
+  const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
   const insets = useSafeAreaInsets();
 
-  // Build dynamic pill categories from user's lists
-  const userCategories = Array.from(new Set(lists.map((l) => l.category)));
-  const allCategories = ['All', ...MASTER_CATEGORIES, ...userCategories.filter(
-    (c) => !MASTER_CATEGORIES.includes(c)
-  )];
+  useEffect(() => {
+    getDetectedLocation().then(setDetectedLocation);
+  }, []);
+
+  const allCategories = ['All', ...ALL_CATEGORY_LABELS];
 
   // Respect the user-defined order (set via All Lists reorder)
   const filteredLists = activeCategory === 'All'
@@ -121,10 +93,23 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     : lists.filter((l) => l.category === activeCategory);
 
   const displayLists = filteredLists.slice(0, 10);
-  const hasMore = filteredLists.length > 10;
 
-  // Build collections: categories that have at least one list
-  const collectionCategories = Array.from(new Set(lists.map((l) => l.category)));
+  const filteredFeatured = activeCategory === 'All'
+    ? FEATURED_LISTS
+    : FEATURED_LISTS.filter((l) => l.category === activeCategory);
+
+  const filteredCommunity = activeCategory === 'All'
+    ? COMMUNITY_LISTS
+    : COMMUNITY_LISTS.filter((l) => l.category === activeCategory);
+
+  // Only show local lists whose region matches the detected location.
+  // While still detecting (undefined) or on failure (null), show nothing.
+  const locationFiltered = detectedLocation
+    ? LOCAL_COMMUNITY_LISTS.filter((cl) => regionMatches(cl.region ?? '', detectedLocation))
+    : [];
+  const filteredLocal = activeCategory === 'All'
+    ? locationFiltered
+    : locationFiltered.filter((cl) => cl.category === activeCategory);
 
   return (
     <ScrollView
@@ -171,45 +156,85 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       </ScrollView>
 
       {/* Featured Lists */}
-      <Text style={styles.sectionHeader}>Featured Lists</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.carousel}
-      >
-        {FEATURED_LISTS.map((list) => (
-          <PickCard
-            key={list.id}
-            pick={list}
-            onPress={() => navigation.navigate('FeaturedList', { featuredId: list.id })}
-          />
-        ))}
-      </ScrollView>
+      {filteredFeatured.length > 0 && (
+        <>
+          <Text style={styles.sectionHeader}>Featured Lists</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carousel}
+          >
+            {filteredFeatured.map((list) => (
+              <PickCard
+                key={list.id}
+                pick={list}
+                onPress={() => navigation.navigate('FeaturedList', { featuredId: list.id })}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
 
       {/* Community Lists */}
-      <View style={styles.divider} />
-      <Text style={styles.sectionHeader}>Community Lists</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.carousel}
-      >
-        {COMMUNITY_LISTS.map((cl) => (
-          <CommunityCard
-            key={cl.id}
-            list={cl}
-            submitted={userRankings[cl.id]?.submitted ?? false}
-            onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
-          />
-        ))}
-      </ScrollView>
+      {filteredCommunity.length > 0 && (
+        <>
+          <View style={styles.divider} />
+          <Text style={styles.sectionHeader}>Community Lists</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carousel}
+          >
+            {filteredCommunity.map((cl) => (
+              <CommunityCard
+                key={cl.id}
+                list={cl}
+                submitted={userRankings[cl.id]?.submitted ?? false}
+                onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
+
+      {/* In your area */}
+      {filteredLocal.length > 0 && (
+        <>
+          <View style={styles.divider} />
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeaderInline}>In your area</Text>
+            <View style={styles.areaHeaderLeft}>
+              <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
+              <Text style={styles.areaRegionLabel}>
+                {detectedLocation
+                  ? (detectedLocation.city || detectedLocation.region)
+                  : ''}
+              </Text>
+            </View>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carousel}
+          >
+            {filteredLocal.map((cl) => (
+              <CommunityCard
+                key={cl.id}
+                list={cl}
+                submitted={userRankings[cl.id]?.submitted ?? false}
+                onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
 
       {/* Thin divider */}
       <View style={styles.divider} />
 
-      {/* My Top Ten */}
+      {/* My Lists */}
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionHeaderInline}>My Top Ten</Text>
+        <Text style={styles.sectionHeaderInline}>My Lists</Text>
         <TouchableOpacity onPress={() => navigation.navigate('AllLists')} activeOpacity={0.7}>
           <Text style={styles.manageButton}>Manage</Text>
         </TouchableOpacity>
@@ -249,33 +274,6 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         <Text style={styles.allListsText}>All Lists</Text>
         <Ionicons name="chevron-forward" size={15} color={colors.activeTab} />
       </TouchableOpacity>
-
-      {/* Thin divider */}
-      <View style={styles.divider} />
-
-      {/* Collections */}
-      {collectionCategories.length > 0 && (
-        <>
-          <Text style={styles.sectionHeader}>Collections</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.collectionsRow}
-          >
-            {collectionCategories.map((cat) => {
-              const count = lists.filter((l) => l.category === cat).length;
-              return (
-                <CollectionCard
-                  key={cat}
-                  category={cat}
-                  count={count}
-                  onPress={() => setActiveCategory(cat)}
-                />
-              );
-            })}
-          </ScrollView>
-        </>
-      )}
 
       {/* Add List Footer */}
       <TouchableOpacity
@@ -383,6 +381,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.activeTab,
   },
+  areaHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  areaRegionLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.secondaryText,
+  },
   allListsLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -440,40 +448,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  collectionsRow: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    gap: spacing.md,
-  },
-  collectionCard: {
-    width: 130,
-    height: 90,
-    borderRadius: borderRadius.squircle,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-    ...shadow,
-    shadowOpacity: 0.15,
-  },
-  collectionBg: {
-    borderRadius: borderRadius.squircle,
-  },
-  collectionScrim: {
-    backgroundColor: 'rgba(0,0,0,0.38)',
-  },
-  collectionOverlay: {
-    padding: spacing.sm,
-  },
-  collectionCategory: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: 0.1,
-  },
-  collectionCount: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 1,
-  },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',

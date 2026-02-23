@@ -9,32 +9,20 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
-import { CATEGORY_COLORS } from '../components/FeedRow';
+import { CATEGORIES } from '../data/categories';
 import { colors, spacing, borderRadius } from '../theme';
-
-const MASTER_CATEGORIES = [
-  { label: 'Movies', icon: 'film-outline' },
-  { label: 'TV', icon: 'tv-outline' },
-  { label: 'Sports', icon: 'trophy-outline' },
-  { label: 'Music', icon: 'musical-notes-outline' },
-  { label: 'Food', icon: 'restaurant-outline' },
-  { label: 'Drinks', icon: 'wine-outline' },
-];
 
 export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
-  const [isCustom, setIsCustom] = useState(false);
   const [customName, setCustomName] = useState('');
   const { addList } = useListContext();
 
-  const effectiveCategory = isCustom ? customCategory.trim() : selectedCategory;
-  const canCreate = effectiveCategory.length > 0;
+  const canCreate = selectedCategory.length > 0;
 
   const handleCreate = () => {
     if (!canCreate) return;
     const title = customName.trim() || undefined;
-    const id = addList(effectiveCategory, title);
+    const id = addList(selectedCategory, title);
     navigation.replace('ListDetail', { listId: id });
   };
 
@@ -57,7 +45,7 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       ),
       title: 'New List',
     });
-  }, [navigation, canCreate, effectiveCategory, customName]);
+  }, [navigation, canCreate, selectedCategory, customName]);
 
   return (
     <ScrollView
@@ -67,59 +55,34 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
     >
       <Text style={styles.label}>Category</Text>
       <View style={styles.grid}>
-        {MASTER_CATEGORIES.map(({ label, icon }) => {
-          const active = !isCustom && selectedCategory === label;
-          const catColor = CATEGORY_COLORS[label] ?? '#AAAAAA';
+        {CATEGORIES.map(({ label, icon, color }) => {
+          const active = selectedCategory === label;
           return (
             <TouchableOpacity
               key={label}
-              style={[styles.chip, active && { borderColor: catColor, backgroundColor: catColor + '18' }]}
-              onPress={() => { setSelectedCategory(label); setIsCustom(false); }}
+              style={[styles.chip, active && { borderColor: color, backgroundColor: color + '22' }]}
+              onPress={() => setSelectedCategory(label)}
               activeOpacity={0.7}
             >
-              <Ionicons name={icon as any} size={20} color={active ? catColor : colors.secondaryText} />
-              <Text style={[styles.chipText, active && { color: catColor, fontWeight: '600' }]}>{label}</Text>
+              <Ionicons name={icon as any} size={18} color={active ? color : colors.secondaryText} />
+              <Text style={[styles.chipText, active && { color, fontWeight: '600' }]}>{label}</Text>
             </TouchableOpacity>
           );
         })}
-        <TouchableOpacity
-          style={[styles.chip, isCustom && styles.chipActiveCustom]}
-          onPress={() => { setIsCustom(true); setSelectedCategory(''); }}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="add-outline" size={20} color={isCustom ? colors.activeTab : colors.secondaryText} />
-          <Text style={[styles.chipText, isCustom && styles.chipTextActiveCustom]}>Custom</Text>
-        </TouchableOpacity>
       </View>
-
-      {isCustom && (
-        <>
-          <Text style={[styles.label, { marginTop: spacing.xl }]}>Custom Category</Text>
-          <TextInput
-            style={styles.input}
-            value={customCategory}
-            onChangeText={setCustomCategory}
-            placeholder="e.g. Podcasts, Restaurants…"
-            placeholderTextColor={colors.secondaryText}
-            autoCapitalize="words"
-            autoFocus
-            returnKeyType="next"
-          />
-        </>
-      )}
 
       <Text style={[styles.label, { marginTop: spacing.xl }]}>List Name (optional)</Text>
       <TextInput
         style={styles.input}
         value={customName}
         onChangeText={setCustomName}
-        placeholder={effectiveCategory ? `My Top 10 ${effectiveCategory}` : 'Auto-generated from category'}
+        placeholder={selectedCategory ? `My Top 10 ${selectedCategory}` : 'Auto-generated from category'}
         placeholderTextColor={colors.secondaryText}
         autoCapitalize="words"
         returnKeyType="done"
         onSubmitEditing={handleCreate}
       />
-      <Text style={styles.hint}>Leave blank to use the default name</Text>
+      <Text style={styles.hint}>Leave blank to use the default name for this category</Text>
     </ScrollView>
   );
 };
@@ -161,14 +124,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: colors.secondaryText,
-  },
-  chipActiveCustom: {
-    borderColor: colors.activeTab,
-    backgroundColor: colors.activeTab + '18',
-  },
-  chipTextActiveCustom: {
-    color: colors.activeTab,
-    fontWeight: '600',
   },
   input: {
     backgroundColor: colors.cardBackground,

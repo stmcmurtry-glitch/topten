@@ -5,12 +5,14 @@ import {
   Image,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FEATURED_LISTS } from '../data/featuredLists';
 import { fetchFeaturedItems, fetchFeaturedImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
+import { ShareModal } from '../components/ShareModal';
 
 export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ route }) => {
   const { featuredId } = route.params as { featuredId: string };
@@ -19,6 +21,7 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [items, setItems] = useState<string[]>(list.previewItems);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     fetchFeaturedImage(list).then(setImageUrl);
@@ -28,6 +31,7 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
   }, [list.id]);
 
   return (
+    <>
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
@@ -51,7 +55,7 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
 
       {/* Description */}
       <View style={styles.descriptionCard}>
-        <Text style={styles.descriptionLabel}>HOW WE RANKED THIS</Text>
+        <Text style={[styles.descriptionLabel, { color: list.color }]}>HOW WE RANKED THIS</Text>
         <Text style={styles.description}>{list.description}</Text>
       </View>
 
@@ -60,19 +64,38 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
         {items.slice(0, 10).map((item, i) => (
           <React.Fragment key={i}>
             <View style={styles.row}>
-              <Text style={[styles.rank, i === 0 && styles.rankTop]}>{i + 1}</Text>
+              <Text style={[styles.rank, i === 0 && styles.rankTop, i === 0 && { color: list.color }]}>{i + 1}</Text>
               <Text style={[styles.itemTitle, i === 0 && styles.itemTitleTop]} numberOfLines={2}>
                 {item}
               </Text>
               {i === 0 && (
-                <Ionicons name="trophy" size={14} color="#CC0000" style={styles.trophy} />
+                <Ionicons name="trophy" size={14} color={list.color} style={styles.trophy} />
               )}
             </View>
             {i < Math.min(items.length, 10) - 1 && <View style={styles.divider} />}
           </React.Fragment>
         ))}
       </View>
+
+      {/* Share button */}
+      <TouchableOpacity
+        style={[styles.shareButton, { backgroundColor: list.color }]}
+        onPress={() => setShowShareModal(true)}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="share-outline" size={18} color="#FFF" />
+        <Text style={styles.shareButtonText}>Share This List</Text>
+      </TouchableOpacity>
     </ScrollView>
+
+    <ShareModal
+      visible={showShareModal}
+      onClose={() => setShowShareModal(false)}
+      title={list.title}
+      category={list.category}
+      items={items}
+    />
+    </>
   );
 };
 
@@ -131,7 +154,6 @@ const styles = StyleSheet.create({
   descriptionLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#CC0000',
     letterSpacing: 1,
     marginBottom: spacing.xs,
   },
@@ -167,7 +189,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   rankTop: {
-    color: '#CC0000',
     fontWeight: '800',
   },
   itemTitle: {
@@ -186,5 +207,20 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginLeft: spacing.md + 22 + spacing.md,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderRadius: borderRadius.sm,
+    marginTop: spacing.md,
+    marginHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  }, // backgroundColor applied inline via list.color
+  shareButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

@@ -13,6 +13,7 @@ export interface CommunityList {
   description: string;
   participantCount: number;
   items: CommunityItem[];
+  region?: string; // e.g. 'Philadelphia' — present only on local/area lists
 }
 
 export const COMMUNITY_LISTS: CommunityList[] = [
@@ -119,6 +120,57 @@ export const COMMUNITY_LISTS: CommunityList[] = [
       { id: 'cb-8', title: 'Don Quixote', seedScore: 411 },
       { id: 'cb-9', title: 'Middlemarch', seedScore: 334 },
       { id: 'cb-10', title: 'The Brothers Karamazov', seedScore: 247 },
+    ],
+  },
+];
+
+// ── Local / "In your area" lists ─────────────────────────────────────────────
+// These are shown in the dedicated "In your area" section on the home screen.
+// Add or remove entries here as regional coverage expands.
+
+export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
+  {
+    id: 'local-philly-pizza',
+    title: 'Top Pizza in Philadelphia Region',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    region: 'Philadelphia',
+    description: 'Philly takes its pizza seriously. Which slice reigns supreme in the region?',
+    participantCount: 412,
+    items: [
+      { id: 'lpp-1',  title: "Angelo's Pizzeria",                 seedScore: 310 },
+      { id: 'lpp-2',  title: "Santucci's Original Square Pizza",  seedScore: 284 },
+      { id: 'lpp-3',  title: "Pizzeria Beddia",                   seedScore: 261 },
+      { id: 'lpp-4',  title: "Tacconelli's Pizzeria",             seedScore: 233 },
+      { id: 'lpp-5',  title: "Pizza Brain",                       seedScore: 198 },
+      { id: 'lpp-6',  title: "Nomad Pizza",                       seedScore: 172 },
+      { id: 'lpp-7',  title: "Pizzeria Vetri",                    seedScore: 149 },
+      { id: 'lpp-8',  title: "Lorenzo and Sons Pizza",            seedScore: 121 },
+      { id: 'lpp-9',  title: "Criniti's",                         seedScore:  96 },
+      { id: 'lpp-10', title: "South Street Pizza",                seedScore:  68 },
+    ],
+  },
+  {
+    id: 'local-philly-things',
+    title: 'Best Things to Do in Philly',
+    category: 'Travel',
+    color: '#0984E3',
+    icon: 'airplane-outline',
+    region: 'Philadelphia',
+    description: "From the Rocky steps to Reading Terminal — what makes Philly worth the trip?",
+    participantCount: 287,
+    items: [
+      { id: 'lpt-1',  title: 'Philadelphia Museum of Art (Rocky Steps)', seedScore: 298 },
+      { id: 'lpt-2',  title: 'Liberty Bell & Independence Hall',          seedScore: 271 },
+      { id: 'lpt-3',  title: 'Reading Terminal Market',                   seedScore: 249 },
+      { id: 'lpt-4',  title: 'Eastern State Penitentiary',                seedScore: 214 },
+      { id: 'lpt-5',  title: 'Philadelphia Zoo',                          seedScore: 183 },
+      { id: 'lpt-6',  title: 'Rittenhouse Square',                        seedScore: 158 },
+      { id: 'lpt-7',  title: 'Penn Museum',                               seedScore: 131 },
+      { id: 'lpt-8',  title: 'Magic Gardens',                             seedScore: 107 },
+      { id: 'lpt-9',  title: 'South Street',                              seedScore:  84 },
+      { id: 'lpt-10', title: 'Franklin Institute',                        seedScore:  61 },
     ],
   },
 ];

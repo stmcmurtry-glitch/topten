@@ -17,9 +17,12 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { COMMUNITY_LISTS } from '../data/communityLists';
+import { COMMUNITY_LISTS, LOCAL_COMMUNITY_LISTS } from '../data/communityLists';
+
+const ALL_COMMUNITY_LISTS = [...COMMUNITY_LISTS, ...LOCAL_COMMUNITY_LISTS];
 import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
+import { ShareModal } from '../components/ShareModal';
 
 const SCORE_BAR_MAX_WIDTH = 100;
 
@@ -38,10 +41,11 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     submitRanking,
   } = useCommunity();
 
-  const list = COMMUNITY_LISTS.find((l) => l.id === communityListId);
+  const list = ALL_COMMUNITY_LISTS.find((l) => l.id === communityListId);
   const [activeTab, setActiveTab] = useState<'community' | 'yours'>('community');
   const [loadingScores, setLoadingScores] = useState(true);
   const [submitConfirmed, setSubmitConfirmed] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const hasFetched = useRef(false);
   const buttonScale = useRef(new Animated.Value(1)).current;
 
@@ -199,7 +203,10 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       {(['community', 'yours'] as const).map((tab) => (
         <TouchableOpacity
           key={tab}
-          style={[styles.tabPill, activeTab === tab && styles.tabPillActive]}
+          style={[
+            styles.tabPill,
+            activeTab === tab && { backgroundColor: list.color, borderColor: list.color },
+          ]}
           onPress={() => setActiveTab(tab)}
           activeOpacity={0.8}
         >
@@ -227,7 +234,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
             {loadingScores ? (
               <ActivityIndicator
                 size="large"
-                color={colors.activeTab}
+                color={list.color}
                 style={styles.loadingIndicator}
               />
             ) : (
@@ -239,12 +246,22 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                     <Text style={styles.rankNum}>{idx + 1}</Text>
                     <Text style={styles.communityItemTitle} numberOfLines={1}>{item.title}</Text>
                     <View style={styles.scoreCol}>
-                      <View style={[styles.scoreBar, { width: barWidth }]} />
+                      <View style={[styles.scoreBar, { width: barWidth, backgroundColor: list.color }]} />
                       <Text style={styles.scorePts}>{score.toLocaleString()} pts</Text>
                     </View>
                   </View>
                 );
               })
+            )}
+            {!loadingScores && (
+              <TouchableOpacity
+                style={[styles.shareButton, { backgroundColor: list.color }]}
+                onPress={() => setShowShareModal(true)}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="share-outline" size={18} color="#FFF" />
+                <Text style={styles.shareButtonText}>Share This List</Text>
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -301,7 +318,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
             })}
 
             <TouchableOpacity onPress={handleSubmit} activeOpacity={0.9} disabled={submitConfirmed}>
-              <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: submitConfirmed ? '#2ECC71' : '#CC0000' }]}>
+              <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: submitConfirmed ? '#2ECC71' : list.color }]}>
                 <Text style={styles.submitButtonText}>
                   {submitConfirmed ? '✓ Submitted!' : submitted ? 'Update My Ranking' : 'Submit My Ranking'}
                 </Text>
@@ -310,6 +327,14 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           </View>
         )}
       </ScrollView>
+
+      <ShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title={list.title}
+        category={list.category}
+        items={communityRanked.map((i) => i.title)}
+      />
 
       {/* ── Choice sheet ── */}
       <Modal visible={activeSlot !== null} transparent animationType="fade">
@@ -322,14 +347,14 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
               style={styles.sheetOption}
               onPress={() => activeSlot !== null && openTypeModal(activeSlot)}
             >
-              <Ionicons name="pencil-outline" size={22} color={colors.activeTab} />
+              <Ionicons name="pencil-outline" size={22} color={list.color} />
               <Text style={styles.sheetOptionText}>Type an item</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.sheetOption}
               onPress={() => activeSlot !== null && openSearch(activeSlot)}
             >
-              <Ionicons name="search-outline" size={22} color={colors.activeTab} />
+              <Ionicons name="search-outline" size={22} color={list.color} />
               <Text style={styles.sheetOptionText}>Find your item in a list</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={() => setActiveSlot(null)}>
@@ -361,7 +386,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                 onSubmitEditing={() => { if (typedValue.trim()) saveSlot(); }}
               />
               <TouchableOpacity
-                style={[styles.saveButton, !typedValue.trim() && styles.saveDisabled]}
+                style={[styles.saveButton, { backgroundColor: list.color }, !typedValue.trim() && styles.saveDisabled]}
                 disabled={!typedValue.trim()}
                 onPress={saveSlot}
               >
@@ -465,7 +490,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.cardBackground,
   },
-  tabPillActive: { backgroundColor: '#CC0000', borderColor: '#CC0000' },
+  tabPillActive: { backgroundColor: 'transparent' }, // color applied inline via list.color
   tabPillText: { fontSize: 14, fontWeight: '600', color: colors.primaryText },
   tabPillTextActive: { color: '#FFF' },
 
@@ -497,7 +522,7 @@ const styles = StyleSheet.create({
   rankNumEmpty: { opacity: 0.4 },
   communityItemTitle: { flex: 1, fontSize: 15, fontWeight: '500', color: colors.primaryText },
   scoreCol: { alignItems: 'flex-end', gap: 3 },
-  scoreBar: { height: 4, borderRadius: 2, backgroundColor: '#CC0000', minWidth: 4 },
+  scoreBar: { height: 4, borderRadius: 2, minWidth: 4 }, // backgroundColor applied inline via list.color
   scorePts: { fontSize: 11, color: colors.secondaryText, fontWeight: '500' },
 
   /* ── Yours tab ── */
@@ -525,13 +550,22 @@ const styles = StyleSheet.create({
   emptyText: { flex: 1, fontSize: 16, color: colors.secondaryText },
   moveButtons: { alignItems: 'center', gap: 2 },
   submitButton: {
-    backgroundColor: '#CC0000',
     borderRadius: borderRadius.sm,
     padding: spacing.lg,
     alignItems: 'center',
     marginTop: spacing.lg,
-  },
+  }, // backgroundColor applied inline via list.color
   submitButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderRadius: borderRadius.sm,
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+  }, // backgroundColor applied inline via list.color
+  shareButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 
   /* ── Modals ── */
   keyboardAvoid: { flex: 1 },
@@ -574,11 +608,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   saveButton: {
-    backgroundColor: colors.activeTab,
     borderRadius: borderRadius.sm,
     padding: spacing.lg,
     alignItems: 'center',
-  },
+  }, // backgroundColor applied inline via list.color
   saveDisabled: { opacity: 0.4 },
   saveText: { color: '#FFF', fontSize: 17, fontWeight: '600' },
 });

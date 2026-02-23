@@ -21,7 +21,7 @@ export const seedLists: TopTenList[] = [
   },
   {
     id: '3',
-    category: 'Foods',
+    category: 'Food',
     title: 'My Top 10 Foods',
     icon: 'restaurant-outline',
     items: [],
@@ -30,7 +30,7 @@ export const seedLists: TopTenList[] = [
   },
   {
     id: '4',
-    category: 'Golf',
+    category: 'Sports',
     title: 'My Top 10 Golf Courses',
     icon: 'golf-outline',
     items: [],
@@ -39,7 +39,7 @@ export const seedLists: TopTenList[] = [
   },
   {
     id: '5',
-    category: 'Wine',
+    category: 'Drinks',
     title: 'My Top 10 Wines',
     icon: 'wine-outline',
     items: [],

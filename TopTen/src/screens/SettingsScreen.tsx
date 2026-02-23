@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,37 +9,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useListContext } from '../data/ListContext';
 import { PlansModal } from '../components/PlansModal';
+import { sendFeedbackEmail } from '../services/emailService';
+import {
+  getDetectedLocation,
+  clearLocationCache,
+  DetectedLocation,
+} from '../services/locationService';
 
 const BASIC_LIMIT = 10;
-
-const sections = [
-  {
-    title: 'Preferences',
-    data: [
-      { label: 'Notifications', route: 'Notifications' },
-    ],
-  },
-  {
-    title: 'App',
-    data: [
-      { label: 'Version', value: '1.0.0' },
-      { label: 'Theme', value: 'System' },
-    ],
-  },
-  {
-    title: 'About',
-    data: [
-      { label: 'Developer', value: 'Top Ten Team' },
-      { label: 'Built with', value: 'Expo + React Native' },
-    ],
-  },
-];
 
 /* ── Membership Card ── */
 const MembershipCard: React.FC<{ onViewPlans: () => void }> = ({ onViewPlans }) => {
@@ -51,103 +35,102 @@ const MembershipCard: React.FC<{ onViewPlans: () => void }> = ({ onViewPlans }) 
   return (
     <View style={styles.memberCard}>
       <View style={styles.memberBody}>
-        {/* Tier row */}
+        {/* Compact tier + CTA row */}
         <View style={styles.tierRow}>
-          <View>
-            <Text style={styles.memberLabel}>YOUR PLAN</Text>
+          <View style={styles.tierLeft}>
+            <View style={styles.tierBadge}>
+              <Text style={styles.tierBadgeText}>FREE</Text>
+            </View>
             <Text style={styles.memberTier}>Basic</Text>
           </View>
-          <View style={styles.tierBadge}>
-            <Text style={styles.tierBadgeText}>FREE</Text>
-          </View>
+          <TouchableOpacity style={styles.upgradeCta} onPress={onViewPlans} activeOpacity={0.85}>
+            <Text style={styles.upgradeCtaText}>Upgrade</Text>
+            <Ionicons name="arrow-forward" size={12} color={colors.activeTab} />
+          </TouchableOpacity>
         </View>
 
         {/* Usage bar */}
-        <View style={styles.usageSection}>
-          <View style={styles.usageLabelRow}>
-            <Text style={styles.usageLabel}>Lists used</Text>
-            <Text style={[styles.usageCount, nearLimit && styles.usageCountWarn]}>
-              {used} of {BASIC_LIMIT}
+        <View style={styles.usageLabelRow}>
+          <Text style={styles.usageLabel}>{used} of {BASIC_LIMIT} lists used</Text>
+          {nearLimit && (
+            <Text style={styles.usageCountWarn}>
+              {used >= BASIC_LIMIT ? 'Limit reached' : 'Almost full'}
             </Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${fillPct * 100}%` as any },
-                nearLimit && styles.progressFillWarn,
-              ]}
-            />
-          </View>
-          {nearLimit && used < BASIC_LIMIT && (
-            <Text style={styles.usageWarnText}>Almost at your limit — upgrade for more.</Text>
-          )}
-          {used >= BASIC_LIMIT && (
-            <Text style={styles.usageWarnText}>List limit reached. Upgrade to add more.</Text>
           )}
         </View>
-
-        {/* CTA */}
-        <TouchableOpacity style={styles.upgradeCta} onPress={onViewPlans} activeOpacity={0.85}>
-          <Text style={styles.upgradeCtaText}>View Plans</Text>
-          <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={styles.progressTrack}>
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${fillPct * 100}%` as any },
+              nearLimit && styles.progressFillWarn,
+            ]}
+          />
+        </View>
       </View>
     </View>
   );
 };
 
 /* ── Feedback Card ── */
+const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'];
+
 const FeedbackCard: React.FC = () => {
   const [rating, setRating] = useState(0);
   const [text, setText] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0) {
       Alert.alert('Select a rating', 'Tap a star before sending.');
       return;
     }
-    setSubmitted(true);
+    setSending(true);
+    try {
+      await sendFeedbackEmail({ rating, ratingLabel: RATING_LABELS[rating], message: text.trim() });
+      setSubmitted(true);
+    } catch {
+      Alert.alert('Error', 'Could not send feedback. Please try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   if (submitted) {
     return (
       <View style={[styles.feedbackCard, styles.feedbackCardThanks]}>
-        <Ionicons name="checkmark-circle" size={48} color="#34C759" />
+        <Ionicons name="checkmark-circle" size={32} color="#34C759" />
         <Text style={styles.thanksTitle}>Thanks for your feedback!</Text>
-        <Text style={styles.thanksSub}>We read every response and use it to improve Top Ten.</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.feedbackCard}>
-      <Text style={styles.feedbackTitle}>Rate Your Experience</Text>
-      <Text style={styles.feedbackSub}>How are you enjoying Top Ten?</Text>
+      <View style={styles.feedbackHeader}>
+        <Text style={styles.feedbackTitle}>Rate Your Experience</Text>
+        {rating > 0 && (
+          <Text style={styles.ratingLabel}>{RATING_LABELS[rating]}</Text>
+        )}
+      </View>
 
       <View style={styles.starsRow}>
         {[1, 2, 3, 4, 5].map((star) => (
           <TouchableOpacity
             key={star}
             onPress={() => setRating(star)}
-            hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             activeOpacity={0.7}
           >
             <Ionicons
               name={star <= rating ? 'star' : 'star-outline'}
-              size={44}
+              size={32}
               color={star <= rating ? '#FF9500' : colors.border}
             />
           </TouchableOpacity>
         ))}
       </View>
-
-      {rating > 0 && (
-        <Text style={styles.ratingLabel}>
-          {['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][rating]}
-        </Text>
-      )}
 
       <TextInput
         style={styles.textInput}
@@ -161,11 +144,15 @@ const FeedbackCard: React.FC = () => {
       />
 
       <TouchableOpacity
-        style={[styles.submitButton, rating === 0 && styles.submitButtonDisabled]}
+        style={[styles.submitButton, (rating === 0 || sending) && styles.submitButtonDisabled]}
         onPress={handleSubmit}
         activeOpacity={0.8}
+        disabled={sending}
       >
-        <Text style={styles.submitText}>Send Feedback</Text>
+        {sending
+          ? <ActivityIndicator color="#FFF" size="small" />
+          : <Text style={styles.submitText}>Send Feedback</Text>
+        }
       </TouchableOpacity>
     </View>
   );
@@ -175,6 +162,48 @@ const FeedbackCard: React.FC = () => {
 export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [plansVisible, setPlansVisible] = useState(false);
+  const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
+
+  useEffect(() => {
+    getDetectedLocation().then(setDetectedLocation);
+  }, []);
+
+  const locationLabel = detectedLocation
+    ? `${detectedLocation.city || detectedLocation.region}${detectedLocation.region && detectedLocation.city ? `, ${detectedLocation.region}` : ''}`
+    : detectedLocation === null ? 'Unknown' : 'Detecting…';
+
+  const handleResetLocation = () => {
+    Alert.alert(
+      'Reset Location',
+      `Currently detected as ${locationLabel}. Reset to re-detect on next launch?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            await clearLocationCache();
+            setDetectedLocation(undefined);
+            const fresh = await getDetectedLocation();
+            setDetectedLocation(fresh);
+          },
+        },
+      ]
+    );
+  };
+
+  const sections = [
+    {
+      title: 'Preferences',
+      data: [
+        { label: 'Notifications', route: 'Notifications' },
+        { label: 'Location', value: locationLabel, isLocation: true },
+        { label: 'Privacy Policy', route: 'PrivacyPolicy' },
+        { label: 'Contact Us', route: 'Contact' },
+        { label: 'About', route: 'About' },
+      ],
+    },
+  ];
 
   return (
     <>
@@ -201,6 +230,21 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           )}
           renderItem={({ item, index, section }) => {
             const isLast = index === section.data.length - 1;
+            if (item.isLocation) {
+              return (
+                <TouchableOpacity
+                  style={[styles.row, isLast && styles.rowLast]}
+                  onPress={handleResetLocation}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.label}>{item.label}</Text>
+                  <View style={styles.locationValue}>
+                    <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
+                    <Text style={styles.value}>{item.value}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }
             if (item.route) {
               return (
                 <TouchableOpacity
@@ -290,6 +334,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.secondaryText,
   },
+  locationValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
 
   /* ── Membership Card ── */
   memberCard: {
@@ -298,50 +347,39 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.squircle,
     overflow: 'hidden',
     ...shadow,
-    shadowOpacity: 0.08,
-  },
-  memberAccent: {
-    height: 4,
-    backgroundColor: '#CC0000',
+    shadowOpacity: 0.06,
   },
   memberBody: {
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   tierRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
-  memberLabel: {
+  tierLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  memberTier: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  tierBadge: {
+    backgroundColor: colors.border,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    alignSelf: 'center',
+  },
+  tierBadgeText: {
     fontSize: 10,
     fontWeight: '700',
     color: colors.secondaryText,
-    letterSpacing: 1,
-    marginBottom: 3,
-  },
-  memberTier: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.primaryText,
-    letterSpacing: -0.5,
-  },
-  tierBadge: {
-    backgroundColor: '#CC0000',
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  tierBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.8,
-  },
-  usageSection: {
-    marginBottom: spacing.lg,
+    letterSpacing: 0.6,
   },
   usageLabelRow: {
     flexDirection: 'row',
@@ -349,51 +387,37 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   usageLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.secondaryText,
-    fontWeight: '500',
-  },
-  usageCount: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.primaryText,
   },
   usageCountWarn: {
+    fontSize: 12,
+    fontWeight: '600',
     color: '#CC0000',
   },
   progressTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: colors.border,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 3,
-    backgroundColor: '#CC0000',
+    borderRadius: 2,
+    backgroundColor: colors.activeTab,
   },
   progressFillWarn: {
     backgroundColor: '#FF3B30',
   },
-  usageWarnText: {
-    fontSize: 12,
-    color: '#CC0000',
-    marginTop: spacing.xs,
-    fontStyle: 'italic',
-  },
   upgradeCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    backgroundColor: '#CC0000',
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
+    gap: 4,
   },
   upgradeCtaText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.activeTab,
   },
 
   /* ── Feedback section ── */
@@ -410,60 +434,53 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
   },
   feedbackCardThanks: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.lg,
+    padding: spacing.md,
     gap: spacing.sm,
   },
-  feedbackAccent: {
-    height: 4,
-    backgroundColor: '#CC0000',
+  feedbackHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
   },
   feedbackTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
     color: colors.primaryText,
-    marginTop: spacing.lg,
-    marginHorizontal: spacing.lg,
-  },
-  feedbackSub: {
-    fontSize: 14,
-    color: colors.secondaryText,
-    marginTop: 4,
-    marginHorizontal: spacing.lg,
   },
   starsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.md,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
   },
   ratingLabel: {
-    textAlign: 'center',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#FF9500',
-    marginBottom: spacing.sm,
     letterSpacing: 0.2,
   },
   textInput: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    minHeight: 90,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    minHeight: 64,
     backgroundColor: colors.background,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    fontSize: 15,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    fontSize: 14,
     color: colors.primaryText,
   },
   submitButton: {
-    margin: spacing.lg,
-    paddingVertical: spacing.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.lg,
     backgroundColor: '#CC0000',
     alignItems: 'center',
@@ -472,21 +489,14 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   submitText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.1,
   },
   thanksTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.primaryText,
-    marginTop: spacing.sm,
-  },
-  thanksSub: {
     fontSize: 14,
-    color: colors.secondaryText,
-    textAlign: 'center',
-    lineHeight: 20,
+    fontWeight: '600',
+    color: colors.primaryText,
   },
 });

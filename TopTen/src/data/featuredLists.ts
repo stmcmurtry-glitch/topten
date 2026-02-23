@@ -1,4 +1,4 @@
-import { CATEGORY_COLORS } from '../components/FeedRow';
+import { CATEGORY_COLORS } from './categories';
 
 export interface FeaturedList {
   id: string;
@@ -37,8 +37,8 @@ export const STARTER_LISTS: PopularList[] = [
   { id: 's-1', title: 'My Favorite Foods',       category: 'Food',    icon: 'restaurant-outline',    color: CATEGORY_COLORS.Food   },
   { id: 's-2', title: 'My Favorite Movies',      category: 'Movies',  icon: 'film-outline',          color: CATEGORY_COLORS.Movies },
   { id: 's-3', title: 'My Favorite TV Shows',    category: 'TV',      icon: 'tv-outline',            color: CATEGORY_COLORS.TV     },
-  { id: 's-4', title: 'My Favorite Animals',     category: 'Animals', icon: 'paw-outline',           color: '#7DBE8E'              },
-  { id: 's-5', title: 'My Favorite Colors',      category: 'Colors',  icon: 'color-palette-outline', color: '#B09FE8'              },
+  { id: 's-4', title: 'My Favorite Animals',     category: 'Nature',  icon: 'paw-outline',           color: CATEGORY_COLORS.Nature },
+  { id: 's-5', title: 'My Favorite Colors',      category: 'Arts',    icon: 'color-palette-outline', color: CATEGORY_COLORS.Arts   },
   { id: 's-6', title: 'My Favorite Songs',       category: 'Music',   icon: 'musical-notes-outline', color: CATEGORY_COLORS.Music  },
   { id: 's-7', title: 'My Favorite Sports Teams',category: 'Sports',  icon: 'trophy-outline',        color: CATEGORY_COLORS.Sports },
   { id: 's-8', title: 'My Favorite Drinks',      category: 'Drinks',  icon: 'wine-outline',          color: CATEGORY_COLORS.Drinks },

@@ -4,20 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { TopTenList } from '../data/schema';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ListThumbnail } from './ListThumbnail';
-
-export const CATEGORY_COLORS: Record<string, string> = {
-  Movies: '#FF6B6B',
-  TV: '#5B8DEF',
-  Sports: '#FF9F43',
-  Music: '#A29BFE',
-  Food: '#FFB347',
-  Drinks: '#00CEC9',
-  // legacy
-  Books: '#4ECDC4',
-  Foods: '#FFB347',
-  Golf: '#6BCB77',
-  Wine: '#C084D8',
-};
+import { CATEGORY_COLORS } from '../data/categories';
+export { CATEGORY_COLORS } from '../data/categories';
 
 interface FeedRowProps {
   list: TopTenList;

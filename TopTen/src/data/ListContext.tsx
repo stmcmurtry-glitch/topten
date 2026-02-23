@@ -2,27 +2,15 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TopTenList, TopTenItem } from './schema';
 import { seedLists } from './seedData';
+import { CATEGORY_ICONS } from './categories';
 
 const STORAGE_KEY = '@topten_lists';
-
-const CATEGORY_ICONS: Record<string, string> = {
-  Movies: 'film-outline',
-  TV: 'tv-outline',
-  Sports: 'trophy-outline',
-  Music: 'musical-notes-outline',
-  Food: 'restaurant-outline',
-  Drinks: 'wine-outline',
-  Books: 'book-outline',
-  Foods: 'restaurant-outline',
-  Golf: 'golf-outline',
-  Wine: 'wine-outline',
-};
 
 interface ListContextType {
   lists: TopTenList[];
   addList: (category: string, title?: string, description?: string) => string;
   updateListItems: (listId: string, items: TopTenItem[]) => void;
-  updateListMeta: (listId: string, meta: { description?: string; customIcon?: string }) => void;
+  updateListMeta: (listId: string, meta: { description?: string; customIcon?: string; category?: string }) => void;
   deleteList: (listId: string) => void;
   reorderLists: (newOrder: TopTenList[]) => void;
 }
@@ -79,8 +67,14 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return id;
   }, [lists, persist]);
 
-  const updateListMeta = useCallback((listId: string, meta: { description?: string; customIcon?: string }) => {
-    const updated = lists.map((l) => l.id === listId ? { ...l, ...meta } : l);
+  const updateListMeta = useCallback((listId: string, meta: { description?: string; customIcon?: string; category?: string }) => {
+    const updated = lists.map((l) => {
+      if (l.id !== listId) return l;
+      const patch: Partial<TopTenList> = { ...meta };
+      // When category changes, reset icon to the category default
+      if (meta.category) patch.icon = CATEGORY_ICONS[meta.category] ?? 'list-outline';
+      return { ...l, ...patch };
+    });
     persist(updated);
   }, [lists, persist]);
 

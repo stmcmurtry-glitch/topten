@@ -21,6 +21,8 @@ import { useListContext } from '../data/ListContext';
 import { TopTenItem } from '../data/schema';
 import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius, shadow } from '../theme';
+import { ShareModal } from '../components/ShareModal';
+import { CATEGORIES } from '../data/categories';
 
 const DESCRIPTION_LIMIT = 120;
 
@@ -53,17 +55,6 @@ const FlexThumb: React.FC<{ uri: string }> = ({ uri }) => {
   );
 };
 
-const ICON_OPTIONS = [
-  'film-outline', 'tv-outline', 'musical-notes-outline', 'book-outline',
-  'restaurant-outline', 'wine-outline', 'trophy-outline', 'football-outline',
-  'basketball-outline', 'baseball-outline', 'bicycle-outline', 'car-outline',
-  'airplane-outline', 'earth-outline', 'heart-outline', 'star-outline',
-  'home-outline', 'person-outline', 'people-outline', 'paw-outline',
-  'color-palette-outline', 'camera-outline', 'game-controller-outline', 'laptop-outline',
-  'pizza-outline', 'beer-outline', 'cafe-outline', 'ice-cream-outline',
-  'leaf-outline', 'planet-outline', 'rocket-outline', 'flame-outline',
-  'golf-outline', 'fitness-outline', 'barbell-outline', 'tennisball-outline',
-];
 
 export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
@@ -87,9 +78,10 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [typeSlotIndex, setTypeSlotIndex] = useState<number | null>(null);
   const [typedValue, setTypedValue] = useState('');
-  const [showIconPicker, setShowIconPicker] = useState(false);
   const [description, setDescription] = useState(list?.description ?? '');
   const [descFocused, setDescFocused] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   useEffect(() => { setSlots(buildSlots()); }, [buildSlots]);
   useEffect(() => { setDescription(list?.description ?? ''); }, [list?.id]);
@@ -148,11 +140,6 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
     ]);
   };
 
-  const handleIconSelect = (icon: string) => {
-    updateListMeta(listId, { customIcon: icon });
-    setShowIconPicker(false);
-  };
-
   const saveDescription = () => {
     if (list && description !== list.description) {
       updateListMeta(listId, { description });
@@ -163,7 +150,6 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const heroImage = list.items.find(i => i.rank === 1)?.imageUrl ?? null;
   const categoryColor = CATEGORY_COLORS[list.category] ?? '#CC0000';
-  const displayIcon = (list.customIcon || list.icon) as any;
 
   const Hero = (
     <View style={[styles.hero, { paddingTop: insets.top + 46 }]}>
@@ -193,14 +179,6 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
             style={styles.heroPoster}
             resizeMode="cover"
           />
-        )}
-
-        {/* Icon picker pill — only when no real image */}
-        {!heroImage && (
-          <TouchableOpacity style={styles.heroIconBtn} onPress={() => setShowIconPicker(true)}>
-            <Ionicons name={displayIcon} size={20} color="#FFF" />
-            <Ionicons name="chevron-down" size={10} color="rgba(255,255,255,0.7)" />
-          </TouchableOpacity>
         )}
 
         {/* Title — flows directly into description with no row wrapper */}
@@ -269,9 +247,38 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           );
         }}
         ListFooterComponent={
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteList}>
-            <Text style={styles.deleteText}>Delete List</Text>
-          </TouchableOpacity>
+          <View style={styles.actionCard}>
+            {/* Share */}
+            <TouchableOpacity style={styles.actionRow} onPress={() => setShowShareModal(true)} activeOpacity={0.7}>
+              <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
+                <Ionicons name="share-outline" size={18} color={categoryColor} />
+              </View>
+              <Text style={styles.actionLabel}>Share</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.border} />
+            </TouchableOpacity>
+
+            <View style={styles.actionDivider} />
+
+            {/* Category */}
+            <TouchableOpacity style={styles.actionRow} onPress={() => setShowCategoryPicker(true)} activeOpacity={0.7}>
+              <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
+                <Ionicons name="grid-outline" size={18} color={categoryColor} />
+              </View>
+              <Text style={styles.actionLabel}>Category</Text>
+              <Text style={[styles.actionValue, { color: categoryColor }]}>{list.category}</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.border} />
+            </TouchableOpacity>
+
+            <View style={styles.actionDivider} />
+
+            {/* Delete */}
+            <TouchableOpacity style={styles.actionRow} onPress={handleDeleteList} activeOpacity={0.7}>
+              <View style={[styles.actionIconWrap, { backgroundColor: colors.danger + '18' }]}>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              </View>
+              <Text style={[styles.actionLabel, { color: colors.danger }]}>Delete List</Text>
+            </TouchableOpacity>
+          </View>
         }
       />
 
@@ -281,11 +288,11 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.sheetTitle}>Rank #{activeSlot !== null ? activeSlot + 1 : ''}</Text>
             <TouchableOpacity style={styles.sheetOption} onPress={() => activeSlot !== null && openTypeModal(activeSlot)}>
-              <Ionicons name="pencil-outline" size={22} color={colors.activeTab} />
+              <Ionicons name="pencil-outline" size={22} color={categoryColor} />
               <Text style={styles.sheetOptionText}>Type an item</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sheetOption} onPress={() => activeSlot !== null && openSearch(activeSlot)}>
-              <Ionicons name="search-outline" size={22} color={colors.activeTab} />
+              <Ionicons name="search-outline" size={22} color={categoryColor} />
               <Text style={styles.sheetOptionText}>Find your item in a list</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={() => setActiveSlot(null)}>
@@ -318,7 +325,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                 }}
               />
               <TouchableOpacity
-                style={[styles.saveButton, !typedValue.trim() && styles.saveDisabled]}
+                style={[styles.saveButton, { backgroundColor: categoryColor }, !typedValue.trim() && styles.saveDisabled]}
                 disabled={!typedValue.trim()}
                 onPress={() => {
                   if (typeSlotIndex !== null) {
@@ -335,28 +342,38 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Icon picker */}
-      <Modal visible={showIconPicker} transparent animationType="slide">
-        <Pressable style={styles.overlay} onPress={() => setShowIconPicker(false)}>
-          <Pressable style={styles.iconSheet} onPress={(e) => e.stopPropagation()}>
+      <ShareModal
+        visible={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title={list.title}
+        category={list.category}
+        items={slots}
+      />
+
+      {/* Category picker */}
+      <Modal visible={showCategoryPicker} transparent animationType="slide">
+        <Pressable style={styles.overlay} onPress={() => setShowCategoryPicker(false)}>
+          <Pressable style={styles.categorySheet} onPress={(e) => e.stopPropagation()}>
             <View style={styles.iconSheetHandle} />
-            <Text style={styles.iconSheetTitle}>Choose an Icon</Text>
+            <Text style={styles.iconSheetTitle}>Choose a Category</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.iconGrid}>
-                {ICON_OPTIONS.map((icon) => {
-                  const isActive = icon === displayIcon;
+              <View style={styles.categoryGrid}>
+                {CATEGORIES.map(({ label, icon, color }) => {
+                  const active = label === list.category;
                   return (
                     <TouchableOpacity
-                      key={icon}
-                      style={[styles.iconCell, isActive && styles.iconCellActive]}
-                      onPress={() => handleIconSelect(icon)}
+                      key={label}
+                      style={[styles.categoryChip, active && { borderColor: color, backgroundColor: color + '22' }]}
+                      onPress={() => {
+                        updateListMeta(listId, { category: label });
+                        setShowCategoryPicker(false);
+                      }}
                       activeOpacity={0.7}
                     >
-                      <Ionicons
-                        name={icon as any}
-                        size={26}
-                        color={isActive ? '#FFF' : colors.primaryText}
-                      />
+                      <Ionicons name={icon as any} size={18} color={active ? color : colors.secondaryText} />
+                      <Text style={[styles.categoryChipText, active && { color, fontWeight: '600' }]}>
+                        {label}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -365,6 +382,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           </Pressable>
         </Pressable>
       </Modal>
+
     </View>
   );
 };
@@ -430,17 +448,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     ...shadow,
     shadowOpacity: 0.35,
-  },
-  heroIconBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    marginBottom: spacing.sm,
   },
   heroTitle: {
     fontSize: 24,
@@ -511,15 +518,46 @@ const styles = StyleSheet.create({
   emptyText: { flex: 1, fontSize: 16, color: colors.secondaryText },
   moveButtons: { alignItems: 'center', gap: 2 },
 
-  deleteButton: {
-    alignItems: 'center',
+  /* ── Footer action card ── */
+  actionCard: {
     marginTop: spacing.xxl,
     marginHorizontal: spacing.lg,
-    padding: spacing.lg,
+    marginBottom: spacing.lg,
     backgroundColor: colors.cardBackground,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.squircle,
+    overflow: 'hidden',
+    ...shadow,
+    shadowOpacity: 0.06,
   },
-  deleteText: { fontSize: 16, fontWeight: '600', color: colors.danger },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md + 2,
+    gap: spacing.md,
+  },
+  actionIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.primaryText,
+  },
+  actionValue: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  actionDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: spacing.lg + 34 + spacing.md,
+  },
 
   /* ── Modals ── */
   keyboardAvoid: { flex: 1 },
@@ -562,24 +600,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   saveButton: {
-    backgroundColor: colors.activeTab,
     borderRadius: borderRadius.sm,
     padding: spacing.lg,
     alignItems: 'center',
-  },
+  }, // backgroundColor applied inline via categoryColor
   saveDisabled: { opacity: 0.4 },
   saveText: { color: '#FFF', fontSize: 17, fontWeight: '600' },
 
-  /* ── Icon Picker ── */
-  iconSheet: {
-    backgroundColor: colors.cardBackground,
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl + 8,
-    maxHeight: '60%',
-  },
+  /* ── Sheet handle + title (shared by category picker) ── */
   iconSheetHandle: {
     width: 36,
     height: 4,
@@ -595,25 +623,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
-  iconGrid: {
+  /* ── Category Picker ── */
+  categorySheet: {
+    backgroundColor: colors.cardBackground,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl + 8,
+    maxHeight: '65%',
+  },
+  categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    justifyContent: 'flex-start',
     paddingBottom: spacing.lg,
   },
-  iconCell: {
-    width: 52,
-    height: 52,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background,
+  categoryChip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
     borderColor: colors.border,
+    backgroundColor: colors.background,
   },
-  iconCellActive: {
-    backgroundColor: '#CC0000',
-    borderColor: '#CC0000',
+  categoryChipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.secondaryText,
   },
 });
