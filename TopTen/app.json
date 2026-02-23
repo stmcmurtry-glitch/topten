@@ -30,7 +30,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-localization"
     ]
   }
 }

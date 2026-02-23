@@ -1,6 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import * as Sentry from '@sentry/react-native';
 import React, { useState, useEffect } from 'react';
+import { PostHogProvider } from 'posthog-react-native';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
@@ -48,17 +49,22 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ListProvider>
-          <CommunityProvider>
-            <NavigationContainer>
-              <TabNavigator />
-              <StatusBar style="auto" />
-            </NavigationContainer>
-          </CommunityProvider>
-        </ListProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <PostHogProvider
+      apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ''}
+      options={{ host: 'https://us.i.posthog.com' }}
+    >
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ListProvider>
+            <CommunityProvider>
+              <NavigationContainer>
+                <TabNavigator />
+                <StatusBar style="auto" />
+              </NavigationContainer>
+            </CommunityProvider>
+          </ListProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </PostHogProvider>
   );
 }
