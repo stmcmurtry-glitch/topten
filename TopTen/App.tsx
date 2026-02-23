@@ -1,5 +1,11 @@
 import 'react-native-url-polyfill/auto';
+import * as Sentry from '@sentry/react-native';
 import React, { useState, useEffect } from 'react';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
+  enabled: !__DEV__,  // only capture crashes in production builds
+});
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
