@@ -129,3 +129,39 @@ export async function searchAthletes(query: string): Promise<SearchResult[]> {
   searchCache.set(key, results);
   return results;
 }
+
+// Generic Wikipedia search for any query (used by People category)
+export async function searchWikipedia(query: string): Promise<SearchResult[]> {
+  if (!query.trim()) return [];
+
+  const key = `wp:${query.toLowerCase().trim()}`;
+  if (searchCache.has(key)) return searchCache.get(key)!;
+
+  const params = new URLSearchParams({
+    action: 'query',
+    generator: 'search',
+    gsrsearch: query,
+    gsrlimit: '20',
+    gsrnamespace: '0',
+    prop: 'pageimages',
+    piprop: 'thumbnail',
+    pithumbsize: '185',
+    format: 'json',
+    origin: '*',
+  });
+
+  const res = await fetch(`${WP_API}?${params}`);
+  if (!res.ok) throw new Error(`Wikipedia ${res.status}`);
+  const data = await res.json();
+
+  const pages: Record<string, any> = data.query?.pages ?? {};
+  const results: SearchResult[] = Object.values(pages)
+    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+    .map((page) => ({
+      title: page.title,
+      imageUrl: page.thumbnail?.source,
+    }));
+
+  searchCache.set(key, results);
+  return results;
+}

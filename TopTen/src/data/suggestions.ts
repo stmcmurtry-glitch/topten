@@ -1,21 +1,25 @@
 import { searchMovies, searchTVShows } from '../services/tmdb';
-import { searchAthletes } from '../services/wikipedia';
+import { searchAthletes, searchWikipedia } from '../services/wikipedia';
+import { searchMusic } from '../services/musicbrainz';
+import { searchMeals } from '../services/mealdb';
+import { searchDrinks } from '../services/cocktaildb';
+import { searchGames } from '../services/rawg';
+import {
+  TRAVEL_DESTINATIONS,
+  PEOPLE_NAMES,
+  FASHION_ITEMS,
+  HEALTH_ITEMS,
+  TECH_ITEMS,
+  NATURE_ITEMS,
+  ARTS_ITEMS,
+  MISC_ITEMS,
+} from './staticSearchLists';
 
 export interface SearchResult {
   title: string;
   imageUrl?: string;
   year?: string;
 }
-
-const foods = [
-  'Pizza', 'Sushi', 'Tacos', 'Pasta', 'Burgers', 'Ramen', 'Steak',
-  'Pad Thai', 'Ice Cream', 'Fried Chicken', 'Curry', 'Pho',
-  'Dumplings', 'Fish and Chips', 'Chocolate Cake',
-];
-
-const staticLists: Record<string, string[]> = {
-  Foods: foods,
-};
 
 const COVERS_BASE = 'https://covers.openlibrary.org/b/id';
 
@@ -43,32 +47,64 @@ async function searchBooks(query: string): Promise<SearchResult[]> {
   }));
 }
 
-function searchStatic(category: string, query: string): SearchResult[] {
-  const list = staticLists[category] ?? [];
+function searchStaticList(list: string[], query: string): SearchResult[] {
   const filtered = query.trim()
     ? list.filter((s) => s.toLowerCase().includes(query.toLowerCase()))
     : list;
-  return filtered.map((title) => ({ title }));
+  return filtered.slice(0, 40).map((title) => ({ title }));
 }
 
 export type SearchCategory = 'Movies' | 'Books' | string;
 
-export const isApiCategory = (category: string): boolean =>
-  category === 'Movies' || category === 'TV' || category === 'Books' || category === 'Sports';
+export const isApiCategory = (category: string): boolean => [
+  'Movies', 'TV', 'Books', 'Sports', 'Music', 'Food', 'Drinks',
+  'Gaming', 'People', 'Travel', 'Fashion', 'Health', 'Tech',
+  'Nature', 'Arts', 'Miscellaneous',
+].includes(category);
 
 export async function searchSuggestions(
   category: string,
   query: string,
 ): Promise<SearchResult[]> {
-  if (category === 'Movies') {
-    const movies = await searchMovies(query);
-    return movies.map((m) => ({ title: m.title, imageUrl: m.imageUrl, year: m.year }));
+  switch (category) {
+    case 'Movies': {
+      const movies = await searchMovies(query);
+      return movies.map((m) => ({ title: m.title, imageUrl: m.imageUrl, year: m.year }));
+    }
+    case 'TV': {
+      const shows = await searchTVShows(query);
+      return shows.map((s) => ({ title: s.title, imageUrl: s.imageUrl, year: s.year }));
+    }
+    case 'Books':
+      return searchBooks(query);
+    case 'Sports':
+      return searchAthletes(query);
+    case 'Music':
+      return searchMusic(query);
+    case 'Food':
+      return searchMeals(query);
+    case 'Drinks':
+      return searchDrinks(query);
+    case 'Gaming':
+      return searchGames(query);
+    case 'People':
+      if (!query.trim()) return searchStaticList(PEOPLE_NAMES, query);
+      return searchWikipedia(query).catch(() => searchStaticList(PEOPLE_NAMES, query));
+    case 'Travel':
+      return searchStaticList(TRAVEL_DESTINATIONS, query);
+    case 'Fashion':
+      return searchStaticList(FASHION_ITEMS, query);
+    case 'Health':
+      return searchStaticList(HEALTH_ITEMS, query);
+    case 'Tech':
+      return searchStaticList(TECH_ITEMS, query);
+    case 'Nature':
+      return searchStaticList(NATURE_ITEMS, query);
+    case 'Arts':
+      return searchStaticList(ARTS_ITEMS, query);
+    case 'Miscellaneous':
+      return searchStaticList(MISC_ITEMS, query);
+    default:
+      return [];
   }
-  if (category === 'TV') {
-    const shows = await searchTVShows(query);
-    return shows.map((s) => ({ title: s.title, imageUrl: s.imageUrl, year: s.year }));
-  }
-  if (category === 'Books') return searchBooks(query);
-  if (category === 'Sports') return searchAthletes(query);
-  return searchStatic(category, query);
 }
