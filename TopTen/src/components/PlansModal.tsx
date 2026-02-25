@@ -31,49 +31,33 @@ interface Tier {
 const TIERS: Tier[] = [
   {
     id: 'basic',
-    name: 'Basic',
+    name: 'Free',
     price: 'Free',
     priceDetail: 'forever',
     accentColor: colors.secondaryText,
-    note: '$0.99 per master list download',
     features: [
-      { label: 'Up to 10 lists', included: true },
-      { label: 'Favorites tracking', included: true },
-      { label: 'Pre-made databases', included: false },
-      { label: 'Social sharing', included: false },
-      { label: 'Friends feature', included: false },
+      { label: 'Up to 100 lists', included: true },
+      { label: 'Community rankings & voting', included: true },
+      { label: 'Discover featured lists', included: true },
       { label: 'Unlimited lists', included: false },
+      { label: 'Unlimited search (movies, TV, books)', included: false },
+      { label: 'No ads', included: false },
     ],
   },
   {
     id: 'premium',
     name: 'Premium',
-    price: '$0.99',
+    price: '$2.49',
     priceDetail: 'per month',
     accentColor: '#CC0000',
-    features: [
-      { label: 'Up to 50 lists', included: true },
-      { label: 'Favorites tracking', included: true },
-      { label: 'Pre-made databases', included: true },
-      { label: 'Social sharing', included: false },
-      { label: 'Friends feature', included: false },
-      { label: 'Unlimited lists', included: false },
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: '$2.99',
-    priceDetail: 'per month',
-    accentColor: '#30D158',
     dark: true,
+    note: 'Or $9.99 / year — save 33%',
     features: [
       { label: 'Unlimited lists', included: true },
-      { label: 'Favorites tracking', included: true },
-      { label: 'Pre-made databases', included: true },
-      { label: 'Social sharing', included: true },
-      { label: 'Friends feature', included: true },
-      { label: 'Full database access', included: true },
+      { label: 'Community rankings & voting', included: true },
+      { label: 'Discover featured lists', included: true },
+      { label: 'Unlimited search (movies, TV, books)', included: true },
+      { label: 'No ads', included: true },
     ],
   },
 ];
@@ -159,9 +143,7 @@ const TierCard: React.FC<{ tier: Tier; isCurrent: boolean }> = ({ tier, isCurren
             onPress={handleUpgrade}
             activeOpacity={0.85}
           >
-            <Text style={styles.upgradeButtonText}>
-              {tier.id === 'pro' ? 'Go Pro' : `Upgrade to ${tier.name}`}
-            </Text>
+            <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -188,8 +170,8 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, currentTier, on
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sheetTitle}>Choose Your Plan</Text>
-        <Text style={styles.sheetSub}>Unlock more lists, databases, and social features.</Text>
+        <Text style={styles.sheetTitle}>Upgrade to Premium</Text>
+        <Text style={styles.sheetSub}>Unlock unlimited lists, full search, and an ad-free experience.</Text>
 
         <ScrollView
           showsVerticalScrollIndicator={false}

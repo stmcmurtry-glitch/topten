@@ -23,7 +23,7 @@ import {
   DetectedLocation,
 } from '../services/locationService';
 
-const BASIC_LIMIT = 10;
+const BASIC_LIMIT = 100;
 
 /* ── Membership Card ── */
 const MembershipCard: React.FC<{ onViewPlans: () => void }> = ({ onViewPlans }) => {
