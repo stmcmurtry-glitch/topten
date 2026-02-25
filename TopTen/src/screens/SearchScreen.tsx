@@ -144,15 +144,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
             <TouchableOpacity style={styles.row} onPress={() => handleSelect(item)}>
               {item.imageUrl ? (
                 <Image source={{ uri: item.imageUrl }} style={styles.poster} />
-              ) : (
-                <View style={styles.posterPlaceholder}>
-                  <Ionicons
-                    name={category === 'Sports' ? 'trophy-outline' : 'film-outline'}
-                    size={20}
-                    color={colors.secondaryText}
-                  />
-                </View>
-              )}
+              ) : null}
               <View style={styles.rowInfo}>
                 <Text style={styles.rowText} numberOfLines={2}>{item.title}</Text>
                 {item.year ? <Text style={styles.rowYear}>{item.year}</Text> : null}
