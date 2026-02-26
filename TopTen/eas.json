@@ -9,7 +9,23 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_txzmkuvxTLOoICyCyDAkuINxOCx",
+        "EXPO_PUBLIC_GOOGLE_PLACES_KEY": "AIzaSyA4Tl56W8iiVhSW87gVdPC5bx1wfnXtCtM",
+        "EXPO_PUBLIC_TMDB_API_KEY": "312b88a8ed4b565fa96b878a6c28a3d0",
+        "EXPO_PUBLIC_UNSPLASH_ACCESS_KEY": "unqrIzAOMjppLYzOuOau81W5fKHuaUpyo8QPy8jesZI",
+        "EXPO_PUBLIC_EMAILJS_SERVICE_ID": "service_cy1hnmu",
+        "EXPO_PUBLIC_EMAILJS_PUBLIC_KEY": "urg1ejukteJjouKW4",
+        "EXPO_PUBLIC_EMAILJS_CONTACT_TEMPLATE": "template_7b9030u",
+        "EXPO_PUBLIC_EMAILJS_FEEDBACK_TEMPLATE": "template_39nwnsw",
+        "EXPO_PUBLIC_RAWG_API_KEY": "b0faa9fcabf642279cab689f374bcef7",
+        "EXPO_PUBLIC_POSTHOG_KEY": "phc_dhX3E2YBt1dIMChXD1WifTt4wEhTeaARrclXQks28m1",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://sapixeicileobndfzoiu.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_1DLktn4TKdemIpSUOqudow_NtxKEzx-",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://6cb68366300114a8a2675f48bcf5116d@o4510937814728704.ingest.us.sentry.io/4510937820102656"
+      }
     },
     "production": {
       "autoIncrement": true,

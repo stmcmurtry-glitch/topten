@@ -14,6 +14,8 @@ import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
 import { PickCard } from '../components/PickCard';
 import { FEATURED_LISTS } from '../data/featuredLists';
 import { COMMUNITY_LISTS, LOCAL_COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
+import { fetchLocalPlacesLists } from '../services/googlePlacesService';
+import { registerDynamicLists } from '../data/dynamicListRegistry';
 import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { fetchCategoryImage } from '../services/imageService';
@@ -79,11 +81,22 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
   const [activeCategory, setActiveCategory] = useState('All');
   // undefined = still detecting, null = failed / no match
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
+  const [localPlacesLists, setLocalPlacesLists] = useState<CommunityList[]>([]);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     getDetectedLocation().then(setDetectedLocation);
   }, []);
+
+  useEffect(() => {
+    if (!detectedLocation?.city) return;
+    fetchLocalPlacesLists(detectedLocation.city).then((lists) => {
+      if (lists.length > 0) {
+        registerDynamicLists(lists);
+        setLocalPlacesLists(lists);
+      }
+    });
+  }, [detectedLocation?.city]);
 
   const allCategories = ['All', ...ALL_CATEGORY_LABELS];
 
@@ -110,6 +123,12 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
   const filteredLocal = activeCategory === 'All'
     ? locationFiltered
     : locationFiltered.filter((cl) => cl.category === activeCategory);
+
+  const filteredPlaces = activeCategory === 'All'
+    ? localPlacesLists
+    : localPlacesLists.filter((cl) => cl.category === activeCategory);
+
+  const allLocalLists = [...filteredLocal, ...filteredPlaces];
 
   return (
     <ScrollView
@@ -198,7 +217,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       )}
 
       {/* In your area */}
-      {filteredLocal.length > 0 && (
+      {allLocalLists.length > 0 && (
         <>
           <View style={styles.divider} />
           <View style={styles.sectionHeaderRow}>
@@ -217,7 +236,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.carousel}
           >
-            {filteredLocal.map((cl) => (
+            {allLocalLists.map((cl) => (
               <CommunityCard
                 key={cl.id}
                 list={cl}

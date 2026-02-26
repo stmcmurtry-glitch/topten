@@ -13,8 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { FEATURED_LISTS, POPULAR_LISTS, STARTER_LISTS, FeaturedList, PopularList } from '../data/featuredLists';
+import { LOCAL_COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
+import { fetchLocalPlacesLists } from '../services/googlePlacesService';
+import { registerDynamicLists } from '../data/dynamicListRegistry';
 import { fetchFeaturedItems, fetchFeaturedImage } from '../services/featuredContentService';
 import { CATEGORY_COLORS } from '../components/FeedRow';
+import { getDetectedLocation, regionMatches, DetectedLocation } from '../services/locationService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
@@ -47,7 +51,34 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     const listId = existing ? existing.id : addList(item.category, item.title, TEMPLATE_DESCRIPTIONS[item.title]);
     navigation.navigate('ListDetail', { listId });
   }, [lists, addList, navigation]);
+
   const [query, setQuery] = useState('');
+  const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
+  const [localPlacesLists, setLocalPlacesLists] = useState<CommunityList[]>([]);
+
+  useEffect(() => {
+    getDetectedLocation().then(setDetectedLocation);
+  }, []);
+
+  useEffect(() => {
+    if (!detectedLocation?.city) return;
+    fetchLocalPlacesLists(detectedLocation.city).then((lists) => {
+      if (lists.length > 0) {
+        registerDynamicLists(lists);
+        setLocalPlacesLists(lists);
+      }
+    });
+  }, [detectedLocation?.city]);
+
+  const localLists = useMemo(() => {
+    if (!detectedLocation) return [];
+    return LOCAL_COMMUNITY_LISTS.filter(l => l.region && regionMatches(l.region, detectedLocation));
+  }, [detectedLocation]);
+
+  const allLocalLists = useMemo(
+    () => [...localLists, ...localPlacesLists],
+    [localLists, localPlacesLists]
+  );
 
   const q = query.toLowerCase().trim();
 
@@ -141,6 +172,34 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               </React.Fragment>
             ))}
           </View>
+
+          {/* In your area */}
+          {allLocalLists.length > 0 && (
+            <>
+              <View style={styles.areaSectionHeader}>
+                <Text style={styles.sectionHeader}>In Your Area</Text>
+                {detectedLocation && (
+                  <View style={styles.areaLocationPill}>
+                    <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
+                    <Text style={styles.areaLocationText}>
+                      {detectedLocation.city || detectedLocation.region}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.popularCard}>
+                {allLocalLists.map((list, index) => (
+                  <React.Fragment key={list.id}>
+                    <CommunityRow
+                      list={list}
+                      onPress={() => navigation.navigate('CommunityList', { communityListId: list.id })}
+                    />
+                    {index < allLocalLists.length - 1 && <View style={styles.popularDivider} />}
+                  </React.Fragment>
+                ))}
+              </View>
+            </>
+          )}
         </ScrollView>
       )}
     </View>
@@ -184,6 +243,16 @@ const FeaturedCard: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ l
 
 /* ── Popular Row (thin card inside grouped container) ── */
 const PopularRow: React.FC<{ list: PopularList; onPress: () => void }> = ({ list, onPress }) => (
+  <TouchableOpacity style={styles.popularRow} onPress={onPress} activeOpacity={0.6}>
+    <View style={[styles.popularDot, { backgroundColor: list.color }]} />
+    <Text style={styles.popularTitle} numberOfLines={1}>{list.title}</Text>
+    <Text style={styles.popularCategory}>{list.category}</Text>
+    <Ionicons name="chevron-forward" size={14} color={colors.border} />
+  </TouchableOpacity>
+);
+
+/* ── Community Row (In Your Area) ── */
+const CommunityRow: React.FC<{ list: CommunityList; onPress: () => void }> = ({ list, onPress }) => (
   <TouchableOpacity style={styles.popularRow} onPress={onPress} activeOpacity={0.6}>
     <View style={[styles.popularDot, { backgroundColor: list.color }]} />
     <Text style={styles.popularTitle} numberOfLines={1}>{list.title}</Text>
@@ -249,6 +318,28 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
     marginBottom: spacing.md,
+  },
+  areaSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: spacing.lg,
+  },
+  areaLocationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(204,0,0,0.08)',
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  areaLocationText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.activeTab,
   },
   carousel: {
     paddingHorizontal: spacing.lg,

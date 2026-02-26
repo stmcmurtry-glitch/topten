@@ -17,9 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { COMMUNITY_LISTS, LOCAL_COMMUNITY_LISTS } from '../data/communityLists';
-
-const ALL_COMMUNITY_LISTS = [...COMMUNITY_LISTS, ...LOCAL_COMMUNITY_LISTS];
+import { resolveCommunityList } from '../data/dynamicListRegistry';
 import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
@@ -41,7 +39,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     submitRanking,
   } = useCommunity();
 
-  const list = ALL_COMMUNITY_LISTS.find((l) => l.id === communityListId);
+  const list = resolveCommunityList(communityListId);
   const [activeTab, setActiveTab] = useState<'community' | 'yours'>('community');
   const [loadingScores, setLoadingScores] = useState(true);
   const [submitConfirmed, setSubmitConfirmed] = useState(false);

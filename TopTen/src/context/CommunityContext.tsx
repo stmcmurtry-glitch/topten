@@ -3,9 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import * as Crypto from 'expo-crypto';
 import { usePostHog } from 'posthog-react-native';
-import { COMMUNITY_LISTS, LOCAL_COMMUNITY_LISTS } from '../data/communityLists';
-
-const ALL_COMMUNITY_LISTS = [...COMMUNITY_LISTS, ...LOCAL_COMMUNITY_LISTS];
+import { resolveCommunityList } from '../data/dynamicListRegistry';
 import { supabase } from '../services/supabase';
 import { containsProfanity } from '../services/profanityFilter';
 
@@ -83,7 +81,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   const fetchLiveScores = useCallback(async (listId: string) => {
-    const list = ALL_COMMUNITY_LISTS.find((l) => l.id === listId);
+    const list = resolveCommunityList(listId);
     if (!list || !supabase) return;
 
     try {
