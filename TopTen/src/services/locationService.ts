@@ -19,6 +19,11 @@ let memCache: DetectedLocation | null | undefined = undefined;
  * Returns null if the request fails or if no network is available.
  */
 export async function getDetectedLocation(): Promise<DetectedLocation | null> {
+  const mockCity = process.env.EXPO_PUBLIC_MOCK_CITY;
+  if (mockCity) {
+    return { city: mockCity, region: '', country: 'US', detectedAt: Date.now() };
+  }
+
   if (memCache !== undefined) return memCache;
 
   // Try the on-disk cache first
