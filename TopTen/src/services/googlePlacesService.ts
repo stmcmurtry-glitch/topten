@@ -9,6 +9,11 @@ const VENUE_KEYWORDS = [
   'cafe', 'cafes', 'coffee shop', 'coffee shops',
 ];
 
+// Keywords that indicate a "places to visit" list (Travel category → tourist_attraction)
+const PLACES_TO_VISIT_KEYWORDS = [
+  'places to visit', 'places to see', 'attractions', 'landmarks', 'sights',
+];
+
 // Keywords that suggest a list is about products/brands (→ do NOT use Google Places)
 const PRODUCT_KEYWORDS = [
   'wine', 'wines', 'cocktail', 'cocktails', 'beer', 'beers', 'whiskey', 'whisky',
@@ -24,11 +29,13 @@ const PRODUCT_KEYWORDS = [
  * beers, spirits). Bars and coffee shops live under Food as venue types.
  */
 export function isVenueList(listTitle: string, category: string): boolean {
-  if (category !== 'Food') return false;
   const t = (listTitle ?? '').toLowerCase();
+  if (category === 'Travel') {
+    return PLACES_TO_VISIT_KEYWORDS.some((kw) => t.includes(kw));
+  }
+  if (category !== 'Food') return false;
   if (PRODUCT_KEYWORDS.some((kw) => t.includes(kw))) return false;
   if (VENUE_KEYWORDS.some((kw) => t.includes(kw))) return true;
-  // Default: only use Places when the title explicitly mentions a venue type
   return false;
 }
 
@@ -37,6 +44,7 @@ export const isPlacesCategory = (category: string): boolean =>
   ['Food', 'Drinks'].includes(category);
 
 export function derivePlacesType(listTitle: string, category: string): string {
+  if (category === 'Travel') return 'tourist_attraction';
   const t = (listTitle ?? '').toLowerCase();
   if (t.includes('coffee') || t.includes('cafe')) return 'cafe';
   if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bar';
@@ -45,6 +53,7 @@ export function derivePlacesType(listTitle: string, category: string): string {
 }
 
 export function derivePlacesQuery(listTitle: string, category: string): string {
+  if (category === 'Travel') return 'top attractions and places to visit';
   const t = (listTitle ?? '').toLowerCase();
   if (t.includes('pizza')) return 'pizza restaurants';
   if (t.includes('wing')) return 'wings restaurants';
@@ -84,6 +93,7 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 interface PlaceConfig {
   slug: string;
   queryTerm: string;
+  placeType?: string;
   title: (city: string) => string;
   icon: string;
   color: string;
@@ -137,6 +147,16 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `The best cafes and coffee shops in ${city}.`,
   },
+  {
+    slug: 'places',
+    queryTerm: 'top attractions and places to visit',
+    placeType: 'tourist_attraction',
+    title: (city) => `Best Places to Visit in ${city}`,
+    icon: 'map-outline',
+    color: '#0984E3',
+    appCategory: 'Travel',
+    description: (city) => `The landmarks, neighborhoods, and hidden gems that make ${city} worth the trip.`,
+  },
 ];
 
 function slugify(city: string): string {
@@ -164,7 +184,8 @@ async function fetchPlacesForConfig(
   }
 
   const query = encodeURIComponent(`best ${config.queryTerm} in ${city}`);
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}&key=${GOOGLE_PLACES_KEY}`;
+  const typeParam = config.placeType ? `&type=${config.placeType}` : '';
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
 
   const response = await fetch(url);
   if (!response.ok) return null;

@@ -697,13 +697,13 @@ export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
   },
   {
     id: 'local-philly-things',
-    title: 'Best Things to Do in Philly',
+    title: 'Best Places to Visit in Philly',
     category: 'Travel',
     color: '#0984E3',
     icon: 'airplane-outline',
     imageQuery: 'philadelphia skyline city architecture street',
     region: 'Philadelphia',
-    description: "From the Rocky steps to Reading Terminal — what makes Philly worth the trip?",
+    description: "From the Rocky steps to Reading Terminal — the landmarks and neighborhoods that define Philly.",
     participantCount: 143,
     items: [
       { id: 'lpt-1',  title: 'Philadelphia Museum of Art (Rocky Steps)', seedScore: 94 },
