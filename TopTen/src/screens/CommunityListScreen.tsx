@@ -173,7 +173,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     setTimeout(() => {
       setSubmitConfirmed(false);
       setActiveTab('community');
-    }, 1200);
+    }, 2500);
   };
 
   // ── Hero ─────────────────────────────────────────────────────────────────
@@ -373,6 +373,11 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                 </Text>
               </Animated.View>
             </TouchableOpacity>
+            {submitConfirmed && (
+              <Text style={styles.batchNotice}>
+                Community scores update overnight — check back tomorrow!
+              </Text>
+            )}
           </View>
         )}
       </ScrollView>
@@ -643,6 +648,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   }, // backgroundColor applied inline via list.color
   submitButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  batchNotice: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: colors.secondaryText,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
