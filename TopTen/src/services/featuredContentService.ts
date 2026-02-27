@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTopRatedMovies, getTopRatedTVShows } from './tmdb';
 import { FeaturedList } from '../data/featuredLists';
 
-const CACHE_V = 'v3';
+const CACHE_V = 'v4';
 const ITEMS_PREFIX = `@topten_fitems_${CACHE_V}_`;
 const IMAGE_PREFIX = `@topten_fimg_${CACHE_V}_`;
 
@@ -99,9 +99,9 @@ const STATIC_ITEMS: Record<string, string[]> = {
   'f-25': [
     'Eric Dickerson — 2,105 yds (Rams, 1984)', 'Adrian Peterson — 2,097 yds (Vikings, 2012)',
     'Jamal Lewis — 2,066 yds (Ravens, 2003)', 'Barry Sanders — 2,053 yds (Lions, 1997)',
-    'Derrick Henry — 2,027 yds (Titans, 2020)', 'O.J. Simpson — 2,003 yds (Bills, 1973)',
-    'Earl Campbell — 1,934 yds (Oilers, 1980)', 'Jim Brown — 1,863 yds (Browns, 1963)',
-    'Walter Payton — 1,852 yds (Bears, 1977)', 'Tiki Barber — 1,860 yds (Giants, 2005)',
+    'Derrick Henry — 2,027 yds (Titans, 2020)', 'Saquon Barkley — 2,005 yds (Eagles, 2024)',
+    'O.J. Simpson — 2,003 yds (Bills, 1973)', 'Earl Campbell — 1,934 yds (Oilers, 1980)',
+    'Jim Brown — 1,863 yds (Browns, 1963)', 'Tiki Barber — 1,860 yds (Giants, 2005)',
   ],
   'f-26': [
     'Brazil — 5 titles (1958, 62, 70, 94, 02)', 'Germany — 4 titles (1954, 74, 90, 2014)',

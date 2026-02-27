@@ -337,7 +337,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'american football running back stadium crowd action',
     previewItems: ['Eric Dickerson — 2,105 yds (Rams, 1984)', 'Adrian Peterson — 2,097 yds (Vikings, 2012)', 'Jamal Lewis — 2,066 yds (Ravens, 2003)', 'Barry Sanders — 2,053 yds (Lions, 1997)', 'Derrick Henry — 2,027 yds (Titans, 2020)'],
-    description: 'Official single-season rushing yard totals from NFL record books. The 2,000-yard season is the benchmark of greatness — only eight backs have crossed it.',
+    description: 'Official single-season rushing yard totals from NFL record books. The 2,000-yard season is the benchmark of greatness — only nine backs have ever crossed it.',
   },
   {
     id: 'f-26',
