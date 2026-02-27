@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { FeedRow } from '../components/FeedRow';
+import { PhotoPickerModal } from '../components/PhotoPickerModal';
 import { CATEGORIES, CATEGORY_COLORS } from '../data/categories';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
@@ -17,9 +18,11 @@ const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 const ALL_PILLS = ['All', ...ALL_CATEGORY_LABELS];
 
 export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { lists } = useListContext();
+  const { lists, updateListMeta } = useListContext();
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [editingListId, setEditingListId] = useState<string | null>(null);
+  const editingList = lists.find((l) => l.id === editingListId);
 
   const filteredLists = activeCategory === 'All'
     ? lists
@@ -88,6 +91,7 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
                 onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
                 flat
                 rank={index + 1}
+                onPressThumb={() => setEditingListId(list.id)}
               />
               {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
             </React.Fragment>
@@ -119,6 +123,15 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
           <Ionicons name="chevron-forward" size={15} color={colors.activeTab} />
         </TouchableOpacity>
       )}
+      <PhotoPickerModal
+        visible={editingListId !== null}
+        onClose={() => setEditingListId(null)}
+        title="Profile Image"
+        currentUri={editingList?.profileImageUri}
+        onSelectUri={(uri) => {
+          if (editingListId) updateListMeta(editingListId, { profileImageUri: uri });
+        }}
+      />
     </ScrollView>
   );
 };

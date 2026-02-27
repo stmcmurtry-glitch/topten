@@ -12,9 +12,10 @@ interface FeedRowProps {
   onPress: () => void;
   flat?: boolean;
   rank?: number;
+  onPressThumb?: () => void;
 }
 
-export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank }) => {
+export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank, onPressThumb }) => {
   const thumbColor = CATEGORY_COLORS[list.category] ?? '#AAAAAA';
   const filled = list.items.length;
 
@@ -24,7 +25,16 @@ export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank }) =
         {rank !== undefined && (
           <Text style={styles.rankNumber}>{rank}</Text>
         )}
-        <ListThumbnail list={list} size={44} radius={9} />
+        <TouchableOpacity onPress={onPressThumb ?? onPress} activeOpacity={0.75} disabled={!onPressThumb}>
+          <View>
+            <ListThumbnail list={list} size={44} radius={9} />
+            {onPressThumb && (
+              <View style={styles.thumbEditBadge}>
+                <Ionicons name="camera" size={8} color="#FFF" />
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
         <View style={styles.info}>
           <Text style={styles.flatTitle} numberOfLines={1}>{list.title}</Text>
           <Text style={styles.subtitle}>{filled} of 10 filled</Text>
@@ -33,6 +43,7 @@ export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank }) =
       </TouchableOpacity>
     );
   }
+
 
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
@@ -86,6 +97,17 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
   },
