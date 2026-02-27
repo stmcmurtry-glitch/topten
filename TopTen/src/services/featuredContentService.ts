@@ -51,7 +51,7 @@ const STATIC_ITEMS: Record<string, string[]> = {
   ],
 };
 
-const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v1_`;
+const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v2_`;
 const communityImageMemCache = new Map<string, string | null>();
 
 // ── Community list images ──────────────────────────────────────────────────
@@ -61,10 +61,9 @@ export async function fetchCommunityImage(listId: string, imageQuery: string): P
 
   try {
     const stored = await AsyncStorage.getItem(COMMUNITY_IMAGE_PREFIX + listId);
-    if (stored !== null) {
-      const url = stored === '' ? null : stored;
-      communityImageMemCache.set(listId, url);
-      return url;
+    if (stored) {
+      communityImageMemCache.set(listId, stored);
+      return stored;
     }
   } catch {}
 
@@ -83,8 +82,11 @@ export async function fetchCommunityImage(listId: string, imageQuery: string): P
     }
   } catch {}
 
-  communityImageMemCache.set(listId, imageUrl);
-  try { await AsyncStorage.setItem(COMMUNITY_IMAGE_PREFIX + listId, imageUrl ?? ''); } catch {}
+  // Only cache successes — failures stay uncached so they retry on next load
+  if (imageUrl) {
+    communityImageMemCache.set(listId, imageUrl);
+    try { await AsyncStorage.setItem(COMMUNITY_IMAGE_PREFIX + listId, imageUrl); } catch {}
+  }
   return imageUrl;
 }
 
@@ -131,10 +133,9 @@ export async function fetchFeaturedImage(list: FeaturedList): Promise<string | n
 
   try {
     const stored = await AsyncStorage.getItem(IMAGE_PREFIX + list.id);
-    if (stored !== null) {
-      const url = stored === '' ? null : stored;
-      imageMemCache.set(list.id, url);
-      return url;
+    if (stored) {
+      imageMemCache.set(list.id, stored);
+      return stored;
     }
   } catch {}
 
@@ -161,7 +162,10 @@ export async function fetchFeaturedImage(list: FeaturedList): Promise<string | n
     }
   } catch {}
 
-  imageMemCache.set(list.id, imageUrl);
-  try { await AsyncStorage.setItem(IMAGE_PREFIX + list.id, imageUrl ?? ''); } catch {}
+  // Only cache successes — failures stay uncached so they retry on next load
+  if (imageUrl) {
+    imageMemCache.set(list.id, imageUrl);
+    try { await AsyncStorage.setItem(IMAGE_PREFIX + list.id, imageUrl); } catch {}
+  }
   return imageUrl;
 }
