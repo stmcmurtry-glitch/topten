@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { useCommunity } from '../context/CommunityContext';
 import { searchSuggestions, isApiCategory, SearchResult } from '../data/suggestions';
-import { isPlacesCategory, derivePlacesQuery, searchLocalPlaces } from '../services/googlePlacesService';
+import { isPlacesCategory, derivePlacesQuery, derivePlacesType, searchLocalPlaces } from '../services/googlePlacesService';
 import { getDetectedLocation } from '../services/locationService';
 import { TopTenItem } from '../data/schema';
 import { colors, spacing, borderRadius } from '../theme';
@@ -61,7 +61,8 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   const doPlacesSearch = useCallback((q: string, city: string) => {
     setLoading(true);
     const effectiveQuery = q.trim() || derivePlacesQuery(listTitle, category);
-    searchLocalPlaces(city, effectiveQuery)
+    const placeType = derivePlacesType(listTitle, category);
+    searchLocalPlaces(city, effectiveQuery, placeType)
       .then((r) => setResults(r as SearchResult[]))
       .catch(() => setResults([]))
       .finally(() => setLoading(false));

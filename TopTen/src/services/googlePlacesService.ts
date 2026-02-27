@@ -4,6 +4,14 @@ import { CommunityList, CommunityItem } from '../data/communityLists';
 export const isPlacesCategory = (category: string): boolean =>
   ['Food', 'Drinks'].includes(category);
 
+export function derivePlacesType(listTitle: string, category: string): string {
+  const t = (listTitle ?? '').toLowerCase();
+  if (t.includes('coffee') || t.includes('cafe')) return 'cafe';
+  if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bar';
+  if (category === 'Drinks') return 'bar';
+  return 'restaurant';
+}
+
 export function derivePlacesQuery(listTitle: string, category: string): string {
   const t = (listTitle ?? '').toLowerCase();
   if (t.includes('pizza')) return 'pizza restaurants';
@@ -20,11 +28,13 @@ export function derivePlacesQuery(listTitle: string, category: string): string {
 
 export async function searchLocalPlaces(
   city: string,
-  query: string
+  query: string,
+  placeType?: string
 ): Promise<Array<{ title: string }>> {
   if (!GOOGLE_PLACES_KEY || !city || !query.trim()) return [];
   const q = encodeURIComponent(`${query} in ${city}`);
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${q}&key=${GOOGLE_PLACES_KEY}`;
+  const typeParam = placeType ? `&type=${placeType}` : '';
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${q}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
   try {
     const response = await fetch(url);
     if (!response.ok) return [];
