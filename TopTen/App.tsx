@@ -1,6 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import * as Sentry from '@sentry/react-native';
 import React, { useState, useEffect } from 'react';
+import Purchases from 'react-native-purchases';
 import { PostHogProvider } from 'posthog-react-native';
 
 Sentry.init({
@@ -24,6 +25,12 @@ export default function App() {
   const [onboarded, setOnboarded] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
+    try {
+      const rcKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
+      if (rcKey) Purchases.configure({ apiKey: rcKey });
+    } catch (e) {
+      // RevenueCat unavailable in Expo Go — no-op
+    }
     AsyncStorage.getItem(ONBOARDED_KEY).then((val) => {
       setOnboarded(val === 'true');
     });
