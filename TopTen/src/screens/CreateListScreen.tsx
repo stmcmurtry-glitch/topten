@@ -32,7 +32,11 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
+          style={{ paddingVertical: 8, paddingHorizontal: 4 }}
+        >
           <Text style={styles.headerButton}>Cancel</Text>
         </TouchableOpacity>
       ),
@@ -40,6 +44,8 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
         <TouchableOpacity
           disabled={!canCreate}
           onPress={handleCreate}
+          hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
+          style={{ paddingVertical: 8, paddingHorizontal: 4 }}
         >
           <Text style={[styles.headerButton, styles.createButton, !canCreate && styles.disabled]}>
             Create

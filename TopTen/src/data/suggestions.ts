@@ -82,7 +82,7 @@ export async function searchSuggestions(
     case 'Sports':
       return searchSports(query, listTitle).catch(() => searchAthletes(query));
     case 'Music':
-      return searchMusic(query);
+      return searchMusic(query, listTitle);
     case 'Food':
       return searchMeals(query);
     case 'Drinks':

@@ -21,7 +21,7 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 
 export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { lists, reorderLists, updateListMeta } = useListContext();
-  const insets = useSafeAreaInsets();
+
   const [activeCategory, setActiveCategory] = useState('All');
   const [showAll, setShowAll] = React.useState(false);
   const [editingListId, setEditingListId] = useState<string | null>(null);
@@ -128,17 +128,7 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-        >
-          <Ionicons name="chevron-back" size={28} color={colors.activeTab} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Lists</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={styles.container}>
 
       <FlatList
         data={visibleLists}
@@ -181,18 +171,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.primaryText,
   },
   pillBar: {
     paddingBottom: spacing.md,

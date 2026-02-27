@@ -15,10 +15,12 @@ import {
   ScrollView,
 } from 'react-native';
 import { PhotoPickerModal } from '../components/PhotoPickerModal';
+import { PlansModal } from '../components/PlansModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
+import Purchases from 'react-native-purchases';
 import { useListContext } from '../data/ListContext';
 import { TopTenItem } from '../data/schema';
 import { CATEGORY_COLORS } from '../components/FeedRow';
@@ -88,6 +90,14 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [showReportModal, setShowReportModal] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [photoPickerTarget, setPhotoPickerTarget] = useState<'cover' | 'profile' | null>(null);
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+
+  useEffect(() => {
+    Purchases.getCustomerInfo()
+      .then(info => setIsPremium(!!info.entitlements.active['premium']))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { setSlots(buildSlots()); }, [buildSlots]);
   useEffect(() => { setDescription(list?.description ?? ''); }, [list?.id]);
@@ -157,7 +167,23 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
     }
   };
 
-  const handlePickCoverImage = () => setPhotoPickerTarget('cover');
+  const FREE_PHOTO_LIMIT = 10;
+
+  const isListCustomized = (l: typeof list) =>
+    !!(l?.coverImageUri || l?.profileImageUri);
+
+  const customizedCount = lists.filter(isListCustomized).length;
+  const thisListCustomized = isListCustomized(list);
+
+  const handlePickPhoto = (target: 'cover' | 'profile') => {
+    if (!isPremium && !thisListCustomized && customizedCount >= FREE_PHOTO_LIMIT) {
+      setShowPlansModal(true);
+      return;
+    }
+    setPhotoPickerTarget(target);
+  };
+
+  const handlePickCoverImage = () => handlePickPhoto('cover');
 
   if (!list) return null;
 
@@ -175,21 +201,17 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
       )}
       <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
 
-      {/* Nav bar: back button + category label */}
+      {/* Nav bar: back button + category label + image button */}
       <View style={[styles.heroNav, { top: insets.top + 6 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
+        <TouchableOpacity style={styles.heroNavBtnWrap} onPress={() => navigation.goBack()} activeOpacity={0.75}>
           <BlurView intensity={60} tint="dark" style={styles.heroNavBtn}>
-            <View style={styles.heroNavBtnInner}>
-              <Ionicons name="chevron-back" size={26} color="#FFF" />
-            </View>
+            <Ionicons name="chevron-back" size={20} color="#FFF" />
           </BlurView>
         </TouchableOpacity>
         <Text style={styles.heroNavCategory}>{list.category.toUpperCase()}</Text>
-        <TouchableOpacity onPress={handlePickCoverImage} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
+        <TouchableOpacity style={styles.heroNavBtnWrapRight} onPress={handlePickCoverImage} activeOpacity={0.75}>
           <BlurView intensity={60} tint="dark" style={styles.heroNavBtn}>
-            <View style={styles.heroNavBtnInner}>
-              <Ionicons name="image-outline" size={20} color="#FFF" />
-            </View>
+            <Ionicons name="image-outline" size={20} color="#FFF" />
           </BlurView>
         </TouchableOpacity>
       </View>
@@ -295,7 +317,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
             <View style={styles.actionDivider} />
 
             {/* Profile image */}
-            <TouchableOpacity style={styles.actionRow} onPress={() => setPhotoPickerTarget('profile')} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.actionRow} onPress={() => handlePickPhoto('profile')} activeOpacity={0.7}>
               <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
                 <Ionicons name="person-circle-outline" size={18} color={categoryColor} />
               </View>
@@ -419,6 +441,10 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           }
         }}
       />
+      <PlansModal
+        visible={showPlansModal}
+        onClose={() => setShowPlansModal(false)}
+      />
 
       {/* Category picker */}
       <Modal visible={showCategoryPicker} transparent animationType="slide">
@@ -480,14 +506,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  heroNavBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
+  heroNavBtnWrap: {
+    padding: 10,
+    marginLeft: -10,
+    marginTop: -10,
   },
-  heroNavBtnInner: {
-    flex: 1,
+  heroNavBtnWrapRight: {
+    padding: 10,
+    marginRight: -10,
+    marginTop: -10,
+  },
+  heroNavBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -16,6 +16,7 @@ import { ContactScreen } from '../screens/ContactScreen';
 import { FeaturedListScreen } from '../screens/FeaturedListScreen';
 import { CommunityListScreen } from '../screens/CommunityListScreen';
 import { YourDataScreen } from '../screens/YourDataScreen';
+import { FAQScreen } from '../screens/FAQScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -37,7 +38,7 @@ const HomeStack = () => (
     <Stack.Screen
       name="ListDetail"
       component={ListDetailScreen}
-      options={{ headerShown: false, title: '' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="CreateList"
@@ -47,7 +48,7 @@ const HomeStack = () => (
     <Stack.Screen
       name="AllLists"
       component={AllListsScreen}
-      options={{ headerShown: false }}
+      options={{ title: 'My Lists', headerLargeTitle: false }}
     />
     <Stack.Screen
       name="Search"
@@ -62,7 +63,7 @@ const HomeStack = () => (
     <Stack.Screen
       name="CommunityList"
       component={CommunityListScreen}
-      options={{ headerShown: false }}
+      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
     />
   </Stack.Navigator>
 );
@@ -77,12 +78,12 @@ const MyListsStack = () => (
     <Stack.Screen
       name="AllLists"
       component={AllListsScreen}
-      options={{ headerShown: false }}
+      options={{ title: 'My Lists', headerLargeTitle: false }}
     />
     <Stack.Screen
       name="ListDetail"
       component={ListDetailScreen}
-      options={{ headerShown: false, title: '' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="CreateList"
@@ -97,7 +98,7 @@ const MyListsStack = () => (
     <Stack.Screen
       name="CommunityList"
       component={CommunityListScreen}
-      options={{ headerShown: false }}
+      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
     />
   </Stack.Navigator>
 );
@@ -117,7 +118,7 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="FeaturedList"
       component={FeaturedListScreen}
-      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="Search"
@@ -158,6 +159,11 @@ const SettingsStack = () => (
       name="YourData"
       component={YourDataScreen}
       options={{ title: 'Your Data', headerLargeTitle: false }}
+    />
+    <Stack.Screen
+      name="FAQ"
+      component={FAQScreen}
+      options={{ title: 'FAQ', headerLargeTitle: false }}
     />
   </Stack.Navigator>
 );

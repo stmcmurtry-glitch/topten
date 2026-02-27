@@ -184,13 +184,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
 
       <View style={[styles.heroNav, { top: insets.top + 6 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={44}>
-          <BlurView intensity={60} tint="dark" style={styles.heroNavBtn}>
-            <View style={styles.heroNavBtnInner}>
-              <Ionicons name="chevron-back" size={26} color="#FFF" />
-            </View>
-          </BlurView>
-        </TouchableOpacity>
+        <View style={{ width: 44 }} />
         <Text style={styles.heroNavCategory} numberOfLines={1}>{list.category.toUpperCase()}</Text>
         <View style={styles.heroBadge}>
           {submitted ? (
@@ -478,6 +472,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  heroNavBtnWrap: {
+    padding: 10,
+    marginLeft: -10,
+    marginTop: -10,
   },
   heroNavBtn: {
     width: 44,

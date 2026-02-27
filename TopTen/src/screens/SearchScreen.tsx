@@ -29,7 +29,8 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+          hitSlop={{ top: 16, bottom: 16, left: 20, right: 20 }}
+          style={{ paddingVertical: 8, paddingHorizontal: 4 }}
         >
           <Ionicons name="chevron-back" size={28} color={colors.activeTab} />
         </TouchableOpacity>

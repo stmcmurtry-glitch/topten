@@ -14,13 +14,16 @@ import { Ionicons } from '@expo/vector-icons';
 import Purchases, { PurchasesPackage } from 'react-native-purchases';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
-const FEATURES = [
-  { label: 'Unlimited lists', free: false },
-  { label: 'Up to 100 lists', free: true, freeOnly: true },
-  { label: 'Community rankings & voting', free: true },
-  { label: 'Discover featured lists', free: true },
-  { label: 'Unlimited search (movies, TV, books)', free: false },
-  { label: 'No ads', free: false },
+const PREMIUM_FEATURES = [
+  'Unlimited lists',
+  'Unlimited custom cover photos',
+  'No ads',
+];
+
+const BASIC_FEATURES = [
+  'Community rankings & voting',
+  'Discover featured lists',
+  'Build up to 100 lists free',
 ];
 
 interface PlansModalProps {
@@ -170,22 +173,33 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, onClose }) => {
 
           {/* Feature list */}
           <View style={styles.featureCard}>
-            {FEATURES.filter(f => !f.freeOnly).map((f, i, arr) => (
-              <React.Fragment key={f.label}>
+            {/* Premium features */}
+            {PREMIUM_FEATURES.map((label, i) => (
+              <React.Fragment key={label}>
                 <View style={styles.featureRow}>
-                  <Ionicons
-                    name={f.free ? 'checkmark-circle' : 'checkmark-circle'}
-                    size={20}
-                    color={f.free ? '#34C759' : colors.activeTab}
-                  />
+                  <Ionicons name="checkmark-circle" size={20} color="#34C759" />
                   <View style={styles.featureText}>
-                    <Text style={styles.featureLabel}>{f.label}</Text>
-                    {!f.free && (
-                      <Text style={styles.featurePremiumTag}>Premium</Text>
-                    )}
+                    <Text style={styles.featureLabel}>{label}</Text>
+                    <Text style={styles.featurePremiumTag}>Premium</Text>
                   </View>
                 </View>
-                {i < arr.length - 1 && <View style={styles.featureDivider} />}
+                {i < PREMIUM_FEATURES.length - 1 && <View style={styles.featureDivider} />}
+              </React.Fragment>
+            ))}
+
+            {/* Basic section divider */}
+            <View style={styles.basicDivider}>
+              <Text style={styles.basicDividerLabel}>INCLUDED IN BASIC</Text>
+            </View>
+
+            {/* Basic features */}
+            {BASIC_FEATURES.map((label, i) => (
+              <React.Fragment key={label}>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={20} color={colors.secondaryText} />
+                  <Text style={styles.featureLabel}>{label}</Text>
+                </View>
+                {i < BASIC_FEATURES.length - 1 && <View style={styles.featureDivider} />}
               </React.Fragment>
             ))}
           </View>
@@ -309,7 +323,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   toggleOptionActive: {
-    backgroundColor: colors.activeTab,
+    backgroundColor: '#000000',
   },
   toggleLabelRow: {
     flexDirection: 'row',
@@ -366,6 +380,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     marginLeft: spacing.lg + 20 + spacing.md,
   },
+  basicDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  basicDividerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.secondaryText,
+    letterSpacing: 0.5,
+  },
   featureText: {
     flex: 1,
     flexDirection: 'row',
@@ -389,14 +417,14 @@ const styles = StyleSheet.create({
 
   /* ── CTA ── */
   ctaButton: {
-    backgroundColor: colors.activeTab,
+    backgroundColor: '#000000',
     borderRadius: borderRadius.squircle,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: spacing.md,
     ...shadow,
-    shadowColor: colors.activeTab,
-    shadowOpacity: 0.35,
+    shadowColor: '#000000',
+    shadowOpacity: 0.2,
     shadowRadius: 12,
   },
   ctaText: {

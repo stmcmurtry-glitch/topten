@@ -225,15 +225,16 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       title: 'Preferences',
       data: [
         { label: 'Location', value: locationLabel, isLocation: true },
-        { label: 'Privacy Policy', route: 'PrivacyPolicy' },
-        { label: 'Contact Us', route: 'Contact' },
-        { label: 'About', route: 'About' },
+        { label: 'Your Data', route: 'YourData' },
       ],
     },
     {
-      title: 'Data',
+      title: 'Info',
       data: [
-        { label: 'Your Data', route: 'YourData' },
+        { label: 'FAQ', route: 'FAQ' },
+        { label: 'Privacy Policy', route: 'PrivacyPolicy' },
+        { label: 'About', route: 'About' },
+        { label: 'Contact Us', route: 'Contact' },
       ],
     },
   ];
