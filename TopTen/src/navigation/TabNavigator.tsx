@@ -120,6 +120,11 @@ const DiscoverStack = () => (
       options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
     />
     <Stack.Screen
+      name="Search"
+      component={SearchScreen}
+      options={{ title: 'Search', headerLargeTitle: false }}
+    />
+    <Stack.Screen
       name="CommunityList"
       component={CommunityListScreen}
       options={{ headerShown: false }}
