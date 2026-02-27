@@ -1,5 +1,6 @@
 import { searchMovies, searchTVShows } from '../services/tmdb';
 import { searchAthletes, searchWikipedia } from '../services/wikipedia';
+import { searchSports } from '../services/sportsdb';
 import { searchMusic } from '../services/musicbrainz';
 import { searchMeals } from '../services/mealdb';
 import { searchDrinks } from '../services/cocktaildb';
@@ -78,7 +79,7 @@ export async function searchSuggestions(
     case 'Books':
       return searchBooks(query);
     case 'Sports':
-      return searchAthletes(query);
+      return searchSports(query).catch(() => searchAthletes(query));
     case 'Music':
       return searchMusic(query);
     case 'Food':
