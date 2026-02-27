@@ -4,9 +4,12 @@ import { CommunityList, CommunityItem } from '../data/communityLists';
 // Keywords that suggest a list is about physical venues (→ use Google Places)
 const VENUE_KEYWORDS = [
   'restaurant', 'pizza', 'wing', 'sushi', 'burger', 'taco', 'mexican', 'italian',
-  'brunch', 'diner', 'bistro', 'eatery', 'dining',
+  'brunch', 'diner', 'bistro', 'eatery', 'dining', 'steakhouse', 'steak',
   'bar', 'bars', 'pub', 'pubs', 'nightlife', 'brewery', 'breweries', 'brewpub',
+  'rooftop', 'sports bar', 'sports bars',
   'cafe', 'cafes', 'coffee shop', 'coffee shops',
+  'ice cream', 'dessert', 'desserts',
+  'live music', 'music venue', 'music venues', 'concert',
 ];
 
 // Keywords that indicate a "places to visit" list (Travel category → tourist_attraction)
@@ -57,10 +60,17 @@ export function derivePlacesQuery(listTitle: string, category: string): string {
   const t = (listTitle ?? '').toLowerCase();
   if (t.includes('pizza')) return 'pizza restaurants';
   if (t.includes('wing')) return 'wings restaurants';
-  if (t.includes('coffee') || t.includes('cafe')) return 'coffee shops';
-  if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bars';
+  if (t.includes('brunch')) return 'brunch restaurants';
   if (t.includes('burger')) return 'burger restaurants';
   if (t.includes('sushi')) return 'sushi restaurants';
+  if (t.includes('steak')) return 'steakhouses';
+  if (t.includes('brewery') || t.includes('breweries')) return 'breweries';
+  if (t.includes('rooftop')) return 'rooftop bars';
+  if (t.includes('ice cream') || t.includes('dessert')) return 'ice cream and dessert shops';
+  if (t.includes('live music') || t.includes('music venue')) return 'live music venues';
+  if (t.includes('sports bar')) return 'sports bars';
+  if (t.includes('coffee') || t.includes('cafe')) return 'coffee shops';
+  if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bars';
   if (t.includes('taco') || t.includes('mexican')) return 'mexican restaurants';
   if (t.includes('restaurant') || t.includes('dining')) return 'restaurants';
   if (category === 'Drinks') return 'bars';
@@ -148,6 +158,96 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     description: (city) => `The best cafes and coffee shops in ${city}.`,
   },
   {
+    slug: 'brunch',
+    queryTerm: 'brunch restaurants',
+    title: (city) => `Best Brunch in ${city}`,
+    icon: 'sunny-outline',
+    color: '#FDCB6E',
+    appCategory: 'Food',
+    description: (city) => `Eggs benny or avocado toast? The top brunch spots in ${city}, ranked.`,
+  },
+  {
+    slug: 'burgers',
+    queryTerm: 'burger restaurants',
+    title: (city) => `Best Burgers in ${city}`,
+    icon: 'fast-food-outline',
+    color: '#E17055',
+    appCategory: 'Food',
+    description: (city) => `The best burgers in ${city} — smash, classic, and everything in between.`,
+  },
+  {
+    slug: 'sushi',
+    queryTerm: 'sushi restaurants',
+    title: (city) => `Best Sushi in ${city}`,
+    icon: 'fish-outline',
+    color: '#00B894',
+    appCategory: 'Food',
+    description: (city) => `Omakase to AYCE — the top sushi spots in ${city}.`,
+  },
+  {
+    slug: 'steakhouses',
+    queryTerm: 'steakhouses',
+    title: (city) => `Best Steakhouses in ${city}`,
+    icon: 'flame-outline',
+    color: '#D63031',
+    appCategory: 'Food',
+    description: (city) => `Where to get the best cut in ${city}.`,
+  },
+  {
+    slug: 'breweries',
+    queryTerm: 'breweries',
+    title: (city) => `Best Breweries in ${city}`,
+    icon: 'beer-outline',
+    color: '#F9A825',
+    appCategory: 'Food',
+    description: (city) => `The craft beer scene in ${city}, ranked by locals.`,
+  },
+  {
+    slug: 'rooftop-bars',
+    queryTerm: 'rooftop bars',
+    title: (city) => `Best Rooftop Bars in ${city}`,
+    icon: 'partly-sunny-outline',
+    color: '#6C5CE7',
+    appCategory: 'Food',
+    description: (city) => `Best views and best drinks — the top rooftop bars in ${city}.`,
+  },
+  {
+    slug: 'ice-cream',
+    queryTerm: 'ice cream and dessert shops',
+    title: (city) => `Best Ice Cream & Desserts in ${city}`,
+    icon: 'ice-cream-outline',
+    color: '#FD79A8',
+    appCategory: 'Food',
+    description: (city) => `The sweetest spots in ${city}.`,
+  },
+  {
+    slug: 'live-music',
+    queryTerm: 'live music venues',
+    title: (city) => `Best Live Music Venues in ${city}`,
+    icon: 'musical-notes-outline',
+    color: '#A29BFE',
+    appCategory: 'Food',
+    description: (city) => `From intimate clubs to concert halls — the best live music in ${city}.`,
+  },
+  {
+    slug: 'sports-bars',
+    queryTerm: 'sports bars',
+    title: (city) => `Best Sports Bars in ${city}`,
+    icon: 'tv-outline',
+    color: '#00B894',
+    appCategory: 'Food',
+    description: (city) => `The best places to catch the game in ${city}.`,
+  },
+  {
+    slug: 'parks',
+    queryTerm: 'parks and outdoor spaces',
+    title: (city) => `Best Parks & Outdoor Spaces in ${city}`,
+    icon: 'leaf-outline',
+    color: '#27AE60',
+    appCategory: 'Travel',
+    description: (city) => `The best green spaces, trails, and outdoor spots in ${city}.`,
+  },
+  {
     slug: 'places',
     queryTerm: 'top places to visit',
     title: (city) => `Best Places to Visit in ${city}`,
@@ -167,7 +267,7 @@ async function fetchPlacesForConfig(
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const cacheKey = `@topten_places_v2_${citySlug}_${config.slug}`;
+  const cacheKey = `@topten_places_v3_${citySlug}_${config.slug}`;
 
   // Check 24h cache
   try {
