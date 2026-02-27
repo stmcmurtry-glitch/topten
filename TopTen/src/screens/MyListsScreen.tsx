@@ -18,7 +18,7 @@ import { fetchLocalPlacesLists } from '../services/googlePlacesService';
 import { registerDynamicLists } from '../data/dynamicListRegistry';
 import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
-import { fetchCategoryImage } from '../services/imageService';
+import { fetchCommunityImage } from '../services/featuredContentService';
 import { CATEGORIES } from '../data/categories';
 import {
   getDetectedLocation,
@@ -40,7 +40,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress 
   const top3 = list.items.slice(0, 3);
 
   useEffect(() => {
-    fetchCategoryImage(list.id).then(setImageUrl);
+    fetchCommunityImage(list.id, list.imageQuery).then(setImageUrl);
   }, [list.id]);
 
   return (

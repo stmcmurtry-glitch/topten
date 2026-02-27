@@ -19,7 +19,8 @@ export interface CommunityList {
   description: string;
   participantCount: number;
   items: CommunityItem[];
-  region?: string;    // e.g. 'Philadelphia' — present only on local/area lists
+  imageQuery: string;   // Unsplash landscape query for the card/header image
+  region?: string;      // e.g. 'Philadelphia' — present only on local/area lists
   sponsored?: Sponsored;
 }
 
@@ -30,6 +31,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Movies',
     color: '#FF6B6B',
     icon: 'film-outline',
+    imageQuery: 'classic cinema film dark dramatic theater',
     description: 'The films that defined cinema. Cast your vote for the greatest of all time.',
     participantCount: 847,
     items: [
@@ -51,6 +53,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'TV',
     color: '#5B8DEF',
     icon: 'tv-outline',
+    imageQuery: 'television drama dark moody cinematic',
     description: 'Peak television. Which series changed the way we watch forever?',
     participantCount: 743,
     sponsored: {
@@ -77,6 +80,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Music',
     color: '#A29BFE',
     icon: 'musical-notes-outline',
+    imageQuery: 'concert stage lights crowd music festival',
     description: 'The tracks that stopped time. What\'s the greatest song ever recorded?',
     participantCount: 1203,
     items: [
@@ -98,6 +102,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#FF9F43',
     icon: 'trophy-outline',
+    imageQuery: 'stadium crowd athlete championship victory',
     description: 'The GOAT debate, settled by you. Who is the greatest athlete of all time?',
     participantCount: 1847,
     items: [
@@ -119,6 +124,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Books',
     color: '#4ECDC4',
     icon: 'book-outline',
+    imageQuery: 'vintage library books shelves warm light',
     description: 'Literature that endures. Which books belong in every library?',
     participantCount: 612,
     items: [
@@ -140,6 +146,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Food',
     color: '#FFB347',
     icon: 'restaurant-outline',
+    imageQuery: 'gourmet food spread table feast fine dining',
     description: 'The dishes that define delicious. What\'s the greatest food ever made?',
     participantCount: 934,
     items: [
@@ -161,6 +168,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Drinks',
     color: '#00CEC9',
     icon: 'wine-outline',
+    imageQuery: 'cocktail bar dark atmospheric neon bokeh',
     description: 'From morning coffee to late-night cocktails — what\'s the world\'s greatest drink?',
     participantCount: 734,
     items: [
@@ -182,6 +190,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Travel',
     color: '#0984E3',
     icon: 'airplane-outline',
+    imageQuery: 'travel aerial mountain vista landscape destination',
     description: 'The whole world to choose from. Where would you go if you could go anywhere?',
     participantCount: 892,
     items: [
@@ -203,6 +212,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Gaming',
     color: '#6C5CE7',
     icon: 'game-controller-outline',
+    imageQuery: 'zelda nintendo video game landscape adventure',
     description: 'Controllers down, debate on. What\'s the greatest video game ever made?',
     participantCount: 743,
     items: [
@@ -224,6 +234,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'People',
     color: '#FD79A8',
     icon: 'people-outline',
+    imageQuery: 'crowd historic black white monument march',
     description: 'Who changed the world the most? Cast your vote for history\'s greatest influencer.',
     participantCount: 821,
     items: [
@@ -245,6 +256,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Fashion',
     color: '#FDCB6E',
     icon: 'shirt-outline',
+    imageQuery: 'fashion runway editorial style elegant model',
     description: 'Whose style defined an era? Vote for the most iconic fashion figures of all time.',
     participantCount: 543,
     items: [
@@ -266,6 +278,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Health',
     color: '#00B894',
     icon: 'fitness-outline',
+    imageQuery: 'morning run fitness outdoors sunrise trail',
     description: 'What single habit has the biggest impact on your health and wellbeing?',
     participantCount: 678,
     items: [
@@ -287,6 +300,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Tech',
     color: '#45AAF2',
     icon: 'laptop-outline',
+    imageQuery: 'technology data center server circuit board',
     description: 'Which invention changed the world more than any other? Cast your vote.',
     participantCount: 812,
     items: [
@@ -308,6 +322,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Nature',
     color: '#6BCB77',
     icon: 'leaf-outline',
+    imageQuery: 'northern lights aurora borealis landscape wilderness',
     description: 'The planet at its most breathtaking. Which natural wonder tops your list?',
     participantCount: 567,
     items: [
@@ -329,6 +344,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Arts',
     color: '#E17055',
     icon: 'color-palette-outline',
+    imageQuery: 'museum gallery painting masterpiece art wide',
     description: 'The masterpieces that moved the world. Which work of art stands above all others?',
     participantCount: 489,
     items: [
@@ -350,6 +366,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Miscellaneous',
     color: '#636E72',
     icon: 'grid-outline',
+    imageQuery: 'adventure bucket list sunrise mountain journey wide',
     description: 'The ultimate bucket list. What\'s one thing every person should experience in their lifetime?',
     participantCount: 721,
     items: [
@@ -378,6 +395,7 @@ export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
     category: 'Food',
     color: '#FFB347',
     icon: 'restaurant-outline',
+    imageQuery: 'pizza wood fired oven cheese landscape',
     region: 'Philadelphia',
     description: 'Philly takes its pizza seriously. Which slice reigns supreme in the region?',
     participantCount: 187,
@@ -405,6 +423,7 @@ export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
     category: 'Travel',
     color: '#0984E3',
     icon: 'airplane-outline',
+    imageQuery: 'philadelphia skyline city architecture street',
     region: 'Philadelphia',
     description: "From the Rocky steps to Reading Terminal — what makes Philly worth the trip?",
     participantCount: 143,

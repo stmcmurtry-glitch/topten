@@ -51,6 +51,43 @@ const STATIC_ITEMS: Record<string, string[]> = {
   ],
 };
 
+const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v1_`;
+const communityImageMemCache = new Map<string, string | null>();
+
+// ── Community list images ──────────────────────────────────────────────────
+
+export async function fetchCommunityImage(listId: string, imageQuery: string): Promise<string | null> {
+  if (communityImageMemCache.has(listId)) return communityImageMemCache.get(listId)!;
+
+  try {
+    const stored = await AsyncStorage.getItem(COMMUNITY_IMAGE_PREFIX + listId);
+    if (stored !== null) {
+      const url = stored === '' ? null : stored;
+      communityImageMemCache.set(listId, url);
+      return url;
+    }
+  } catch {}
+
+  let imageUrl: string | null = null;
+  try {
+    if (UNSPLASH_KEY) {
+      const url =
+        `https://api.unsplash.com/photos/random` +
+        `?query=${encodeURIComponent(imageQuery)}` +
+        `&orientation=landscape&client_id=${UNSPLASH_KEY}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        imageUrl = data.urls?.regular ?? null;
+      }
+    }
+  } catch {}
+
+  communityImageMemCache.set(listId, imageUrl);
+  try { await AsyncStorage.setItem(COMMUNITY_IMAGE_PREFIX + listId, imageUrl ?? ''); } catch {}
+  return imageUrl;
+}
+
 // ── Items ──────────────────────────────────────────────────────────────────
 
 export async function fetchFeaturedItems(list: FeaturedList): Promise<string[]> {
