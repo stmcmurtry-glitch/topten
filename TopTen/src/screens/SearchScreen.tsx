@@ -61,7 +61,9 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   const doPlacesSearch = useCallback((q: string, city: string) => {
     setLoading(true);
     const effectiveQuery = q.trim() || derivePlacesQuery(listTitle, category);
-    const placeType = derivePlacesType(listTitle, category);
+    // Only apply type filter on initial browse (no user query) — typed searches skip it
+    // so specific venues like stadiums, arenas, etc. aren't filtered out
+    const placeType = q.trim() ? undefined : derivePlacesType(listTitle, category);
     searchLocalPlaces(city, effectiveQuery, placeType)
       .then((r) => setResults(r as SearchResult[]))
       .catch(() => setResults([]))

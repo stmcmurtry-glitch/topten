@@ -43,8 +43,8 @@ export function isVenueList(listTitle: string, category: string): boolean {
 export const isPlacesCategory = (category: string): boolean =>
   ['Food', 'Drinks'].includes(category);
 
-export function derivePlacesType(listTitle: string, category: string): string {
-  if (category === 'Travel') return 'tourist_attraction';
+export function derivePlacesType(listTitle: string, category: string): string | undefined {
+  if (category === 'Travel') return undefined; // no filter — return all place types
   const t = (listTitle ?? '').toLowerCase();
   if (t.includes('coffee') || t.includes('cafe')) return 'cafe';
   if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bar';
@@ -53,7 +53,7 @@ export function derivePlacesType(listTitle: string, category: string): string {
 }
 
 export function derivePlacesQuery(listTitle: string, category: string): string {
-  if (category === 'Travel') return 'top attractions and places to visit';
+  if (category === 'Travel') return 'top places to visit';
   const t = (listTitle ?? '').toLowerCase();
   if (t.includes('pizza')) return 'pizza restaurants';
   if (t.includes('wing')) return 'wings restaurants';
@@ -149,8 +149,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
   },
   {
     slug: 'places',
-    queryTerm: 'top attractions and places to visit',
-    placeType: 'tourist_attraction',
+    queryTerm: 'top places to visit',
     title: (city) => `Best Places to Visit in ${city}`,
     icon: 'map-outline',
     color: '#0984E3',
@@ -168,7 +167,7 @@ async function fetchPlacesForConfig(
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const cacheKey = `@topten_places_${citySlug}_${config.slug}`;
+  const cacheKey = `@topten_places_v2_${citySlug}_${config.slug}`;
 
   // Check 24h cache
   try {
