@@ -14,11 +14,13 @@ import { FEATURED_LISTS } from '../data/featuredLists';
 import { fetchFeaturedItems, fetchFeaturedImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
+import { usePostHog } from 'posthog-react-native';
 
 export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ route }) => {
   const { featuredId } = route.params as { featuredId: string };
   const list = FEATURED_LISTS.find(l => l.id === featuredId)!;
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [items, setItems] = useState<string[]>(list.previewItems);
@@ -66,7 +68,14 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
           <>
             <TouchableOpacity
               style={styles.sponsoredRow}
-              onPress={() => Linking.openURL(list.sponsored!.url)}
+              onPress={() => {
+                posthog?.capture('sponsored_tap', {
+                  list_id: featuredId,
+                  sponsor_name: list.sponsored!.name,
+                  city: null,
+                });
+                Linking.openURL(list.sponsored!.url);
+              }}
               activeOpacity={0.75}
             >
               <Text style={styles.sponsoredLabel}>SPONSORED</Text>

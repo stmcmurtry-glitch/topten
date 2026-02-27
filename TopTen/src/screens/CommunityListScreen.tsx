@@ -22,6 +22,7 @@ import { resolveCommunityList } from '../data/dynamicListRegistry';
 import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
+import { usePostHog } from 'posthog-react-native';
 
 const SCORE_BAR_MAX_WIDTH = 100;
 
@@ -41,6 +42,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   } = useCommunity();
 
   const list = resolveCommunityList(communityListId);
+  const posthog = usePostHog();
   const [activeTab, setActiveTab] = useState<'community' | 'yours'>('community');
   const [loadingScores, setLoadingScores] = useState(true);
   const [submitConfirmed, setSubmitConfirmed] = useState(false);
@@ -67,6 +69,18 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   useEffect(() => {
     if (list) navigation.setOptions({ title: list.title });
   }, [list, navigation]);
+
+  // Track list view
+  useEffect(() => {
+    if (!list) return;
+    posthog?.capture('local_list_viewed', {
+      list_id: communityListId,
+      list_title: list.title,
+      category: list.category,
+      city: (list as any).region ?? null,
+      is_local: communityListId.startsWith('local-'),
+    });
+  }, [communityListId]);
 
   // Fetch scores on mount
   useEffect(() => {
@@ -242,7 +256,14 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
               {list.sponsored && (
                 <TouchableOpacity
                   style={styles.sponsoredRow}
-                  onPress={() => Linking.openURL(list.sponsored!.url)}
+                  onPress={() => {
+                    posthog?.capture('sponsored_tap', {
+                      list_id: communityListId,
+                      sponsor_name: list.sponsored!.name,
+                      city: (list as any).region ?? null,
+                    });
+                    Linking.openURL(list.sponsored!.url);
+                  }}
                   activeOpacity={0.75}
                 >
                   <Text style={styles.sponsoredLabel}>SPONSORED</Text>
