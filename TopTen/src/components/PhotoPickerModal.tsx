@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   Image,
@@ -19,31 +20,11 @@ const UNSPLASH_KEY =
   process.env.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY ||
   'unqrIzAOMjppLYzOuOau81W5fKHuaUpyo8QPy8jesZI';
 
-const CATEGORY_QUERIES: Record<string, string> = {
-  Movies:        'cinema film',
-  TV:            'television watching',
-  Sports:        'athlete sport',
-  Music:         'concert music',
-  Food:          'food restaurant',
-  Drinks:        'cocktails drinks bar',
-  Books:         'books library reading',
-  Travel:        'travel landscape',
-  Gaming:        'gaming controller',
-  People:        'portrait people',
-  Fashion:       'fashion style',
-  Health:        'fitness wellness',
-  Tech:          'technology',
-  Nature:        'nature landscape',
-  Arts:          'art gallery',
-  Miscellaneous: 'abstract colorful',
-};
-
 interface PhotoPickerModalProps {
   visible: boolean;
   onClose: () => void;
   /** Called with a URI string to set, or undefined to remove */
   onSelectUri: (uri: string | undefined) => void;
-  category: string;
   currentUri?: string;
   title?: string;
   /** Image crop aspect ratio. Defaults to [1,1] (square) */
@@ -56,23 +37,36 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
   visible,
   onClose,
   onSelectUri,
-  category,
   currentUri,
   title = 'Choose Photo',
   aspect = [1, 1],
   orientation = 'squarish',
 }) => {
   const insets = useSafeAreaInsets();
+  const [query, setQuery] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Reset state when modal closes
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      setQuery('');
+      setPhotos([]);
+      setLoading(false);
+    }
+  }, [visible]);
+
+  const searchPhotos = (q: string) => {
+    if (!q.trim()) {
+      setPhotos([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const query = CATEGORY_QUERIES[category] ?? category;
     fetch(
       `https://api.unsplash.com/search/photos` +
-      `?query=${encodeURIComponent(query)}` +
+      `?query=${encodeURIComponent(q.trim())}` +
       `&per_page=9&orientation=${orientation}` +
       `&client_id=${UNSPLASH_KEY}`
     )
@@ -85,7 +79,13 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
       })
       .catch(() => setPhotos([]))
       .finally(() => setLoading(false));
-  }, [visible, category, orientation]);
+  };
+
+  const handleQueryChange = (text: string) => {
+    setQuery(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => searchPhotos(text), 500);
+  };
 
   const handleLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -122,6 +122,9 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
     }
   };
 
+  const showEmpty = !loading && query.trim().length === 0;
+  const showNoResults = !loading && query.trim().length > 0 && photos.length === 0;
+
   return (
     <Modal
       visible={visible}
@@ -138,11 +141,40 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* Curated gallery */}
-        <Text style={styles.sectionLabel}>GALLERY</Text>
+        {/* Search bar */}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={16} color={colors.secondaryText} />
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={handleQueryChange}
+            placeholder="Search photos…"
+            placeholderTextColor={colors.secondaryText}
+            returnKeyType="search"
+            autoCorrect={false}
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => handleQueryChange('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Gallery area */}
         {loading ? (
           <ActivityIndicator color={colors.activeTab} style={styles.loader} size="large" />
-        ) : photos.length > 0 ? (
+        ) : showEmpty ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="images-outline" size={44} color={colors.border} />
+            <Text style={styles.emptyTitle}>Search for a photo</Text>
+            <Text style={styles.emptyBody}>Type anything — a place, mood, or subject</Text>
+          </View>
+        ) : showNoResults ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No results for "{query}"</Text>
+            <Text style={styles.emptyBody}>Try a different search term</Text>
+          </View>
+        ) : (
           <FlatList
             data={photos}
             keyExtractor={(_, i) => i.toString()}
@@ -159,12 +191,10 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
               </TouchableOpacity>
             )}
           />
-        ) : (
-          <Text style={styles.galleryEmpty}>No photos available</Text>
         )}
 
         {/* Device actions */}
-        <Text style={styles.sectionLabel}>OR CHOOSE FROM</Text>
+        <Text style={styles.sectionLabel}>OR CHOOSE FROM DEVICE</Text>
         <View style={styles.actionCard}>
           <TouchableOpacity style={styles.actionRow} onPress={handleLibrary} activeOpacity={0.7}>
             <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(204,0,0,0.08)' }]}>
@@ -225,27 +255,50 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primaryText,
   },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.secondaryText,
-    letterSpacing: 0.8,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    ...shadow,
+    shadowOpacity: 0.05,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.primaryText,
+    paddingVertical: spacing.md,
   },
   loader: {
     marginTop: spacing.xxl,
   },
-  galleryEmpty: {
-    fontSize: 14,
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingBottom: spacing.xxl,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primaryText,
+    marginTop: spacing.sm,
+  },
+  emptyBody: {
+    fontSize: 13,
     color: colors.secondaryText,
     textAlign: 'center',
-    marginTop: spacing.lg,
+    paddingHorizontal: spacing.xxl,
   },
   grid: {
     paddingHorizontal: spacing.lg,
     gap: CELL_GAP,
+    paddingBottom: spacing.lg,
   },
   photoCell: {
     flex: 1,
@@ -259,6 +312,15 @@ const styles = StyleSheet.create({
   photo: {
     width: '100%',
     height: '100%',
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.secondaryText,
+    letterSpacing: 0.8,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   actionCard: {
     marginHorizontal: spacing.lg,

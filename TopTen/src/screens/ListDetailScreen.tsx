@@ -388,7 +388,6 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
       <PhotoPickerModal
         visible={photoPickerTarget !== null}
         onClose={() => setPhotoPickerTarget(null)}
-        category={list.category}
         title={photoPickerTarget === 'cover' ? 'Cover Photo' : 'Profile Image'}
         currentUri={photoPickerTarget === 'cover' ? list.coverImageUri : list.profileImageUri}
         aspect={photoPickerTarget === 'cover' ? [16, 9] : [1, 1]}
