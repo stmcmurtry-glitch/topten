@@ -2,7 +2,8 @@ import 'react-native-url-polyfill/auto';
 import * as Sentry from '@sentry/react-native';
 import React, { useState, useEffect } from 'react';
 import Purchases from 'react-native-purchases';
-import { PostHogProvider } from 'posthog-react-native';
+import { PostHogProvider, usePostHog } from 'posthog-react-native';
+import * as Crypto from 'expo-crypto';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
@@ -19,6 +20,20 @@ import { TabNavigator } from './src/navigation/TabNavigator';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 
 const ONBOARDED_KEY = '@topten_onboarded';
+const USER_ID_KEY = '@topten_user_id';
+
+// Identifies the anonymous device ID to PostHog once the provider is mounted
+function PostHogIdentifier() {
+  const posthog = usePostHog();
+  useEffect(() => {
+    AsyncStorage.getItem(USER_ID_KEY).then((id) => {
+      if (id) {
+        posthog?.identify(id);
+      }
+    });
+  }, []);
+  return null;
+}
 
 export default function App() {
   // undefined = still checking, false = show onboarding, true = go to app
@@ -31,6 +46,17 @@ export default function App() {
     } catch (e) {
       // RevenueCat unavailable in Expo Go — no-op
     }
+
+    // Generate a stable anonymous user ID on first launch
+    const initUser = async () => {
+      let userId = await AsyncStorage.getItem(USER_ID_KEY);
+      if (!userId) {
+        userId = Crypto.randomUUID();
+        await AsyncStorage.setItem(USER_ID_KEY, userId);
+      }
+    };
+
+    initUser();
     AsyncStorage.getItem(ONBOARDED_KEY).then((val) => {
       setOnboarded(val === 'true');
     });
@@ -60,6 +86,7 @@ export default function App() {
       apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ''}
       options={{ host: 'https://us.i.posthog.com' }}
     >
+      <PostHogIdentifier />
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <ListProvider>
