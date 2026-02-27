@@ -70,9 +70,11 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
               activeOpacity={0.75}
             >
               <Text style={styles.sponsoredLabel}>SPONSORED</Text>
-              <Text style={styles.sponsoredName}>{list.sponsored.name}</Text>
-              <Text style={[styles.sponsoredCta, { color: list.color }]}>{list.sponsored.cta}</Text>
-              <Ionicons name="open-outline" size={14} color={list.color} style={styles.sponsoredIcon} />
+              <View style={styles.sponsoredContent}>
+                <Text style={styles.sponsoredName}>{list.sponsored.name}</Text>
+                <Text style={[styles.sponsoredCta, { color: list.color }]}>{list.sponsored.cta}</Text>
+                <Ionicons name="open-outline" size={20} color={list.color} />
+              </View>
             </TouchableOpacity>
             <View style={styles.divider} />
           </>
@@ -191,31 +193,32 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
   },
   sponsoredRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
     paddingHorizontal: spacing.md,
-    paddingVertical: 11,
-    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    gap: 5,
     backgroundColor: 'rgba(255,200,0,0.06)',
   },
   sponsoredLabel: {
     fontSize: 9,
     fontWeight: '700',
     color: colors.secondaryText,
-    letterSpacing: 0.8,
+    letterSpacing: 1,
+  },
+  sponsoredContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   sponsoredName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: colors.primaryText,
   },
   sponsoredCta: {
     flex: 1,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
-  },
-  sponsoredIcon: {
-    flexShrink: 0,
   },
   row: {
     flexDirection: 'row',
