@@ -3,6 +3,7 @@ import { TopTenItem } from '../data/schema';
 const API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY ?? '';
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w185';
+const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -10,6 +11,7 @@ export interface TmdbMovie {
   id: number;
   title: string;
   poster_path: string | null;
+  backdrop_path: string | null;
   release_date: string;
   overview: string;
 }
@@ -19,6 +21,7 @@ export interface MovieResult {
   id: string;
   title: string;
   imageUrl?: string;
+  backdropUrl?: string;
   year: string;
   overview: string;
 }
@@ -30,6 +33,7 @@ function toMovieResult(m: TmdbMovie): MovieResult {
     id: String(m.id),
     title: m.title,
     imageUrl: m.poster_path ? `${IMAGE_BASE}${m.poster_path}` : undefined,
+    backdropUrl: m.backdrop_path ? `${BACKDROP_BASE}${m.backdrop_path}` : undefined,
     year: m.release_date ? m.release_date.slice(0, 4) : '',
     overview: m.overview ?? '',
   };
@@ -70,6 +74,7 @@ function toTVResult(show: any): MovieResult {
     id: String(show.id),
     title: show.name,
     imageUrl: show.poster_path ? `${IMAGE_BASE}${show.poster_path}` : undefined,
+    backdropUrl: show.backdrop_path ? `${BACKDROP_BASE}${show.backdrop_path}` : undefined,
     year: show.first_air_date ? show.first_air_date.slice(0, 4) : '',
     overview: show.overview ?? '',
   };

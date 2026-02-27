@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTopRatedMovies, getTopRatedTVShows } from './tmdb';
 import { FeaturedList } from '../data/featuredLists';
 
-const CACHE_V = 'v1';
+const CACHE_V = 'v2';
 const ITEMS_PREFIX = `@topten_fitems_${CACHE_V}_`;
 const IMAGE_PREFIX = `@topten_fimg_${CACHE_V}_`;
 
@@ -105,11 +105,13 @@ export async function fetchFeaturedImage(list: FeaturedList): Promise<string | n
   try {
     if (list.category === 'Movies') {
       const movies = await getTopRatedMovies();
-      imageUrl = movies[0]?.imageUrl ?? null;
+      imageUrl = movies[0]?.backdropUrl ?? null;
     } else if (list.category === 'TV') {
       const shows = await getTopRatedTVShows();
-      imageUrl = shows[0]?.imageUrl ?? null;
-    } else if (UNSPLASH_KEY) {
+      imageUrl = shows[0]?.backdropUrl ?? null;
+    }
+    // Fall back to Unsplash landscape for any category (including Movies/TV if backdrop missing)
+    if (!imageUrl && UNSPLASH_KEY) {
       const url =
         `https://api.unsplash.com/photos/random` +
         `?query=${encodeURIComponent(list.imageQuery)}` +
@@ -117,7 +119,7 @@ export async function fetchFeaturedImage(list: FeaturedList): Promise<string | n
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        imageUrl = data.urls?.small ?? null;
+        imageUrl = data.urls?.regular ?? null;
       }
     }
   } catch {}

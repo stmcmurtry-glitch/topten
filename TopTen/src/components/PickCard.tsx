@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, shadow } from '../theme';
-import { fetchCategoryImage } from '../services/imageService';
+import { fetchFeaturedImage } from '../services/featuredContentService';
 import { FeaturedList } from '../data/featuredLists';
 
 export type { FeaturedList as EditorsPick };
@@ -16,8 +16,8 @@ export const PickCard: React.FC<PickCardProps> = ({ pick, onPress }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCategoryImage(pick.category).then(setImageUrl);
-  }, [pick.category]);
+    fetchFeaturedImage(pick).then(setImageUrl);
+  }, [pick.id]);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
