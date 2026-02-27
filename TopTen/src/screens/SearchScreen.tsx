@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { useCommunity } from '../context/CommunityContext';
 import { searchSuggestions, isApiCategory, SearchResult } from '../data/suggestions';
-import { isPlacesCategory, derivePlacesQuery, derivePlacesType, searchLocalPlaces } from '../services/googlePlacesService';
+import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces } from '../services/googlePlacesService';
 import { getDetectedLocation } from '../services/locationService';
 import { TopTenItem } from '../data/schema';
 import { colors, spacing, borderRadius } from '../theme';
@@ -43,7 +43,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   const [apiError, setApiError] = useState(false);
   // undefined = still detecting, null = unavailable, string = city name
   const [placesCity, setPlacesCity] = useState<string | null | undefined>(
-    isPlacesCategory(category) ? undefined : null
+    isVenueList(listTitle, category) ? undefined : null
   );
   const { updateListItems, lists } = useListContext();
   const { userRankings, setUserSlots } = useCommunity();
@@ -69,7 +69,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   }, [listTitle, category]);
 
   useEffect(() => {
-    if (isPlacesCategory(category)) {
+    if (isVenueList(listTitle, category)) {
       getDetectedLocation().then((loc) => {
         const city = loc?.city || null;
         setPlacesCity(city);
@@ -118,8 +118,8 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     navigation.goBack();
   };
 
-  // Still detecting location for a Places category
-  if (isPlacesCategory(category) && placesCity === undefined) {
+  // Still detecting location for a venue-based list
+  if (isVenueList(listTitle, category) && placesCity === undefined) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color={colors.activeTab} />

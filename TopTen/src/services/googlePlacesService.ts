@@ -1,6 +1,38 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommunityList, CommunityItem } from '../data/communityLists';
 
+// Keywords that suggest a list is about physical venues (→ use Google Places)
+const VENUE_KEYWORDS = [
+  'restaurant', 'pizza', 'wing', 'sushi', 'burger', 'taco', 'mexican', 'italian',
+  'brunch', 'diner', 'bistro', 'eatery', 'dining',
+  'bar', 'bars', 'pub', 'pubs', 'nightlife', 'brewery', 'breweries', 'brewpub',
+  'cafe', 'cafes', 'coffee shop', 'coffee shops',
+];
+
+// Keywords that suggest a list is about products/brands (→ do NOT use Google Places)
+const PRODUCT_KEYWORDS = [
+  'wine', 'wines', 'cocktail', 'cocktails', 'beer', 'beers', 'whiskey', 'whisky',
+  'spirit', 'spirits', 'sake', 'champagne', 'vodka', 'rum', 'gin', 'tequila',
+  'bourbon', 'cider', 'mead', 'snack', 'cheese',
+];
+
+/**
+ * Returns true only when the list is about local venues (restaurants, bars, cafes, etc.)
+ * and Google Places results make sense.
+ *
+ * Only Food lists can be venue lists — Drinks is for actual beverages (wines, cocktails,
+ * beers, spirits). Bars and coffee shops live under Food as venue types.
+ */
+export function isVenueList(listTitle: string, category: string): boolean {
+  if (category !== 'Food') return false;
+  const t = (listTitle ?? '').toLowerCase();
+  if (PRODUCT_KEYWORDS.some((kw) => t.includes(kw))) return false;
+  if (VENUE_KEYWORDS.some((kw) => t.includes(kw))) return true;
+  // Default: only use Places when the title explicitly mentions a venue type
+  return false;
+}
+
+/** @deprecated Use isVenueList(listTitle, category) instead */
 export const isPlacesCategory = (category: string): boolean =>
   ['Food', 'Drinks'].includes(category);
 
@@ -93,7 +125,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     title: (city) => `Best Bars in ${city}`,
     icon: 'wine-outline',
     color: '#6C5CE7',
-    appCategory: 'Drinks',
+    appCategory: 'Food',
     description: (city) => `The top bars and nightlife spots in ${city}.`,
   },
   {
@@ -102,7 +134,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     title: (city) => `Best Coffee Shops in ${city}`,
     icon: 'cafe-outline',
     color: '#4ECDC4',
-    appCategory: 'Drinks',
+    appCategory: 'Food',
     description: (city) => `The best cafes and coffee shops in ${city}.`,
   },
 ];

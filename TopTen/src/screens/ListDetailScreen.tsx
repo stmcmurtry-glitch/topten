@@ -231,7 +231,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         <TouchableOpacity onPress={handlePickCoverImage} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
           <BlurView intensity={60} tint="dark" style={styles.heroNavBtn}>
             <View style={styles.heroNavBtnInner}>
-              <Ionicons name={coverImageUri ? 'image' : 'camera-outline'} size={20} color="#FFF" />
+              <Ionicons name="image-outline" size={20} color="#FFF" />
             </View>
           </BlurView>
         </TouchableOpacity>
