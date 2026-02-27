@@ -122,6 +122,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       slotIndex: index,
       rank: index + 1,
       category: list.category,
+      listTitle: list.title,
     });
   };
 

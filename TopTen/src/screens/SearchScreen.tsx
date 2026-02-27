@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { useCommunity } from '../context/CommunityContext';
 import { searchSuggestions, isApiCategory, SearchResult } from '../data/suggestions';
+import { isPlacesCategory, derivePlacesQuery, searchLocalPlaces } from '../services/googlePlacesService';
+import { getDetectedLocation } from '../services/locationService';
 import { TopTenItem } from '../data/schema';
 import { colors, spacing, borderRadius } from '../theme';
 
@@ -20,7 +22,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
   navigation,
 }) => {
-  const { listId, rank, category, communityListId, slotIndex } = route.params;
+  const { listId, rank, category, communityListId, slotIndex, listTitle = '' } = route.params;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -39,6 +41,10 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
+  // undefined = still detecting, null = unavailable, string = city name
+  const [placesCity, setPlacesCity] = useState<string | null | undefined>(
+    isPlacesCategory(category) ? undefined : null
+  );
   const { updateListItems, lists } = useListContext();
   const { userRankings, setUserSlots } = useCommunity();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,14 +58,41 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       .finally(() => setLoading(false));
   };
 
+  const doPlacesSearch = useCallback((q: string, city: string) => {
+    setLoading(true);
+    const effectiveQuery = q.trim() || derivePlacesQuery(listTitle, category);
+    searchLocalPlaces(city, effectiveQuery)
+      .then((r) => setResults(r as SearchResult[]))
+      .catch(() => setResults([]))
+      .finally(() => setLoading(false));
+  }, [listTitle, category]);
+
   useEffect(() => {
-    doSearch('');
+    if (isPlacesCategory(category)) {
+      getDetectedLocation().then((loc) => {
+        const city = loc?.city || null;
+        setPlacesCity(city);
+        if (city) {
+          doPlacesSearch('', city);
+        } else {
+          doSearch('');
+        }
+      });
+    } else {
+      doSearch('');
+    }
   }, [category]);
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => doSearch(text), 400);
+    debounceRef.current = setTimeout(() => {
+      if (placesCity) {
+        doPlacesSearch(text, placesCity);
+      } else {
+        doSearch(text);
+      }
+    }, 400);
   };
 
   const handleSelect = (result: SearchResult) => {
@@ -84,6 +117,16 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     navigation.goBack();
   };
 
+  // Still detecting location for a Places category
+  if (isPlacesCategory(category) && placesCity === undefined) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={colors.activeTab} />
+        <Text style={styles.detectingText}>Finding places near you…</Text>
+      </View>
+    );
+  }
+
   if (!isApiCategory(category)) {
     return (
       <View style={styles.container}>
@@ -107,18 +150,28 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
 
   return (
     <View style={styles.container}>
+      {placesCity && (
+        <View style={styles.locationPill}>
+          <Ionicons name="location-sharp" size={12} color={colors.activeTab} />
+          <Text style={styles.locationPillText}>Near {placesCity}</Text>
+        </View>
+      )}
       <View style={styles.searchBar}>
         <Ionicons name="search" size={18} color={colors.secondaryText} />
         <TextInput
           style={styles.searchInput}
           value={query}
           onChangeText={handleQueryChange}
-          placeholder={`Search ${category.toLowerCase()}…`}
+          placeholder={placesCity ? `Search places in ${placesCity}…` : `Search ${category.toLowerCase()}…`}
           placeholderTextColor={colors.secondaryText}
           returnKeyType="search"
         />
         {query.length > 0 && (
-          <TouchableOpacity onPress={() => { setQuery(''); doSearch(''); }}>
+          <TouchableOpacity onPress={() => {
+            setQuery('');
+            if (placesCity) doPlacesSearch('', placesCity);
+            else doSearch('');
+          }}>
             <Ionicons name="close-circle" size={18} color={colors.secondaryText} />
           </TouchableOpacity>
         )}
@@ -141,10 +194,13 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
           keyExtractor={(item, i) => `${item.title}-${i}`}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.row} onPress={() => handleSelect(item)}>
-              {item.imageUrl ? (
+            <TouchableOpacity
+              style={[styles.row, !item.imageUrl && styles.rowNoImage]}
+              onPress={() => handleSelect(item)}
+            >
+              {item.imageUrl && (
                 <Image source={{ uri: item.imageUrl }} style={styles.poster} />
-              ) : null}
+              )}
               <View style={styles.rowInfo}>
                 <Text style={styles.rowText} numberOfLines={2}>{item.title}</Text>
                 {item.year ? <Text style={styles.rowYear}>{item.year}</Text> : null}
@@ -165,6 +221,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  detectingText: {
+    fontSize: 15,
+    color: colors.secondaryText,
+  },
+  locationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    backgroundColor: 'rgba(204,0,0,0.08)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  locationPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.activeTab,
   },
   searchBar: {
     flexDirection: 'row',
@@ -194,16 +276,13 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     overflow: 'hidden',
   },
+  rowNoImage: {
+    paddingLeft: spacing.lg,
+    paddingVertical: spacing.md,
+  },
   poster: {
     width: 44,
     height: 66,
-  },
-  posterPlaceholder: {
-    width: 44,
-    height: 66,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   rowInfo: {
     flex: 1,

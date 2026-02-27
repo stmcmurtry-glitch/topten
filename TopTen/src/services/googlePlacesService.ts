@@ -1,6 +1,41 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommunityList, CommunityItem } from '../data/communityLists';
 
+export const isPlacesCategory = (category: string): boolean =>
+  ['Food', 'Drinks'].includes(category);
+
+export function derivePlacesQuery(listTitle: string, category: string): string {
+  const t = (listTitle ?? '').toLowerCase();
+  if (t.includes('pizza')) return 'pizza restaurants';
+  if (t.includes('wing')) return 'wings restaurants';
+  if (t.includes('coffee') || t.includes('cafe')) return 'coffee shops';
+  if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bars';
+  if (t.includes('burger')) return 'burger restaurants';
+  if (t.includes('sushi')) return 'sushi restaurants';
+  if (t.includes('taco') || t.includes('mexican')) return 'mexican restaurants';
+  if (t.includes('restaurant') || t.includes('dining')) return 'restaurants';
+  if (category === 'Drinks') return 'bars';
+  return 'restaurants';
+}
+
+export async function searchLocalPlaces(
+  city: string,
+  query: string
+): Promise<Array<{ title: string }>> {
+  if (!GOOGLE_PLACES_KEY || !city || !query.trim()) return [];
+  const q = encodeURIComponent(`${query} in ${city}`);
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${q}&key=${GOOGLE_PLACES_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const json = await response.json();
+    const results: Array<{ name: string }> = json.results ?? [];
+    return results.slice(0, 20).map((r) => ({ title: r.name }));
+  } catch {
+    return [];
+  }
+}
+
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? '';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 

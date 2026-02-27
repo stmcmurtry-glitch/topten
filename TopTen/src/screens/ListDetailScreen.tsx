@@ -137,7 +137,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const openSearch = (index: number) => {
     setActiveSlot(null);
-    navigation.navigate('Search', { listId, rank: index + 1, category: list?.category ?? '' });
+    navigation.navigate('Search', { listId, rank: index + 1, category: list?.category ?? '', listTitle: list?.title ?? '' });
   };
 
   const handleDeleteList = () => {
