@@ -33,7 +33,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'film-outline',
     imageQuery: 'classic cinema film dark dramatic theater',
     description: 'The films that defined cinema. Cast your vote for the greatest of all time.',
-    participantCount: 847,
+    participantCount: 1247,
     items: [
       { id: 'cm-1', title: 'The Godfather',             seedScore: 112 },
       { id: 'cm-2', title: 'Schindler\'s List',         seedScore: 107 },
@@ -55,7 +55,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'tv-outline',
     imageQuery: 'television drama dark moody cinematic',
     description: 'Peak television. Which series changed the way we watch forever?',
-    participantCount: 743,
+    participantCount: 891,
     sponsored: {
       name: 'Drops of God',
       cta: 'Watch now on Apple TV+',
@@ -82,7 +82,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'musical-notes-outline',
     imageQuery: 'concert stage lights crowd music festival',
     description: 'The tracks that stopped time. What\'s the greatest song ever recorded?',
-    participantCount: 1203,
+    participantCount: 1563,
     items: [
       { id: 'cs-1', title: 'Bohemian Rhapsody',       seedScore: 114 },
       { id: 'cs-2', title: 'Imagine',                 seedScore: 111 },
@@ -104,7 +104,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'trophy-outline',
     imageQuery: 'stadium crowd athlete championship victory',
     description: 'The GOAT debate, settled by you. Who is the greatest athlete of all time?',
-    participantCount: 1847,
+    participantCount: 2341,
     items: [
       { id: 'ca-1', title: 'Michael Jordan',    seedScore: 118 },
       { id: 'ca-2', title: 'Muhammad Ali',      seedScore: 113 },
@@ -126,7 +126,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'book-outline',
     imageQuery: 'vintage library books shelves warm light',
     description: 'Literature that endures. Which books belong in every library?',
-    participantCount: 612,
+    participantCount: 412,
     items: [
       { id: 'cb-1', title: 'To Kill a Mockingbird',          seedScore: 106 },
       { id: 'cb-2', title: '1984',                           seedScore: 102 },
@@ -148,7 +148,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'restaurant-outline',
     imageQuery: 'gourmet food spread table feast fine dining',
     description: 'The dishes that define delicious. What\'s the greatest food ever made?',
-    participantCount: 934,
+    participantCount: 1089,
     items: [
       { id: 'cf-1',  title: 'Pizza',          seedScore: 116 },
       { id: 'cf-2',  title: 'Sushi',          seedScore: 112 },
@@ -170,7 +170,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'wine-outline',
     imageQuery: 'cocktail bar dark atmospheric neon bokeh',
     description: 'From morning coffee to late-night cocktails — what\'s the world\'s greatest drink?',
-    participantCount: 734,
+    participantCount: 567,
     items: [
       { id: 'cd-1',  title: 'Coffee',             seedScore: 111 },
       { id: 'cd-2',  title: 'Espresso Martini',   seedScore: 108 },
@@ -192,7 +192,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'airplane-outline',
     imageQuery: 'travel aerial mountain vista landscape destination',
     description: 'The whole world to choose from. Where would you go if you could go anywhere?',
-    participantCount: 892,
+    participantCount: 1342,
     items: [
       { id: 'ctr-1',  title: 'Japan',       seedScore: 113 },
       { id: 'ctr-2',  title: 'Italy',       seedScore: 110 },
@@ -214,7 +214,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'game-controller-outline',
     imageQuery: 'zelda nintendo video game landscape adventure',
     description: 'Controllers down, debate on. What\'s the greatest video game ever made?',
-    participantCount: 743,
+    participantCount: 634,
     items: [
       { id: 'cg-1',  title: 'The Legend of Zelda: Ocarina of Time', seedScore: 110 },
       { id: 'cg-2',  title: 'The Last of Us',                       seedScore: 107 },
@@ -236,7 +236,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'people-outline',
     imageQuery: 'crowd historic black white monument march',
     description: 'Who changed the world the most? Cast your vote for history\'s greatest influencer.',
-    participantCount: 821,
+    participantCount: 978,
     items: [
       { id: 'cp-1',  title: 'Isaac Newton',          seedScore: 115 },
       { id: 'cp-2',  title: 'Albert Einstein',        seedScore: 112 },
@@ -258,7 +258,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'shirt-outline',
     imageQuery: 'fashion runway editorial style elegant model',
     description: 'Whose style defined an era? Vote for the most iconic fashion figures of all time.',
-    participantCount: 543,
+    participantCount: 287,
     items: [
       { id: 'cfa-1',  title: 'Audrey Hepburn',   seedScore: 108 },
       { id: 'cfa-2',  title: 'David Bowie',       seedScore: 104 },
@@ -280,7 +280,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'fitness-outline',
     imageQuery: 'morning run fitness outdoors sunrise trail',
     description: 'What single habit has the biggest impact on your health and wellbeing?',
-    participantCount: 678,
+    participantCount: 203,
     items: [
       { id: 'ch-1',  title: 'Daily Exercise',            seedScore: 112 },
       { id: 'ch-2',  title: 'Consistent Sleep Schedule', seedScore: 109 },
@@ -302,7 +302,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'laptop-outline',
     imageQuery: 'technology data center server circuit board',
     description: 'Which invention changed the world more than any other? Cast your vote.',
-    participantCount: 812,
+    participantCount: 743,
     items: [
       { id: 'cte-1',  title: 'The Internet',        seedScore: 117 },
       { id: 'cte-2',  title: 'The Smartphone',      seedScore: 113 },
@@ -324,7 +324,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'leaf-outline',
     imageQuery: 'northern lights aurora borealis landscape wilderness',
     description: 'The planet at its most breathtaking. Which natural wonder tops your list?',
-    participantCount: 567,
+    participantCount: 445,
     items: [
       { id: 'cn-1',  title: 'The Northern Lights',    seedScore: 109 },
       { id: 'cn-2',  title: 'The Grand Canyon',       seedScore: 105 },
@@ -346,7 +346,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'color-palette-outline',
     imageQuery: 'museum gallery painting masterpiece art wide',
     description: 'The masterpieces that moved the world. Which work of art stands above all others?',
-    participantCount: 489,
+    participantCount: 134,
     items: [
       { id: 'car-1',  title: 'The Mona Lisa',                       seedScore: 111 },
       { id: 'car-2',  title: 'The Starry Night',                    seedScore: 107 },
@@ -368,7 +368,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'grid-outline',
     imageQuery: 'adventure bucket list sunrise mountain journey wide',
     description: 'The ultimate bucket list. What\'s one thing every person should experience in their lifetime?',
-    participantCount: 721,
+    participantCount: 823,
     items: [
       { id: 'cmi-1',  title: 'See a total solar eclipse',            seedScore: 107 },
       { id: 'cmi-2',  title: 'Watch a live World Cup or Olympics',   seedScore: 103 },
@@ -392,7 +392,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'golf-outline',
     imageQuery: 'golf course sunset fairway landscape wide',
     description: 'Beyond the trophies — who is the greatest golfer to ever play the game?',
-    participantCount: 428,
+    participantCount: 298,
     items: [
       { id: 'cgg-1',  title: 'Jack Nicklaus',   seedScore: 115 },
       { id: 'cgg-2',  title: 'Tiger Woods',      seedScore: 112 },
@@ -416,7 +416,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'tennisball-outline',
     imageQuery: 'tennis stadium aerial court crowd open',
     description: 'Across eras and genders — who is the greatest tennis player in history?',
-    participantCount: 634,
+    participantCount: 489,
     items: [
       { id: 'ctg-1',  title: 'Novak Djokovic',       seedScore: 115 },
       { id: 'ctg-2',  title: 'Roger Federer',         seedScore: 112 },
@@ -440,7 +440,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'baseball-outline',
     imageQuery: 'baseball stadium aerial panoramic historic black white',
     description: 'The most dominant teams ever assembled for a single season.',
-    participantCount: 334,
+    participantCount: 134,
     items: [
       { id: 'cbt-1',  title: '1927 New York Yankees',             seedScore: 116 },
       { id: 'cbt-2',  title: '1998 New York Yankees',             seedScore: 112 },
@@ -462,7 +462,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'baseball-outline',
     imageQuery: 'baseball stadium sunset field empty classic',
     description: 'From Babe to Barry — who is the greatest to ever play the game?',
-    participantCount: 589,
+    participantCount: 712,
     items: [
       { id: 'cbg-1',  title: 'Babe Ruth',       seedScore: 116 },
       { id: 'cbg-2',  title: 'Willie Mays',      seedScore: 112 },
@@ -486,7 +486,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'american-football-outline',
     imageQuery: 'american football stadium aerial night lights crowd',
     description: 'The debate that never ends. Who is the greatest football player in NFL history?',
-    participantCount: 743,
+    participantCount: 1156,
     items: [
       { id: 'cfg-1',  title: 'Jerry Rice',       seedScore: 116 },
       { id: 'cfg-2',  title: 'Tom Brady',        seedScore: 113 },
@@ -508,7 +508,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'american-football-outline',
     imageQuery: 'NFL stadium aerial architecture crowd full game day',
     description: 'The cathedrals of football. Which stadium delivers the best experience on game day?',
-    participantCount: 389,
+    participantCount: 267,
     items: [
       { id: 'cfst-1',  title: 'Lambeau Field, Green Bay',          seedScore: 116 },
       { id: 'cfst-2',  title: 'Arrowhead Stadium, Kansas City',    seedScore: 112 },
@@ -532,7 +532,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'football-outline',
     imageQuery: 'soccer stadium aerial pitch green crowd',
     description: 'The beautiful game\'s greatest. Who is the best footballer to ever lace up boots?',
-    participantCount: 892,
+    participantCount: 1489,
     items: [
       { id: 'csg-1',  title: 'Pelé',              seedScore: 116 },
       { id: 'csg-2',  title: 'Lionel Messi',       seedScore: 114 },
@@ -554,7 +554,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'football-outline',
     imageQuery: 'soccer team celebration world cup trophy stadium',
     description: 'The most brilliant national squads ever assembled for a single World Cup tournament.',
-    participantCount: 378,
+    participantCount: 178,
     items: [
       { id: 'cswct-1',  title: 'Brazil 1970 — Pelé, Jairzinho, Rivelino',         seedScore: 118 },
       { id: 'cswct-2',  title: 'Netherlands 1974 — Cruyff & Total Football',       seedScore: 113 },
@@ -578,7 +578,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'snow-outline',
     imageQuery: 'ice hockey rink arena ice surface wide aerial',
     description: 'On the ice, one name stands alone — but who rounds out the all-time list?',
-    participantCount: 498,
+    participantCount: 312,
     items: [
       { id: 'chg-1',  title: 'Wayne Gretzky',    seedScore: 118 },
       { id: 'chg-2',  title: 'Mario Lemieux',    seedScore: 113 },
@@ -600,7 +600,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'snow-outline',
     imageQuery: 'ice hockey arena crowd packed full game night',
     description: 'The most dominant teams in NHL history during a single regular season and playoffs.',
-    participantCount: 298,
+    participantCount: 67,
     items: [
       { id: 'cht-1',  title: '1976-77 Montreal Canadiens (60-8-12)',      seedScore: 118 },
       { id: 'cht-2',  title: '1995-96 Detroit Red Wings (62-13-7)',       seedScore: 113 },
@@ -624,7 +624,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'basketball-outline',
     imageQuery: 'basketball court NBA arena game night crowd full',
     description: 'The most dominant teams ever assembled for a single NBA season.',
-    participantCount: 489,
+    participantCount: 198,
     items: [
       { id: 'cbbt-1',  title: '1995-96 Chicago Bulls (72-10)',               seedScore: 118 },
       { id: 'cbbt-2',  title: '2015-16 Golden State Warriors (73-9)',        seedScore: 115 },
@@ -646,7 +646,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     icon: 'basketball-outline',
     imageQuery: 'basketball player silhouette court arena spotlight',
     description: 'Jordan or LeBron? Russell or Kareem? Cast your vote in the ultimate GOAT debate.',
-    participantCount: 1243,
+    participantCount: 1734,
     items: [
       { id: 'cbbgoat-1',  title: 'Michael Jordan',        seedScore: 118 },
       { id: 'cbbgoat-2',  title: 'LeBron James',          seedScore: 115 },
@@ -676,7 +676,7 @@ export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'pizza wood fired oven cheese landscape',
     region: 'Philadelphia',
     description: 'Philly takes its pizza seriously. Which slice reigns supreme in the region?',
-    participantCount: 187,
+    participantCount: 76,
     sponsored: {
       name: 'Pizzeria Beddia',
       cta: 'Book a table now',
@@ -704,7 +704,7 @@ export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'philadelphia skyline city architecture street',
     region: 'Philadelphia',
     description: "From the Rocky steps to Reading Terminal — the landmarks and neighborhoods that define Philly.",
-    participantCount: 143,
+    participantCount: 54,
     items: [
       { id: 'lpt-1',  title: 'Philadelphia Museum of Art (Rocky Steps)', seedScore: 94 },
       { id: 'lpt-2',  title: 'Liberty Bell & Independence Hall',          seedScore: 89 },
