@@ -14,6 +14,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -153,15 +154,68 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
     }
   };
 
+  const handlePickCoverImage = () => {
+    Alert.alert('Cover Photo', 'Choose a source', [
+      {
+        text: 'Photo Library',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Allow photo access to set a cover image.');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [16, 9],
+            quality: 0.8,
+          });
+          if (!result.canceled) {
+            updateListMeta(listId, { coverImageUri: result.assets[0].uri });
+          }
+        },
+      },
+      {
+        text: 'Camera',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Allow camera access to take a cover photo.');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [16, 9],
+            quality: 0.8,
+          });
+          if (!result.canceled) {
+            updateListMeta(listId, { coverImageUri: result.assets[0].uri });
+          }
+        },
+      },
+      ...(list?.coverImageUri ? [{
+        text: 'Remove Photo',
+        style: 'destructive' as const,
+        onPress: () => updateListMeta(listId, { coverImageUri: undefined }),
+      }] : []),
+      { text: 'Cancel', style: 'cancel' as const },
+    ]);
+  };
+
   if (!list) return null;
 
   const heroImage = list.items.find(i => i.rank === 1)?.imageUrl ?? null;
   const categoryColor = CATEGORY_COLORS[list.category] ?? '#CC0000';
+  const coverImageUri = list.coverImageUri ?? null;
 
   const Hero = (
     <View style={[styles.hero, { paddingTop: insets.top + 46 }]}>
-      {/* Always solid category color */}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: categoryColor }]} />
+      {/* Background: user cover photo, else solid category color */}
+      {coverImageUri ? (
+        <Image source={{ uri: coverImageUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: categoryColor }]} />
+      )}
       <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
 
       {/* Nav bar: back button + category label */}
@@ -174,7 +228,13 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           </BlurView>
         </TouchableOpacity>
         <Text style={styles.heroNavCategory}>{list.category.toUpperCase()}</Text>
-        <View style={{ width: 36 }} />
+        <TouchableOpacity onPress={handlePickCoverImage} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
+          <BlurView intensity={60} tint="dark" style={styles.heroNavBtn}>
+            <View style={styles.heroNavBtnInner}>
+              <Ionicons name={coverImageUri ? 'image' : 'camera-outline'} size={20} color="#FFF" />
+            </View>
+          </BlurView>
+        </TouchableOpacity>
       </View>
 
       {/* Bottom content */}

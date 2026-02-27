@@ -15,4 +15,5 @@ export interface TopTenList {
   isCustom: boolean;
   description?: string;
   customIcon?: string;
+  coverImageUri?: string; // user-chosen photo from gallery or camera
 }

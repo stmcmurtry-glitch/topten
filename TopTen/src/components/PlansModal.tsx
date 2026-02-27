@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -7,152 +7,100 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Purchases, { PurchasesPackage } from 'react-native-purchases';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
-interface Feature {
-  label: string;
-  included: boolean;
-}
-
-interface Tier {
-  id: string;
-  name: string;
-  price: string;
-  priceDetail: string;
-  accentColor: string;
-  dark?: boolean;
-  features: Feature[];
-  note?: string;
-}
-
-const TIERS: Tier[] = [
-  {
-    id: 'basic',
-    name: 'Free',
-    price: 'Free',
-    priceDetail: 'forever',
-    accentColor: colors.secondaryText,
-    features: [
-      { label: 'Up to 100 lists', included: true },
-      { label: 'Community rankings & voting', included: true },
-      { label: 'Discover featured lists', included: true },
-      { label: 'Unlimited lists', included: false },
-      { label: 'Unlimited search (movies, TV, books)', included: false },
-      { label: 'No ads', included: false },
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: '$2.49',
-    priceDetail: 'per month',
-    accentColor: '#CC0000',
-    dark: true,
-    note: 'Or $9.99 / year — save 33%',
-    features: [
-      { label: 'Unlimited lists', included: true },
-      { label: 'Community rankings & voting', included: true },
-      { label: 'Discover featured lists', included: true },
-      { label: 'Unlimited search (movies, TV, books)', included: true },
-      { label: 'No ads', included: true },
-    ],
-  },
+const FEATURES = [
+  { label: 'Unlimited lists', free: false },
+  { label: 'Up to 100 lists', free: true, freeOnly: true },
+  { label: 'Community rankings & voting', free: true },
+  { label: 'Discover featured lists', free: true },
+  { label: 'Unlimited search (movies, TV, books)', free: false },
+  { label: 'No ads', free: false },
 ];
 
 interface PlansModalProps {
   visible: boolean;
-  currentTier: string;
   onClose: () => void;
 }
 
-const TierCard: React.FC<{ tier: Tier; isCurrent: boolean }> = ({ tier, isCurrent }) => {
-  const textColor = tier.dark ? '#FFFFFF' : colors.primaryText;
-  const subColor = tier.dark ? 'rgba(255,255,255,0.6)' : colors.secondaryText;
+export const PlansModal: React.FC<PlansModalProps> = ({ visible, onClose }) => {
+  const insets = useSafeAreaInsets();
+  const [monthlyPkg, setMonthlyPkg] = useState<PurchasesPackage | null>(null);
+  const [annualPkg, setAnnualPkg] = useState<PurchasesPackage | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
 
-  const handleUpgrade = () => {
-    Alert.alert(
-      `Upgrade to ${tier.name}`,
-      'In-app purchases are coming soon. Stay tuned!',
-      [{ text: 'OK' }]
-    );
+  useEffect(() => {
+    if (!visible) return;
+    setLoading(true);
+    Promise.all([
+      Purchases.getOfferings(),
+      Purchases.getCustomerInfo(),
+    ]).then(([offerings, info]) => {
+      const pkgs = offerings.current?.availablePackages ?? [];
+      setMonthlyPkg(
+        pkgs.find(p => p.identifier === '$rc_monthly') ??
+        pkgs.find(p => p.packageType === 'MONTHLY') ??
+        pkgs.find(p => p.product.identifier.includes('monthly')) ??
+        null
+      );
+      setAnnualPkg(
+        pkgs.find(p => p.identifier === '$rc_annual') ??
+        pkgs.find(p => p.packageType === 'ANNUAL') ??
+        pkgs.find(p => p.product.identifier.includes('annual')) ??
+        null
+      );
+      setIsPremium(!!info.entitlements.active['premium']);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [visible]);
+
+  const handlePurchase = async (pkg: PurchasesPackage) => {
+    setPurchasing(true);
+    try {
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      if (customerInfo.entitlements.active['premium']) {
+        setIsPremium(true);
+        Alert.alert('Welcome to Premium!', 'Your subscription is now active.');
+        onClose();
+      }
+    } catch (e: any) {
+      if (!e.userCancelled) {
+        Alert.alert('Purchase failed', 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setPurchasing(false);
+    }
   };
 
-  return (
-    <View style={[styles.tierCard, tier.dark && styles.tierCardDark]}>
-      {/* Accent top bar */}
-      <View style={[styles.tierAccent, { backgroundColor: tier.accentColor }]} />
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const info = await Purchases.restorePurchases();
+      if (info.entitlements.active['premium']) {
+        setIsPremium(true);
+        Alert.alert('Restored!', 'Your Premium subscription has been restored.');
+        onClose();
+      } else {
+        Alert.alert('Nothing to restore', 'No active Premium subscription found.');
+      }
+    } catch {
+      Alert.alert('Error', 'Could not restore purchases. Please try again.');
+    } finally {
+      setRestoring(false);
+    }
+  };
 
-      <View style={styles.tierBody}>
-        {/* Header row */}
-        <View style={styles.tierHeader}>
-          <View style={styles.tierNameRow}>
-            <Text style={[styles.tierName, { color: textColor }]}>{tier.name}</Text>
-            {isCurrent && (
-              <View style={styles.currentBadge}>
-                <Text style={styles.currentBadgeText}>Current</Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.tierPriceBlock}>
-            <Text style={[styles.tierPrice, { color: tier.accentColor }]}>{tier.price}</Text>
-            <Text style={[styles.tierPriceDetail, { color: subColor }]}>{tier.priceDetail}</Text>
-          </View>
-        </View>
-
-        {/* Divider */}
-        <View style={[styles.tierDivider, { backgroundColor: tier.dark ? 'rgba(255,255,255,0.12)' : colors.border }]} />
-
-        {/* Feature list */}
-        <View style={styles.featureList}>
-          {tier.features.map((f) => (
-            <View key={f.label} style={styles.featureRow}>
-              <Ionicons
-                name={f.included ? 'checkmark-circle' : 'remove-circle-outline'}
-                size={18}
-                color={f.included ? '#34C759' : (tier.dark ? 'rgba(255,255,255,0.25)' : colors.border)}
-              />
-              <Text
-                style={[
-                  styles.featureLabel,
-                  { color: f.included ? textColor : subColor },
-                  !f.included && styles.featureLabelDimmed,
-                ]}
-              >
-                {f.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Note */}
-        {tier.note && (
-          <Text style={[styles.tierNote, { color: subColor }]}>* {tier.note}</Text>
-        )}
-
-        {/* CTA */}
-        {isCurrent ? (
-          <View style={styles.currentPlanButton}>
-            <Text style={[styles.currentPlanText, { color: subColor }]}>Your current plan</Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[styles.upgradeButton, { backgroundColor: tier.accentColor }]}
-            onPress={handleUpgrade}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
-};
-
-export const PlansModal: React.FC<PlansModalProps> = ({ visible, currentTier, onClose }) => {
-  const insets = useSafeAreaInsets();
+  const monthlyPrice = monthlyPkg?.product.priceString ?? '$2.49';
+  const annualPrice = annualPkg?.product.priceString ?? '$9.99';
+  const selectedPkg = selectedPlan === 'annual' ? annualPkg : monthlyPkg;
 
   return (
     <Modal
@@ -162,25 +110,126 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, currentTier, on
       onRequestClose={onClose}
     >
       <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-        {/* Handle + close */}
-        <View style={styles.sheetHeader}>
-          <View style={styles.handle} />
-          <TouchableOpacity style={styles.closeButton} onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <Ionicons name="close" size={22} color={colors.secondaryText} />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.sheetTitle}>Upgrade to Premium</Text>
-        <Text style={styles.sheetSub}>Unlock unlimited lists, full search, and an ad-free experience.</Text>
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scroll}
+        {/* Close */}
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={onClose}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          {TIERS.map((tier) => (
-            <TierCard key={tier.id} tier={tier} isCurrent={tier.id === currentTier} />
-          ))}
+          <Ionicons name="close" size={20} color={colors.secondaryText} />
+        </TouchableOpacity>
+
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+          {/* Hero */}
+          <View style={styles.hero}>
+            <View style={styles.heroIconWrap}>
+              <Ionicons name="star" size={32} color={colors.activeTab} />
+            </View>
+            <Text style={styles.heroTitle}>TopTen Premium</Text>
+            <Text style={styles.heroSub}>
+              {isPremium
+                ? 'You\'re all set. Thanks for supporting TopTen.'
+                : 'Unlock everything. No limits, no ads.'}
+            </Text>
+          </View>
+
+          {/* Plan toggle — only show if not premium */}
+          {!isPremium && (
+            <View style={styles.toggle}>
+              <TouchableOpacity
+                style={[styles.toggleOption, selectedPlan === 'monthly' && styles.toggleOptionActive]}
+                onPress={() => setSelectedPlan('monthly')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.toggleLabel, selectedPlan === 'monthly' && styles.toggleLabelActive]}>
+                  Monthly
+                </Text>
+                <Text style={[styles.togglePrice, selectedPlan === 'monthly' && styles.togglePriceActive]}>
+                  {monthlyPrice}/mo
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleOption, selectedPlan === 'annual' && styles.toggleOptionActive]}
+                onPress={() => setSelectedPlan('annual')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.toggleLabelRow}>
+                  <Text style={[styles.toggleLabel, selectedPlan === 'annual' && styles.toggleLabelActive]}>
+                    Annual
+                  </Text>
+                  <View style={styles.saveBadge}>
+                    <Text style={styles.saveBadgeText}>Save 33%</Text>
+                  </View>
+                </View>
+                <Text style={[styles.togglePrice, selectedPlan === 'annual' && styles.togglePriceActive]}>
+                  {annualPrice}/yr
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Feature list */}
+          <View style={styles.featureCard}>
+            {FEATURES.filter(f => !f.freeOnly).map((f, i, arr) => (
+              <React.Fragment key={f.label}>
+                <View style={styles.featureRow}>
+                  <Ionicons
+                    name={f.free ? 'checkmark-circle' : 'checkmark-circle'}
+                    size={20}
+                    color={f.free ? '#34C759' : colors.activeTab}
+                  />
+                  <View style={styles.featureText}>
+                    <Text style={styles.featureLabel}>{f.label}</Text>
+                    {!f.free && (
+                      <Text style={styles.featurePremiumTag}>Premium</Text>
+                    )}
+                  </View>
+                </View>
+                {i < arr.length - 1 && <View style={styles.featureDivider} />}
+              </React.Fragment>
+            ))}
+          </View>
+
+          {/* CTA */}
+          {isPremium ? (
+            <View style={styles.activeBadge}>
+              <Ionicons name="checkmark-circle" size={18} color="#34C759" />
+              <Text style={styles.activeBadgeText}>Premium Active</Text>
+            </View>
+          ) : loading ? (
+            <ActivityIndicator color={colors.activeTab} style={{ marginTop: spacing.xl }} />
+          ) : (
+            <TouchableOpacity
+              style={styles.ctaButton}
+              onPress={() => selectedPkg && handlePurchase(selectedPkg)}
+              activeOpacity={0.88}
+              disabled={purchasing || !selectedPkg}
+            >
+              {purchasing
+                ? <ActivityIndicator color="#FFF" />
+                : (
+                  <Text style={styles.ctaText}>
+                    {selectedPlan === 'annual'
+                      ? `Start for ${annualPrice} / year`
+                      : `Start for ${monthlyPrice} / month`}
+                  </Text>
+                )
+              }
+            </TouchableOpacity>
+          )}
+
+          <Text style={styles.legalText}>
+            Subscription auto-renews. Cancel anytime in App Store settings.
+          </Text>
         </ScrollView>
+
+        {/* Restore */}
+        <TouchableOpacity style={styles.restoreButton} onPress={handleRestore} disabled={restoring}>
+          {restoring
+            ? <ActivityIndicator color={colors.secondaryText} size="small" />
+            : <Text style={styles.restoreText}>Restore Purchases</Text>
+          }
+        </TouchableOpacity>
       </View>
     </Modal>
   );
@@ -191,158 +240,203 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  sheetHeader: {
-    alignItems: 'center',
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-    marginBottom: spacing.md,
-  },
   closeButton: {
     position: 'absolute',
+    top: spacing.lg,
     right: spacing.lg,
-    top: spacing.md + 12,
+    zIndex: 10,
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: colors.border,
+    backgroundColor: colors.cardBackground,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sheetTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.primaryText,
-    letterSpacing: -0.5,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-  },
-  sheetSub: {
-    fontSize: 14,
-    color: colors.secondaryText,
-    marginHorizontal: spacing.lg,
-    marginTop: 4,
-    marginBottom: spacing.lg,
+    ...shadow,
+    shadowOpacity: 0.08,
   },
   scroll: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
-    gap: spacing.md,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
   },
 
-  /* ── Tier Card ── */
-  tierCard: {
+  /* ── Hero ── */
+  hero: {
+    alignItems: 'center',
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
+  },
+  heroIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: 'rgba(204,0,0,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: colors.primaryText,
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  heroSub: {
+    fontSize: 15,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    lineHeight: 21,
+    paddingHorizontal: spacing.md,
+  },
+
+  /* ── Plan toggle ── */
+  toggle: {
+    flexDirection: 'row',
     backgroundColor: colors.cardBackground,
     borderRadius: borderRadius.squircle,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: 4,
+    marginBottom: spacing.lg,
     ...shadow,
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.06,
   },
-  tierCardDark: {
-    backgroundColor: '#1C1C1E',
-    borderColor: '#3A3A3C',
+  toggleOption: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    gap: 2,
   },
-  tierAccent: {
-    height: 4,
+  toggleOptionActive: {
+    backgroundColor: colors.activeTab,
   },
-  tierBody: {
-    padding: spacing.lg,
-  },
-  tierHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  tierNameRow: {
+  toggleLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 6,
   },
-  tierName: {
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: -0.3,
+  toggleLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.secondaryText,
   },
-  currentBadge: {
+  toggleLabelActive: {
+    color: '#FFF',
+  },
+  togglePrice: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.secondaryText,
+  },
+  togglePriceActive: {
+    color: 'rgba(255,255,255,0.85)',
+  },
+  saveBadge: {
     backgroundColor: '#34C759',
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
   },
-  currentBadgeText: {
-    fontSize: 11,
+  saveBadgeText: {
+    fontSize: 9,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#FFF',
     letterSpacing: 0.2,
   },
-  tierPriceBlock: {
-    alignItems: 'flex-end',
-  },
-  tierPrice: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  tierPriceDetail: {
-    fontSize: 12,
-    marginTop: 1,
-  },
-  tierDivider: {
-    height: StyleSheet.hairlineWidth,
-    marginBottom: spacing.md,
-  },
-  featureList: {
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+
+  /* ── Feature list ── */
+  featureCard: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.squircle,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.lg,
+    ...shadow,
+    shadowOpacity: 0.06,
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 13,
+    gap: spacing.md,
+  },
+  featureDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: spacing.lg + 20 + spacing.md,
+  },
+  featureText: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   featureLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  featureLabelDimmed: {
-    opacity: 0.5,
-  },
-  tierNote: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginBottom: spacing.md,
-  },
-  upgradeButton: {
-    marginTop: spacing.xs,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-  },
-  upgradeButtonText: {
     fontSize: 15,
+    fontWeight: '500',
+    color: colors.primaryText,
+  },
+  featurePremiumTag: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.activeTab,
+    backgroundColor: 'rgba(204,0,0,0.08)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+
+  /* ── CTA ── */
+  ctaButton: {
+    backgroundColor: colors.activeTab,
+    borderRadius: borderRadius.squircle,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    ...shadow,
+    shadowColor: colors.activeTab,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+  },
+  ctaText: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#FFF',
     letterSpacing: 0.1,
   },
-  currentPlanButton: {
-    marginTop: spacing.xs,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
+  activeBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    backgroundColor: 'rgba(52,199,89,0.1)',
+    borderRadius: borderRadius.squircle,
+    marginBottom: spacing.md,
   },
-  currentPlanText: {
+  activeBadgeText: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#34C759',
+  },
+  legalText: {
+    fontSize: 11,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    lineHeight: 16,
+    marginBottom: spacing.sm,
+  },
+
+  /* ── Restore ── */
+  restoreButton: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  restoreText: {
+    fontSize: 13,
+    color: colors.secondaryText,
+    fontWeight: '500',
   },
 });

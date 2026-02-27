@@ -10,7 +10,7 @@ interface ListContextType {
   lists: TopTenList[];
   addList: (category: string, title?: string, description?: string) => string;
   updateListItems: (listId: string, items: TopTenItem[]) => void;
-  updateListMeta: (listId: string, meta: { description?: string; customIcon?: string; category?: string }) => void;
+  updateListMeta: (listId: string, meta: { description?: string; customIcon?: string; category?: string; coverImageUri?: string }) => void;
   deleteList: (listId: string) => void;
   reorderLists: (newOrder: TopTenList[]) => void;
 }
@@ -67,7 +67,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return id;
   }, [lists, persist]);
 
-  const updateListMeta = useCallback((listId: string, meta: { description?: string; customIcon?: string; category?: string }) => {
+  const updateListMeta = useCallback((listId: string, meta: { description?: string; customIcon?: string; category?: string; coverImageUri?: string }) => {
     const updated = lists.map((l) => {
       if (l.id !== listId) return l;
       const patch: Partial<TopTenList> = { ...meta };

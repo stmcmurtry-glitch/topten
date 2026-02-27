@@ -10,12 +10,12 @@ import { AllListsScreen } from '../screens/AllListsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { DiscoverScreen } from '../screens/DiscoverScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
-import { NotificationsScreen } from '../screens/NotificationsScreen';
 import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { AboutScreen } from '../screens/AboutScreen';
 import { ContactScreen } from '../screens/ContactScreen';
 import { FeaturedListScreen } from '../screens/FeaturedListScreen';
 import { CommunityListScreen } from '../screens/CommunityListScreen';
+import { YourDataScreen } from '../screens/YourDataScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -72,7 +72,7 @@ const MyListsStack = () => (
     <Stack.Screen
       name="MyListsTabHome"
       component={MyListsTabScreen}
-      options={{ headerShown: false }}
+      options={{ headerShown: false, title: 'Lists' }}
     />
     <Stack.Screen
       name="AllLists"
@@ -88,6 +88,16 @@ const MyListsStack = () => (
       name="CreateList"
       component={CreateListScreen}
       options={{ presentation: 'modal', title: 'New List', headerLargeTitle: false }}
+    />
+    <Stack.Screen
+      name="Search"
+      component={SearchScreen}
+      options={{ title: 'Search', headerLargeTitle: false }}
+    />
+    <Stack.Screen
+      name="CommunityList"
+      component={CommunityListScreen}
+      options={{ headerShown: false }}
     />
   </Stack.Navigator>
 );
@@ -109,6 +119,11 @@ const DiscoverStack = () => (
       component={FeaturedListScreen}
       options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
     />
+    <Stack.Screen
+      name="CommunityList"
+      component={CommunityListScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -117,14 +132,9 @@ const SettingsStack = () => (
     <Stack.Screen
       name="SettingsHome"
       component={SettingsScreen}
-      options={{ headerShown: false }}
+      options={{ headerShown: false, title: 'Account' }}
     />
-    <Stack.Screen
-      name="Notifications"
-      component={NotificationsScreen}
-      options={{ title: 'Notifications', headerLargeTitle: false }}
-    />
-    <Stack.Screen
+<Stack.Screen
       name="PrivacyPolicy"
       component={PrivacyPolicyScreen}
       options={{ title: 'Privacy Policy', headerLargeTitle: false }}
@@ -138,6 +148,11 @@ const SettingsStack = () => (
       name="Contact"
       component={ContactScreen}
       options={{ title: 'Contact Us', headerLargeTitle: false }}
+    />
+    <Stack.Screen
+      name="YourData"
+      component={YourDataScreen}
+      options={{ title: 'Your Data', headerLargeTitle: false }}
     />
   </Stack.Navigator>
 );
