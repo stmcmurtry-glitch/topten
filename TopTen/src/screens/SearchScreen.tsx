@@ -52,7 +52,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   const doSearch = (q: string) => {
     setLoading(true);
     setApiError(false);
-    searchSuggestions(category, q)
+    searchSuggestions(category, q, listTitle)
       .then((r) => { setResults(r); })
       .catch(() => { setResults([]); setApiError(true); })
       .finally(() => setLoading(false));

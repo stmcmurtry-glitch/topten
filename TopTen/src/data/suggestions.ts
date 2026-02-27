@@ -66,6 +66,7 @@ export const isApiCategory = (category: string): boolean => [
 export async function searchSuggestions(
   category: string,
   query: string,
+  listTitle?: string,
 ): Promise<SearchResult[]> {
   switch (category) {
     case 'Movies': {
@@ -79,7 +80,7 @@ export async function searchSuggestions(
     case 'Books':
       return searchBooks(query);
     case 'Sports':
-      return searchSports(query).catch(() => searchAthletes(query));
+      return searchSports(query, listTitle).catch(() => searchAthletes(query));
     case 'Music':
       return searchMusic(query);
     case 'Food':
