@@ -14,7 +14,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { PhotoPickerModal } from '../components/PhotoPickerModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,6 +85,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [descFocused, setDescFocused] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [photoPickerTarget, setPhotoPickerTarget] = useState<'cover' | 'profile' | null>(null);
 
   useEffect(() => { setSlots(buildSlots()); }, [buildSlots]);
   useEffect(() => { setDescription(list?.description ?? ''); }, [list?.id]);
@@ -154,53 +155,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
     }
   };
 
-  const handlePickCoverImage = () => {
-    Alert.alert('Cover Photo', 'Choose a source', [
-      {
-        text: 'Photo Library',
-        onPress: async () => {
-          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (status !== 'granted') {
-            Alert.alert('Permission needed', 'Allow photo access to set a cover image.');
-            return;
-          }
-          const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [16, 9],
-            quality: 0.8,
-          });
-          if (!result.canceled) {
-            updateListMeta(listId, { coverImageUri: result.assets[0].uri });
-          }
-        },
-      },
-      {
-        text: 'Camera',
-        onPress: async () => {
-          const { status } = await ImagePicker.requestCameraPermissionsAsync();
-          if (status !== 'granted') {
-            Alert.alert('Permission needed', 'Allow camera access to take a cover photo.');
-            return;
-          }
-          const result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [16, 9],
-            quality: 0.8,
-          });
-          if (!result.canceled) {
-            updateListMeta(listId, { coverImageUri: result.assets[0].uri });
-          }
-        },
-      },
-      ...(list?.coverImageUri ? [{
-        text: 'Remove Photo',
-        style: 'destructive' as const,
-        onPress: () => updateListMeta(listId, { coverImageUri: undefined }),
-      }] : []),
-      { text: 'Cancel', style: 'cancel' as const },
-    ]);
-  };
+  const handlePickCoverImage = () => setPhotoPickerTarget('cover');
 
   if (!list) return null;
 
@@ -326,6 +281,18 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
             <View style={styles.actionDivider} />
 
+            {/* Profile image */}
+            <TouchableOpacity style={styles.actionRow} onPress={() => setPhotoPickerTarget('profile')} activeOpacity={0.7}>
+              <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
+                <Ionicons name="person-circle-outline" size={18} color={categoryColor} />
+              </View>
+              <Text style={styles.actionLabel}>Profile Image</Text>
+              {list.profileImageUri && <Text style={[styles.actionValue, { color: categoryColor }]}>Set</Text>}
+              <Ionicons name="chevron-forward" size={16} color={colors.border} />
+            </TouchableOpacity>
+
+            <View style={styles.actionDivider} />
+
             {/* Category */}
             <TouchableOpacity style={styles.actionRow} onPress={() => setShowCategoryPicker(true)} activeOpacity={0.7}>
               <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
@@ -415,6 +382,24 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         title={list.title}
         category={list.category}
         items={slots}
+      />
+
+      {/* Photo picker — cover or profile */}
+      <PhotoPickerModal
+        visible={photoPickerTarget !== null}
+        onClose={() => setPhotoPickerTarget(null)}
+        category={list.category}
+        title={photoPickerTarget === 'cover' ? 'Cover Photo' : 'Profile Image'}
+        currentUri={photoPickerTarget === 'cover' ? list.coverImageUri : list.profileImageUri}
+        aspect={photoPickerTarget === 'cover' ? [16, 9] : [1, 1]}
+        orientation={photoPickerTarget === 'cover' ? 'landscape' : 'squarish'}
+        onSelectUri={(uri) => {
+          if (photoPickerTarget === 'cover') {
+            updateListMeta(listId, { coverImageUri: uri });
+          } else {
+            updateListMeta(listId, { profileImageUri: uri });
+          }
+        }}
       />
 
       {/* Category picker */}

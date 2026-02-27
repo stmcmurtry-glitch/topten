@@ -15,5 +15,6 @@ export interface TopTenList {
   isCustom: boolean;
   description?: string;
   customIcon?: string;
-  coverImageUri?: string; // user-chosen photo from gallery or camera
+  coverImageUri?: string;   // hero/banner image at top of ListDetailScreen
+  profileImageUri?: string; // thumbnail shown in My Lists rows
 }

@@ -36,9 +36,7 @@ export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank }) =
 
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.thumbnail, { backgroundColor: thumbColor }]}>
-        <Ionicons name={list.icon as any} size={28} color="#FFF" />
-      </View>
+      <ListThumbnail list={list} size={60} radius={14} />
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>{list.title}</Text>
         <Text style={styles.subtitle}>{filled} of 10 filled</Text>

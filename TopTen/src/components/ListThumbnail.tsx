@@ -13,9 +13,16 @@ interface ListThumbnailProps {
 }
 
 export const ListThumbnail: React.FC<ListThumbnailProps> = ({ list, size, radius }) => {
-  const [imageUrl, setImageUrl] = useState<string | null>(() => getListTopImageUrl(list));
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    () => list.profileImageUri ?? getListTopImageUrl(list)
+  );
 
   useEffect(() => {
+    // User-chosen profile image always wins
+    if (list.profileImageUri) {
+      setImageUrl(list.profileImageUri);
+      return;
+    }
     const top = getListTopImageUrl(list);
     if (top) {
       setImageUrl(top);
@@ -23,7 +30,7 @@ export const ListThumbnail: React.FC<ListThumbnailProps> = ({ list, size, radius
     }
     // No ranked item image — fetch a category photo
     fetchCategoryImage(list.category).then(setImageUrl);
-  }, [list.id, list.items.length, list.category]);
+  }, [list.id, list.profileImageUri, list.items.length, list.category]);
 
   const fallbackColor = CATEGORY_COLORS[list.category] ?? '#AAAAAA';
   const br = radius ?? borderRadius.md;
