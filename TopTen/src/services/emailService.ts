@@ -17,7 +17,8 @@ async function sendTemplate(templateId: string, params: Record<string, string>):
     }),
   });
   if (!res.ok) {
-    throw new Error(`EmailJS error ${res.status}`);
+    const text = await res.text();
+    throw new Error(`EmailJS error ${res.status}: ${text}`);
   }
 }
 
