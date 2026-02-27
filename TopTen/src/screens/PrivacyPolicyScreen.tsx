@@ -1,19 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  Switch,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   Linking,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, shadow } from '../theme';
-
-const DATA_CONTRIBUTION_KEY = '@topten_data_contribution';
 
 const SECTIONS = [
   {
@@ -24,34 +20,22 @@ const SECTIONS = [
   {
     icon: 'bar-chart-outline' as const,
     title: 'Anonymous Data & Insights',
-    body: 'To support the platform, we may aggregate anonymous ranking data to identify global trends. These anonymized insights may be shared with partners for market research purposes. They are strictly anonymized and cannot be traced back to any individual account.',
+    body: 'To support the platform, we may aggregate anonymous ranking data to identify global trends. These anonymized insights may be shared with partners for market research purposes. They are strictly anonymized and cannot be traced back to any individual.',
   },
   {
     icon: 'cloud-outline' as const,
     title: 'Third-Party APIs',
-    body: 'Top Ten communicates with third-party services such as TMDb and Edamam to fetch movie and food data. These services receive only specific search queries. They never have access to your personal Top Ten account information.',
+    body: 'Top Ten communicates with third-party services such as TMDb and MusicBrainz to fetch content data. These services receive only specific search queries and never have access to your personal information.',
   },
   {
     icon: 'shield-checkmark-outline' as const,
     title: 'Your Rights',
-    body: 'You may request deletion of your account data at any time by contacting us. You can opt out of anonymous data aggregation using the toggle above. Your choices take effect immediately.',
+    body: 'You may request deletion of your data at any time by contacting us. Your request will be processed within a few business days.',
   },
 ];
 
-export const PrivacyPolicyScreen: React.FC = () => {
+export const PrivacyPolicyScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const [dataContribution, setDataContribution] = useState(true);
-
-  useEffect(() => {
-    AsyncStorage.getItem(DATA_CONTRIBUTION_KEY).then((raw) => {
-      if (raw !== null) setDataContribution(JSON.parse(raw));
-    });
-  }, []);
-
-  const toggleContribution = (value: boolean) => {
-    setDataContribution(value);
-    AsyncStorage.setItem(DATA_CONTRIBUTION_KEY, JSON.stringify(value));
-  };
 
   return (
     <ScrollView
@@ -59,30 +43,6 @@ export const PrivacyPolicyScreen: React.FC = () => {
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Data Contribution toggle — prominent, actionable */}
-      <View style={styles.toggleCard}>
-        <View style={styles.toggleCardHeader}>
-          <Ionicons name="analytics-outline" size={20} color={colors.activeTab} />
-          <Text style={styles.toggleCardTitle}>Data Contribution</Text>
-        </View>
-        <Text style={styles.toggleCardBody}>
-          Allow Top Ten to include your anonymous ranking data in aggregated trend reports shared with research partners. Your identity is never exposed.
-        </Text>
-        <View style={styles.toggleRow}>
-          <Text style={styles.toggleLabel}>
-            {dataContribution ? 'Contributing anonymously' : 'Opted out'}
-          </Text>
-          <Switch
-            value={dataContribution}
-            onValueChange={toggleContribution}
-            trackColor={{ false: colors.border, true: '#CC0000' }}
-            thumbColor="#FFFFFF"
-            ios_backgroundColor={colors.border}
-          />
-        </View>
-      </View>
-
-      {/* Policy sections */}
       <Text style={styles.sectionGroupHeader}>Privacy Policy</Text>
       <Text style={styles.effectiveDate}>Effective February 2026</Text>
 
@@ -110,9 +70,12 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <Text style={styles.footerLink}>View full privacy policy ↗</Text>
       </TouchableOpacity>
 
-      <Text style={styles.footer}>
-        Questions? Contact us at stmcmurtry@gmail.com
-      </Text>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Contact')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.footerLink}>Questions? Get in touch ↗</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -126,48 +89,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingHorizontal: spacing.lg,
   },
-
-  /* ── Data Contribution toggle ── */
-  toggleCard: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: borderRadius.squircle,
-    padding: spacing.lg,
-    ...shadow,
-    shadowOpacity: 0.07,
-    marginBottom: spacing.xl,
-  },
-  toggleCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  toggleCardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.primaryText,
-  },
-  toggleCardBody: {
-    fontSize: 13,
-    color: colors.secondaryText,
-    lineHeight: 19,
-    marginBottom: spacing.lg,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  toggleLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.primaryText,
-  },
-
-  /* ── Policy sections ── */
   sectionGroupHeader: {
     fontSize: 13,
     fontWeight: '600',
@@ -220,20 +141,11 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     lineHeight: 20,
   },
-
-  /* ── Footer ── */
   footerLink: {
     fontSize: 13,
     fontWeight: '600',
     color: colors.activeTab,
     textAlign: 'center',
     marginBottom: spacing.md,
-  },
-  footer: {
-    fontSize: 12,
-    color: colors.secondaryText,
-    textAlign: 'center',
-    lineHeight: 18,
-    fontStyle: 'italic',
   },
 });

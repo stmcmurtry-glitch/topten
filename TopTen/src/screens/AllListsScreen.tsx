@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { TopTenList } from '../data/schema';
 import { ListThumbnail } from '../components/ListThumbnail';
+import { PhotoPickerModal } from '../components/PhotoPickerModal';
 import { CATEGORIES, CATEGORY_COLORS } from '../data/categories';
 
 const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
@@ -19,10 +20,12 @@ const ALL_PILLS = ['All', ...ALL_CATEGORY_LABELS];
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
 export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { lists, reorderLists } = useListContext();
+  const { lists, reorderLists, updateListMeta } = useListContext();
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All');
   const [showAll, setShowAll] = React.useState(false);
+  const [editingListId, setEditingListId] = useState<string | null>(null);
+  const editingList = lists.find((l) => l.id === editingListId);
 
   // Reset pagination when filter changes
   useEffect(() => { setShowAll(false); }, [activeCategory]);
@@ -60,7 +63,14 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           activeOpacity={0.7}
         >
           <Text style={styles.rankNumber}>{globalIndex + 1}</Text>
-          <ListThumbnail list={item} size={48} radius={10} />
+          <TouchableOpacity onPress={() => setEditingListId(item.id)} activeOpacity={0.75}>
+            <View>
+              <ListThumbnail list={item} size={48} radius={10} />
+              <View style={styles.thumbEditBadge}>
+                <Ionicons name="camera" size={8} color="#FFF" />
+              </View>
+            </View>
+          </TouchableOpacity>
           <View style={styles.info}>
             <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
             <Text style={styles.subtitle}>{item.items.length} of 10 filled</Text>
@@ -154,6 +164,15 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           </View>
         }
       />
+      <PhotoPickerModal
+        visible={editingListId !== null}
+        onClose={() => setEditingListId(null)}
+        title="Profile Image"
+        currentUri={editingList?.profileImageUri}
+        onSelectUri={(uri) => {
+          if (editingListId) updateListMeta(editingListId, { profileImageUri: uri });
+        }}
+      />
     </View>
   );
 };
@@ -242,6 +261,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.xs,
     alignItems: 'center',
+  },
+  thumbEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   separator: {
     height: spacing.sm,

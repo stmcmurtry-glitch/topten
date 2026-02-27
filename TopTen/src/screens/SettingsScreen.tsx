@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Purchases from 'react-native-purchases';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useListContext } from '../data/ListContext';
 import { PlansModal } from '../components/PlansModal';
@@ -26,11 +27,30 @@ import {
 const BASIC_LIMIT = 100;
 
 /* ── Membership Card ── */
-const MembershipCard: React.FC<{ onViewPlans: () => void }> = ({ onViewPlans }) => {
+const MembershipCard: React.FC<{ isPremium: boolean; onViewPlans: () => void }> = ({ isPremium, onViewPlans }) => {
   const { lists } = useListContext();
   const used = lists.length;
   const fillPct = Math.min(used / BASIC_LIMIT, 1);
   const nearLimit = fillPct >= 0.8;
+
+  if (isPremium) {
+    return (
+      <View style={styles.memberCard}>
+        <View style={styles.memberBody}>
+          <View style={styles.tierRow}>
+            <View style={styles.tierLeft}>
+              <View style={[styles.tierBadge, styles.tierBadgePremium]}>
+                <Text style={[styles.tierBadgeText, styles.tierBadgeTextPremium]}>PREMIUM</Text>
+              </View>
+              <Text style={styles.memberTier}>Premium</Text>
+            </View>
+            <Ionicons name="checkmark-circle" size={20} color="#34C759" />
+          </View>
+          <Text style={styles.premiumSubLabel}>Unlimited lists · Full search · No ads</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.memberCard}>
@@ -162,10 +182,18 @@ const FeedbackCard: React.FC = () => {
 export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [plansVisible, setPlansVisible] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
+
+  const checkPremium = () => {
+    Purchases.getCustomerInfo()
+      .then(info => setIsPremium(!!info.entitlements.active['premium']))
+      .catch(() => {});
+  };
 
   useEffect(() => {
     getDetectedLocation().then(setDetectedLocation);
+    checkPremium();
   }, []);
 
   const locationLabel = detectedLocation
@@ -196,7 +224,6 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     {
       title: 'Preferences',
       data: [
-        { label: 'Notifications', route: 'Notifications' },
         { label: 'Location', value: locationLabel, isLocation: true },
         { label: 'Privacy Policy', route: 'PrivacyPolicy' },
         { label: 'Contact Us', route: 'Contact' },
@@ -206,7 +233,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     {
       title: 'Data',
       data: [
-        { label: 'Delete My Data', route: 'Contact', routeParams: { subject: 'Data Deletion Request' }, isDestructive: true },
+        { label: 'Your Data', route: 'YourData' },
       ],
     },
   ];
@@ -228,7 +255,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               </View>
               {/* Membership section */}
               <Text style={styles.sectionHeader}>Membership</Text>
-              <MembershipCard onViewPlans={() => setPlansVisible(true)} />
+              <MembershipCard isPremium={isPremium} onViewPlans={() => setPlansVisible(true)} />
             </View>
           }
           renderSectionHeader={({ section }) => (
@@ -286,8 +313,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
       <PlansModal
         visible={plansVisible}
-        currentTier="basic"
-        onClose={() => setPlansVisible(false)}
+        onClose={() => { setPlansVisible(false); checkPremium(); }}
       />
     </>
   );
@@ -386,11 +412,22 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     alignSelf: 'center',
   },
+  tierBadgePremium: {
+    backgroundColor: colors.activeTab,
+  },
   tierBadgeText: {
     fontSize: 10,
     fontWeight: '700',
     color: colors.secondaryText,
     letterSpacing: 0.6,
+  },
+  tierBadgeTextPremium: {
+    color: '#FFFFFF',
+  },
+  premiumSubLabel: {
+    fontSize: 12,
+    color: colors.secondaryText,
+    marginTop: spacing.xs,
   },
   usageLabelRow: {
     flexDirection: 'row',

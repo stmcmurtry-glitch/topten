@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TopTenList } from '../data/schema';
 import { CATEGORY_COLORS } from './FeedRow';
-import { fetchCategoryImage, getListTopImageUrl } from '../services/imageService';
 import { borderRadius } from '../theme';
 
 interface ListThumbnailProps {
@@ -13,35 +12,14 @@ interface ListThumbnailProps {
 }
 
 export const ListThumbnail: React.FC<ListThumbnailProps> = ({ list, size, radius }) => {
-  const [imageUrl, setImageUrl] = useState<string | null>(
-    () => list.profileImageUri ?? getListTopImageUrl(list)
-  );
-
-  useEffect(() => {
-    // User-chosen profile image always wins
-    if (list.profileImageUri) {
-      setImageUrl(list.profileImageUri);
-      return;
-    }
-    const top = getListTopImageUrl(list);
-    if (top) {
-      setImageUrl(top);
-      return;
-    }
-    // No ranked item image — fetch a category photo
-    fetchCategoryImage(list.category).then(setImageUrl);
-  }, [list.id, list.profileImageUri, list.items.length, list.category]);
-
   const fallbackColor = CATEGORY_COLORS[list.category] ?? '#AAAAAA';
   const br = radius ?? borderRadius.md;
   const iconSize = Math.round(size * 0.44);
 
-  if (imageUrl) {
+  if (list.profileImageUri) {
     return (
       <View style={{ width: size, height: size, borderRadius: br, overflow: 'hidden' }}>
-        <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        {/* 5% black tint so white icons stay legible */}
-        <View style={[StyleSheet.absoluteFill, styles.tint]} />
+        <Image source={{ uri: list.profileImageUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       </View>
     );
   }
@@ -61,9 +39,3 @@ export const ListThumbnail: React.FC<ListThumbnailProps> = ({ list, size, radius
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  tint: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
-  },
-});

@@ -19,7 +19,6 @@ import { registerDynamicLists } from '../data/dynamicListRegistry';
 import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { fetchCategoryImage } from '../services/imageService';
-import { PhotoPickerModal } from '../components/PhotoPickerModal';
 import { CATEGORIES } from '../data/categories';
 import {
   getDetectedLocation,
@@ -77,9 +76,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress 
 };
 
 export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { lists, updateListMeta } = useListContext();
-  const [editingListId, setEditingListId] = useState<string | null>(null);
-  const editingList = lists.find((l) => l.id === editingListId);
+  const { lists } = useListContext();
   const { userRankings } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
   // undefined = still detecting, null = failed / no match
@@ -270,7 +267,6 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
               onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
               flat
               rank={index + 1}
-              onPressThumb={() => setEditingListId(list.id)}
             />
             {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
           </React.Fragment>
@@ -297,16 +293,6 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         <Text style={styles.allListsText}>All Lists</Text>
         <Ionicons name="chevron-forward" size={15} color={colors.activeTab} />
       </TouchableOpacity>
-
-      <PhotoPickerModal
-        visible={editingListId !== null}
-        onClose={() => setEditingListId(null)}
-        title="Profile Image"
-        currentUri={editingList?.profileImageUri}
-        onSelectUri={(uri) => {
-          if (editingListId) updateListMeta(editingListId, { profileImageUri: uri });
-        }}
-      />
 
       {/* Add List Footer */}
       <TouchableOpacity
