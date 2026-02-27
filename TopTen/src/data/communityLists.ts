@@ -382,7 +382,6 @@ export const COMMUNITY_LISTS: CommunityList[] = [
       { id: 'cmi-10', title: 'Watch the sunrise from a mountaintop', seedScore:  72 },
     ],
   },
-];
 
 // ── Golf ──────────────────────────────────────────────────────────────────────
   {
@@ -1079,6 +1078,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
       { id: 'cbbppg-10', title: 'Kobe Bryant — 25.0 ppg',       seedScore:  75 },
     ],
   },
+];
 
 // ── Local / "In your area" lists ──────────────────────────────────────────────
 // These are shown in the dedicated "In your area" section on the home screen.
