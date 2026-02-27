@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTopRatedMovies, getTopRatedTVShows } from './tmdb';
 import { FeaturedList } from '../data/featuredLists';
 
-const CACHE_V = 'v2';
+const CACHE_V = 'v3';
 const ITEMS_PREFIX = `@topten_fitems_${CACHE_V}_`;
 const IMAGE_PREFIX = `@topten_fimg_${CACHE_V}_`;
 
