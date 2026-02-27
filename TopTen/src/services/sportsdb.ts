@@ -128,8 +128,6 @@ const DEFAULTS: Record<string, SearchResult[]> = {
     { title: 'Oscar Robertson',      year: 'NBA · PG' },
     { title: 'Hakeem Olajuwon',      year: 'NBA · C'  },
   ],
-};
-
   'NFL Stadiums': [
     { title: 'Lambeau Field',              year: 'Green Bay Packers' },
     { title: 'Arrowhead Stadium',          year: 'Kansas City Chiefs' },
@@ -143,9 +141,26 @@ const DEFAULTS: Record<string, SearchResult[]> = {
     { title: 'MetLife Stadium',            year: 'NY Giants / Jets' },
     { title: 'Levi\'s Stadium',            year: 'San Francisco 49ers' },
     { title: 'M&T Bank Stadium',           year: 'Baltimore Ravens' },
-    { title: 'Empower Field',              year: 'Denver Broncos' },
+    { title: 'Empower Field at Mile High', year: 'Denver Broncos' },
     { title: 'NRG Stadium',                year: 'Houston Texans' },
     { title: 'Paycor Stadium',             year: 'Cincinnati Bengals' },
+    { title: 'Acrisure Stadium',           year: 'Pittsburgh Steelers' },
+    { title: 'Bank of America Stadium',    year: 'Carolina Panthers' },
+    { title: 'Caesars Superdome',          year: 'New Orleans Saints' },
+    { title: 'Commanders Field',           year: 'Washington Commanders' },
+    { title: 'Ford Field',                 year: 'Detroit Lions' },
+    { title: 'Highmark Stadium',           year: 'Buffalo Bills' },
+    { title: 'Huntington Bank Field',      year: 'Cleveland Browns' },
+    { title: 'Lumen Field',                year: 'Seattle Seahawks' },
+    { title: 'Lucas Oil Stadium',          year: 'Indianapolis Colts' },
+    { title: 'Mercedes-Benz Stadium',      year: 'Atlanta Falcons' },
+    { title: 'Nissan Stadium',             year: 'Tennessee Titans' },
+    { title: 'Raymond James Stadium',      year: 'Tampa Bay Buccaneers' },
+    { title: 'State Farm Stadium',         year: 'Arizona Cardinals' },
+    { title: 'U.S. Bank Stadium',          year: 'Minnesota Vikings' },
+    { title: 'EverBank Stadium',           year: 'Jacksonville Jaguars' },
+    { title: 'Wembley Stadium',            year: 'International Series' },
+    { title: 'Tottenham Hotspur Stadium',  year: 'International Series' },
   ],
   'Baseball Teams': [
     { title: '1927 New York Yankees',                  year: 'MLB · 110-44' },
@@ -199,21 +214,100 @@ const DEFAULTS: Record<string, SearchResult[]> = {
     { title: '1986-87 Boston Celtics',              year: 'NBA · 59-23' },
   ],
   'World Cup Teams': [
-    { title: 'Brazil 1970',       year: 'Pelé, Jairzinho, Rivelino' },
-    { title: 'Netherlands 1974',  year: 'Cruyff & Total Football' },
-    { title: 'Brazil 1958',       year: 'Pelé & Garrincha' },
-    { title: 'France 1998',       year: 'Zidane, Henry, Desailly' },
-    { title: 'Argentina 1986',    year: 'Maradona\'s tournament' },
-    { title: 'Germany 1974',      year: 'Beckenbauer & Müller' },
-    { title: 'Italy 1982',        year: 'Paolo Rossi & Zoff' },
-    { title: 'Hungary 1954',      year: 'Puskás & the Golden Team' },
-    { title: 'Brazil 1982',       year: 'Zico, Sócrates & Falcão' },
-    { title: 'Argentina 2022',    year: 'Messi\'s World Cup' },
-    { title: 'Spain 2010',        year: 'Xavi, Iniesta, Villa' },
-    { title: 'France 2018',       year: 'Mbappé, Griezmann, Kanté' },
-    { title: 'Germany 2014',      year: 'Müller, Neuer, Kroos' },
-    { title: 'Brazil 1994',       year: 'Romário & Bebeto' },
-    { title: 'Italy 2006',        year: 'Cannavaro, Buffon, Pirlo' },
+    // The undisputed legends
+    { title: 'Brazil 1970',              year: 'Pelé, Jairzinho, Rivelino' },
+    { title: 'Netherlands 1974',         year: 'Cruyff & Total Football' },
+    { title: 'Brazil 1958',              year: 'Pelé & Garrincha' },
+    { title: 'France 1998',              year: 'Zidane, Henry, Desailly' },
+    { title: 'Argentina 1986',           year: "Maradona's tournament" },
+    { title: 'West Germany 1974',        year: 'Beckenbauer & Müller' },
+    { title: 'Italy 1982',               year: 'Paolo Rossi & Zoff' },
+    { title: 'Hungary 1954',             year: 'Puskás & the Golden Team' },
+    { title: 'Brazil 1982',              year: 'Zico, Sócrates & Falcão' },
+    { title: 'Argentina 2022',           year: "Messi's World Cup" },
+    { title: 'Spain 2010',               year: 'Xavi, Iniesta, Villa' },
+    { title: 'France 2018',              year: 'Mbappé, Griezmann, Kanté' },
+    { title: 'Germany 2014',             year: 'Müller, Neuer, Kroos' },
+    { title: 'Brazil 1994',              year: 'Romário & Bebeto' },
+    { title: 'Italy 2006',               year: 'Cannavaro, Buffon, Pirlo' },
+    // Early era champions & runners-up
+    { title: 'Uruguay 1930',             year: 'Nasazzi, Cea — first champions' },
+    { title: 'Argentina 1930',           year: 'Stábile — runners-up' },
+    { title: 'Italy 1934',               year: 'Meazza, Schiavio — host winners' },
+    { title: 'Czechoslovakia 1934',      year: 'Nejedlý — runners-up' },
+    { title: 'Italy 1938',               year: 'Piola, Meazza — back-to-back' },
+    { title: 'Hungary 1938',             year: 'Zsengellér, Sárosi — runners-up' },
+    { title: 'Brazil 1938',              year: 'Leônidas da Silva — third place' },
+    { title: 'Uruguay 1950',             year: 'Ghiggia, Schiaffino — Maracanazo' },
+    { title: 'Brazil 1950',              year: 'Zizinho, Ademir — runners-up (host)' },
+    { title: 'West Germany 1954',        year: 'Fritz Walter — Miracle of Bern' },
+    // 1960s
+    { title: 'Brazil 1962',              year: 'Garrincha, Amarildo — winners' },
+    { title: 'Czechoslovakia 1962',      year: 'Masopust — runners-up' },
+    { title: 'England 1966',             year: 'Moore, Charlton, Hurst — host winners' },
+    { title: 'West Germany 1966',        year: 'Seeler, Beckenbauer — runners-up' },
+    { title: 'Portugal 1966',            year: 'Eusébio (9 goals) — third place' },
+    { title: 'Soviet Union 1966',        year: 'Yashin — fourth place' },
+    { title: 'North Korea 1966',         year: 'Beat Italy — giant killers' },
+    // 1970s
+    { title: 'Italy 1970',               year: 'Riva, Rivera, Mazzola — runners-up' },
+    { title: 'West Germany 1970',        year: 'Müller, Beckenbauer — third place' },
+    { title: 'Poland 1974',              year: 'Lato, Szarmach — third place' },
+    { title: 'Argentina 1978',           year: 'Kempes, Ardiles — host winners' },
+    { title: 'Netherlands 1978',         year: 'Rensenbrink, Rep — runners-up' },
+    { title: 'Brazil 1978',              year: 'Zico, Cerezo — third place' },
+    { title: 'Italy 1978',               year: 'Rossi, Zoff — fourth place' },
+    // 1980s
+    { title: 'West Germany 1982',        year: 'Rummenigge, Breitner — runners-up' },
+    { title: 'Poland 1982',              year: 'Boniek — third place' },
+    { title: 'France 1982',              year: 'Platini, Tigana, Giresse' },
+    { title: 'West Germany 1986',        year: 'Rummenigge, Matthäus — runners-up' },
+    { title: 'France 1986',              year: 'Platini — third place' },
+    { title: 'Brazil 1986',              year: 'Sócrates, Zico, Careca' },
+    { title: 'Belgium 1986',             year: 'Pfaff, Ceulemans — fourth place' },
+    { title: 'West Germany 1990',        year: 'Matthäus, Klinsmann, Brehme — winners' },
+    { title: 'Argentina 1990',           year: "Maradona, Caniggia — runners-up" },
+    { title: 'Italy 1990',               year: 'Schillaci (host) — third place' },
+    { title: 'England 1990',             year: 'Lineker, Gascoigne — semi-finals' },
+    // 1990s
+    { title: 'Italy 1994',               year: "Baggio's penalty — runners-up" },
+    { title: 'Bulgaria 1994',            year: 'Stoichkov — fourth place' },
+    { title: 'Romania 1994',             year: 'Hagi, Dumitrescu — quarter-finals' },
+    { title: 'Netherlands 1994',         year: 'Bergkamp, Rijkaard, Gullit' },
+    { title: 'Brazil 1998',              year: 'Ronaldo, Rivaldo — runners-up' },
+    { title: 'Croatia 1998',             year: 'Šuker (Golden Boot) — third place' },
+    { title: 'Netherlands 1998',         year: 'Bergkamp, Seedorf — fourth place' },
+    { title: 'Italy 1998',               year: 'Del Piero, Maldini — quarter-finals' },
+    // 2000s
+    { title: 'Brazil 2002',              year: 'Ronaldo, Ronaldinho, Rivaldo — winners' },
+    { title: 'Germany 2002',             year: 'Kahn, Ballack, Klose — runners-up' },
+    { title: 'South Korea 2002',         year: 'Park Ji-sung — semi-finals (host)' },
+    { title: 'Senegal 2002',             year: 'El-Hadji Diouf — quarter-finals' },
+    { title: 'Turkey 2002',              year: 'Hakan Şükür — third place' },
+    { title: 'Germany 2006',             year: 'Klose, Podolski, Ballack — third (host)' },
+    { title: 'France 2006',              year: "Zidane's last game — runners-up" },
+    { title: 'Portugal 2006',            year: 'Figo, Cristiano, Deco — fourth place' },
+    { title: 'Brazil 2006',              year: 'Ronaldo, Ronaldinho, Kaká' },
+    // 2010s
+    { title: 'Netherlands 2010',         year: 'Robben, Sneijder, Van Persie — runners-up' },
+    { title: 'Germany 2010',             year: 'Müller (5 goals), Klose' },
+    { title: 'Uruguay 2010',             year: 'Forlán, Suárez — fourth place' },
+    { title: 'Argentina 2014',           year: 'Messi, Di María, Higuaín — runners-up' },
+    { title: 'Brazil 2014',              year: 'Neymar, Oscar — fourth (host, 7-1 loss)' },
+    { title: 'Netherlands 2014',         year: 'Van Persie, Robben — third place' },
+    { title: 'Colombia 2014',            year: 'James Rodríguez (Golden Boot)' },
+    { title: 'Croatia 2018',             year: 'Modric, Rakitic — runners-up' },
+    { title: 'Belgium 2018',             year: 'De Bruyne, Hazard, Lukaku — third' },
+    { title: 'England 2018',             year: 'Kane (Golden Boot) — fourth place' },
+    { title: 'Uruguay 2018',             year: 'Suárez, Cavani — quarter-finals' },
+    // 2022
+    { title: 'France 2022',              year: 'Mbappé (8 goals) — runners-up' },
+    { title: 'Morocco 2022',             year: 'Bounou, En-Nesyri — first African SF' },
+    { title: 'Croatia 2022',             year: 'Modric, Gvardiol — third place' },
+    { title: 'Netherlands 2022',         year: 'Virgil van Dijk, Depay' },
+    { title: 'Brazil 2022',              year: 'Vinícius Jr., Richarlison, Neymar' },
+    { title: 'England 2022',             year: 'Bellingham, Kane — quarter-finals' },
+    { title: 'Portugal 2022',            year: 'Cristiano, Félix — quarter-finals' },
   ],
 };
 
@@ -278,10 +372,22 @@ async function fetchTeams(query: string): Promise<SearchResult[]> {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+// Sports lists that are purely static — typed queries filter the local list, not the API
+const STATIC_SPORTS = ['NFL Stadiums', 'Baseball Teams', 'NHL Teams', 'NBA Teams', 'World Cup Teams'];
+
 export async function searchSports(query: string, listTitle?: string): Promise<SearchResult[]> {
+  const sport = listTitle ? detectSport(listTitle) : null;
+
   if (!query.trim()) {
-    const sport = listTitle ? detectSport(listTitle) : null;
     return sport ? (DEFAULTS[sport] ?? DEFAULT_SPORTS_MIXED) : DEFAULT_SPORTS_MIXED;
+  }
+
+  // Venue/team lists: filter the static defaults list locally; the API has no stadium data
+  if (sport && STATIC_SPORTS.includes(sport)) {
+    const q = query.toLowerCase();
+    return (DEFAULTS[sport] ?? []).filter(
+      (r) => r.title.toLowerCase().includes(q) || (r.year ?? '').toLowerCase().includes(q)
+    );
   }
 
   const cacheKey = `sdb:${query.toLowerCase().trim()}`;
