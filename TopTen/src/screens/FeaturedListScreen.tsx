@@ -14,6 +14,7 @@ import { FEATURED_LISTS } from '../data/featuredLists';
 import { fetchFeaturedItems, fetchFeaturedImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
+import { ReportIssueModal } from '../components/ReportIssueModal';
 import { usePostHog } from 'posthog-react-native';
 
 export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ route }) => {
@@ -25,6 +26,7 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [items, setItems] = useState<string[]>(list.previewItems);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     fetchFeaturedImage(list).then(setImageUrl);
@@ -113,6 +115,16 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
         <Ionicons name="share-outline" size={18} color="#FFF" />
         <Text style={styles.shareButtonText}>Share This List</Text>
       </TouchableOpacity>
+
+      {/* Report issue */}
+      <TouchableOpacity
+        style={styles.reportButton}
+        onPress={() => setShowReportModal(true)}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="flag-outline" size={13} color={colors.secondaryText} />
+        <Text style={styles.reportButtonText}>Report an issue</Text>
+      </TouchableOpacity>
     </ScrollView>
 
     <ShareModal
@@ -121,6 +133,12 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
       title={list.title}
       category={list.category}
       items={items}
+    />
+    <ReportIssueModal
+      visible={showReportModal}
+      onClose={() => setShowReportModal(false)}
+      listTitle={list.title}
+      listType="Featured"
     />
     </>
   );
@@ -277,5 +295,17 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  reportButtonText: {
+    fontSize: 12,
+    color: colors.secondaryText,
   },
 });

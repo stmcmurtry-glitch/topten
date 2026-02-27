@@ -22,6 +22,7 @@ import { resolveCommunityList } from '../data/dynamicListRegistry';
 import { useCommunity } from '../context/CommunityContext';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
+import { ReportIssueModal } from '../components/ReportIssueModal';
 import { usePostHog } from 'posthog-react-native';
 
 const SCORE_BAR_MAX_WIDTH = 100;
@@ -47,6 +48,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const [loadingScores, setLoadingScores] = useState(true);
   const [submitConfirmed, setSubmitConfirmed] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const hasFetched = useRef(false);
   const buttonScale = useRef(new Animated.Value(1)).current;
 
@@ -291,14 +293,24 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
               </>
             )}
             {!loadingScores && (
-              <TouchableOpacity
-                style={[styles.shareButton, { backgroundColor: list.color }]}
-                onPress={() => setShowShareModal(true)}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="share-outline" size={18} color="#FFF" />
-                <Text style={styles.shareButtonText}>Share This List</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={[styles.shareButton, { backgroundColor: list.color }]}
+                  onPress={() => setShowShareModal(true)}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="share-outline" size={18} color="#FFF" />
+                  <Text style={styles.shareButtonText}>Share This List</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.reportButton}
+                  onPress={() => setShowReportModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="flag-outline" size={13} color={colors.secondaryText} />
+                  <Text style={styles.reportButtonText}>Report an issue</Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
         )}
@@ -371,6 +383,12 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
         title={list.title}
         category={list.category}
         items={communityRanked.map((i) => i.title)}
+      />
+      <ReportIssueModal
+        visible={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        listTitle={list.title}
+        listType="Community"
       />
 
       {/* ── Choice sheet ── */}
@@ -635,6 +653,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   }, // backgroundColor applied inline via list.color
   shareButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  reportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  reportButtonText: {
+    fontSize: 12,
+    color: colors.secondaryText,
+  },
 
   /* ── Modals ── */
   keyboardAvoid: { flex: 1 },

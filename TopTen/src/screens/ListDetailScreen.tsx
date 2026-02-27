@@ -24,6 +24,7 @@ import { TopTenItem } from '../data/schema';
 import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
+import { ReportIssueModal } from '../components/ReportIssueModal';
 import { CATEGORIES } from '../data/categories';
 
 const DESCRIPTION_LIMIT = 120;
@@ -84,6 +85,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [description, setDescription] = useState(list?.description ?? '');
   const [descFocused, setDescFocused] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [photoPickerTarget, setPhotoPickerTarget] = useState<'cover' | 'profile' | null>(null);
 
@@ -281,6 +283,17 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
             <View style={styles.actionDivider} />
 
+            {/* Report */}
+            <TouchableOpacity style={styles.actionRow} onPress={() => setShowReportModal(true)} activeOpacity={0.7}>
+              <View style={[styles.actionIconWrap, { backgroundColor: colors.secondaryText + '18' }]}>
+                <Ionicons name="flag-outline" size={18} color={colors.secondaryText} />
+              </View>
+              <Text style={[styles.actionLabel, { color: colors.secondaryText }]}>Report an Issue</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.border} />
+            </TouchableOpacity>
+
+            <View style={styles.actionDivider} />
+
             {/* Profile image */}
             <TouchableOpacity style={styles.actionRow} onPress={() => setPhotoPickerTarget('profile')} activeOpacity={0.7}>
               <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
@@ -382,6 +395,12 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         title={list.title}
         category={list.category}
         items={slots}
+      />
+      <ReportIssueModal
+        visible={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        listTitle={list.title}
+        listType="Personal"
       />
 
       {/* Photo picker — cover or profile */}

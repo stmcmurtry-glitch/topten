@@ -44,3 +44,15 @@ export async function sendFeedbackEmail(opts: {
     message:      opts.message || '(no comment)',
   });
 }
+
+export async function sendReportEmail(opts: {
+  listTitle: string;
+  listType: string;
+  message: string;
+}): Promise<void> {
+  await sendTemplate(CONTACT_TEMPLATE_ID, {
+    from_name:  `Issue Report — ${opts.listType} List`,
+    from_email: 'report@toptenapp.com',
+    message:    `List: ${opts.listTitle}\nType: ${opts.listType}\n\n${opts.message}`,
+  });
+}
