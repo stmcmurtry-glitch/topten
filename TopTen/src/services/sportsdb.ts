@@ -130,6 +130,93 @@ const DEFAULTS: Record<string, SearchResult[]> = {
   ],
 };
 
+  'NFL Stadiums': [
+    { title: 'Lambeau Field',              year: 'Green Bay Packers' },
+    { title: 'Arrowhead Stadium',          year: 'Kansas City Chiefs' },
+    { title: 'Soldier Field',              year: 'Chicago Bears' },
+    { title: 'AT&T Stadium',              year: 'Dallas Cowboys' },
+    { title: 'Allegiant Stadium',          year: 'Las Vegas Raiders' },
+    { title: 'SoFi Stadium',              year: 'LA Rams / Chargers' },
+    { title: 'Lincoln Financial Field',    year: 'Philadelphia Eagles' },
+    { title: 'Hard Rock Stadium',          year: 'Miami Dolphins' },
+    { title: 'Gillette Stadium',           year: 'New England Patriots' },
+    { title: 'MetLife Stadium',            year: 'NY Giants / Jets' },
+    { title: 'Levi\'s Stadium',            year: 'San Francisco 49ers' },
+    { title: 'M&T Bank Stadium',           year: 'Baltimore Ravens' },
+    { title: 'Empower Field',              year: 'Denver Broncos' },
+    { title: 'NRG Stadium',                year: 'Houston Texans' },
+    { title: 'Paycor Stadium',             year: 'Cincinnati Bengals' },
+  ],
+  'Baseball Teams': [
+    { title: '1927 New York Yankees',                  year: 'MLB · 110-44' },
+    { title: '1998 New York Yankees',                  year: 'MLB · 114-48' },
+    { title: '1976 Cincinnati Reds (Big Red Machine)', year: 'MLB · 102-60' },
+    { title: '1906 Chicago Cubs',                      year: 'MLB · 116-36' },
+    { title: '2001 Seattle Mariners',                  year: 'MLB · 116-46' },
+    { title: '1961 New York Yankees',                  year: 'MLB · 109-53' },
+    { title: '1969 New York Mets (Miracle Mets)',      year: 'MLB · 100-62' },
+    { title: '1986 New York Mets',                     year: 'MLB · 108-54' },
+    { title: '1995 Atlanta Braves',                    year: 'MLB · 90-54' },
+    { title: '1975 Cincinnati Reds',                   year: 'MLB · 108-54' },
+    { title: '2017 Houston Astros',                    year: 'MLB · 101-61' },
+    { title: '2022 Los Angeles Dodgers',               year: 'MLB · 111-51' },
+    { title: '1939 New York Yankees',                  year: 'MLB · 106-45' },
+    { title: '1969 Baltimore Orioles',                 year: 'MLB · 109-53' },
+    { title: '1902 Pittsburgh Pirates',                year: 'MLB · 103-36' },
+  ],
+  'NHL Teams': [
+    { title: '1976-77 Montreal Canadiens',    year: 'NHL · 60-8-12' },
+    { title: '1995-96 Detroit Red Wings',     year: 'NHL · 62-13-7' },
+    { title: '1983-84 Edmonton Oilers',       year: 'NHL · 57-18-5' },
+    { title: '1971-72 Boston Bruins',         year: 'NHL · 54-13-11' },
+    { title: '1977-78 Montreal Canadiens',    year: 'NHL · 59-10-11' },
+    { title: '1984-85 Edmonton Oilers',       year: 'NHL · 49-20-11' },
+    { title: '1991-92 Pittsburgh Penguins',   year: 'NHL · 39-32-9' },
+    { title: '2022-23 Boston Bruins',         year: 'NHL · 65-12-5' },
+    { title: '1986-87 Edmonton Oilers',       year: 'NHL · 50-24-6' },
+    { title: '2018-19 Tampa Bay Lightning',   year: 'NHL · 62-16-4' },
+    { title: '1929-30 Boston Bruins',         year: 'NHL · 38-5-1' },
+    { title: '2015-16 Washington Capitals',   year: 'NHL · 56-18-8' },
+    { title: '1973-74 Philadelphia Flyers',   year: 'NHL · 50-16-12' },
+    { title: '1996-97 Colorado Avalanche',    year: 'NHL · 49-24-9' },
+    { title: '2009-10 Washington Capitals',   year: 'NHL · 54-15-13' },
+  ],
+  'NBA Teams': [
+    { title: '1995-96 Chicago Bulls',              year: 'NBA · 72-10' },
+    { title: '2015-16 Golden State Warriors',       year: 'NBA · 73-9' },
+    { title: '1971-72 Los Angeles Lakers',          year: 'NBA · 69-13' },
+    { title: '1966-67 Philadelphia 76ers',          year: 'NBA · 68-13' },
+    { title: '1985-86 Boston Celtics',              year: 'NBA · 67-15' },
+    { title: '2016-17 Golden State Warriors',       year: 'NBA · 67-15' },
+    { title: '1982-83 Philadelphia 76ers',          year: 'NBA · 65-17' },
+    { title: '2012-13 Miami Heat',                  year: 'NBA · 66-16' },
+    { title: '1986-87 Los Angeles Lakers',          year: 'NBA · 65-17' },
+    { title: '1996-97 Chicago Bulls',               year: 'NBA · 69-13' },
+    { title: '2016-17 San Antonio Spurs',           year: 'NBA · 61-21' },
+    { title: '1991-92 Chicago Bulls',               year: 'NBA · 67-15' },
+    { title: '1999-00 Los Angeles Lakers',          year: 'NBA · 67-15' },
+    { title: '2017-18 Golden State Warriors',       year: 'NBA · 58-24' },
+    { title: '1986-87 Boston Celtics',              year: 'NBA · 59-23' },
+  ],
+  'World Cup Teams': [
+    { title: 'Brazil 1970',       year: 'Pelé, Jairzinho, Rivelino' },
+    { title: 'Netherlands 1974',  year: 'Cruyff & Total Football' },
+    { title: 'Brazil 1958',       year: 'Pelé & Garrincha' },
+    { title: 'France 1998',       year: 'Zidane, Henry, Desailly' },
+    { title: 'Argentina 1986',    year: 'Maradona\'s tournament' },
+    { title: 'Germany 1974',      year: 'Beckenbauer & Müller' },
+    { title: 'Italy 1982',        year: 'Paolo Rossi & Zoff' },
+    { title: 'Hungary 1954',      year: 'Puskás & the Golden Team' },
+    { title: 'Brazil 1982',       year: 'Zico, Sócrates & Falcão' },
+    { title: 'Argentina 2022',    year: 'Messi\'s World Cup' },
+    { title: 'Spain 2010',        year: 'Xavi, Iniesta, Villa' },
+    { title: 'France 2018',       year: 'Mbappé, Griezmann, Kanté' },
+    { title: 'Germany 2014',      year: 'Müller, Neuer, Kroos' },
+    { title: 'Brazil 1994',       year: 'Romário & Bebeto' },
+    { title: 'Italy 2006',        year: 'Cannavaro, Buffon, Pirlo' },
+  ],
+};
+
 // Mixed list for unrecognized sport lists
 const DEFAULT_SPORTS_MIXED: SearchResult[] = [
   ...DEFAULTS.Basketball.slice(0, 5),
@@ -148,6 +235,13 @@ const DEFAULT_SPORTS_MIXED: SearchResult[] = [
 
 function detectSport(title: string): string | null {
   const t = title.toLowerCase();
+  // Team / venue lists — check before generic sport keywords
+  if (/\bstadium|stadiums|arena|arenas|venue\b/.test(t))             return 'NFL Stadiums';
+  if (/\bworld cup team|world cup squad\b/.test(t))                  return 'World Cup Teams';
+  if (/\bsingle.season\b.*\bbaseball\b|\bbaseball\b.*\bsingle.season\b/.test(t)) return 'Baseball Teams';
+  if (/\bsingle.season\b.*\bnhl\b|\bnhl\b.*\bsingle.season\b/.test(t))           return 'NHL Teams';
+  if (/\bsingle.season\b.*\bnba\b|\bnba\b.*\bsingle.season\b/.test(t))           return 'NBA Teams';
+  // Individual player lists
   if (/\bgolf|golfer|pga|masters\b/.test(t))                          return 'Golf';
   if (/\btennis|wimbledon|grand slam|atp|wta\b/.test(t))             return 'Tennis';
   if (/\bbaseball|mlb|pitcher|home run|world series\b/.test(t))      return 'Baseball';
