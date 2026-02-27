@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -61,6 +62,21 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
 
       {/* Ranked list */}
       <View style={styles.listCard}>
+        {list.sponsored && (
+          <>
+            <TouchableOpacity
+              style={styles.sponsoredRow}
+              onPress={() => Linking.openURL(list.sponsored!.url)}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.sponsoredLabel}>SPONSORED</Text>
+              <Text style={styles.sponsoredName}>{list.sponsored.name}</Text>
+              <Text style={[styles.sponsoredCta, { color: list.color }]}>{list.sponsored.cta}</Text>
+              <Ionicons name="open-outline" size={14} color={list.color} style={styles.sponsoredIcon} />
+            </TouchableOpacity>
+            <View style={styles.divider} />
+          </>
+        )}
         {items.slice(0, 10).map((item, i) => (
           <React.Fragment key={i}>
             <View style={styles.row}>
@@ -173,6 +189,33 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     ...shadow,
     shadowOpacity: 0.06,
+  },
+  sponsoredRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 11,
+    gap: spacing.sm,
+    backgroundColor: 'rgba(255,200,0,0.06)',
+  },
+  sponsoredLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.secondaryText,
+    letterSpacing: 0.8,
+  },
+  sponsoredName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  sponsoredCta: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  sponsoredIcon: {
+    flexShrink: 0,
   },
   row: {
     flexDirection: 'row',

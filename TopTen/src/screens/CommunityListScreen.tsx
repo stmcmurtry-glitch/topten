@@ -12,6 +12,7 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  Linking,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -237,7 +238,20 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                 style={styles.loadingIndicator}
               />
             ) : (
-              communityRanked.map((item, idx) => {
+              <>
+              {list.sponsored && (
+                <TouchableOpacity
+                  style={styles.sponsoredRow}
+                  onPress={() => Linking.openURL(list.sponsored!.url)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.sponsoredLabel}>SPONSORED</Text>
+                  <Text style={styles.sponsoredName}>{list.sponsored.name}</Text>
+                  <Text style={[styles.sponsoredCta, { color: list.color }]}>{list.sponsored.cta}</Text>
+                  <Ionicons name="open-outline" size={14} color={list.color} />
+                </TouchableOpacity>
+              )}
+              {communityRanked.map((item, idx) => {
                 const score = getScore(item.title);
                 const barWidth = (score / maxScore) * SCORE_BAR_MAX_WIDTH;
                 return (
@@ -250,7 +264,8 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                     </View>
                   </View>
                 );
-              })
+              })}
+              </>
             )}
             {!loadingScores && (
               <TouchableOpacity
@@ -496,6 +511,34 @@ const styles = StyleSheet.create({
   /* ── Shared ── */
   section: { marginHorizontal: spacing.lg },
   loadingIndicator: { marginTop: spacing.xxl },
+
+  /* ── Sponsored row ── */
+  sponsoredRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(255,200,0,0.06)',
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 11,
+    marginBottom: spacing.xs,
+  },
+  sponsoredLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.secondaryText,
+    letterSpacing: 0.8,
+  },
+  sponsoredName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  sponsoredCta: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
+  },
 
   /* ── Community tab ── */
   communityRow: {

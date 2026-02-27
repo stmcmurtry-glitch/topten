@@ -10,6 +10,7 @@ export interface FeaturedList {
   previewItems: string[];
   imageQuery: string;
   description: string;
+  sponsored?: { name: string; cta: string; url: string };
 }
 
 export interface PopularList {
@@ -55,6 +56,11 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'television drama dark moody cinematic',
     previewItems: ['The Wire', 'Breaking Bad', 'The Sopranos', 'Succession', 'Band of Brothers'],
     description: 'Ranked by a combined score drawn from TMDB audience ratings, Rotten Tomatoes critic consensus, and Emmy Award recognition across a show\'s full run.',
+    sponsored: {
+      name: 'Drops of God',
+      cta: 'Watch now on Apple TV+',
+      url: 'https://tv.apple.com/show/drops-of-god',
+    },
   },
   {
     id: 'f-1',
