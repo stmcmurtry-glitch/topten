@@ -169,16 +169,21 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const FREE_PHOTO_LIMIT = 10;
 
-  const isListCustomized = (l: typeof list) =>
-    !!(l?.coverImageUri || l?.profileImageUri);
-
-  const customizedCount = lists.filter(isListCustomized).length;
-  const thisListCustomized = isListCustomized(list);
+  const coverCount = lists.filter(l => !!l.coverImageUri).length;
+  const profileCount = lists.filter(l => !!l.profileImageUri).length;
+  const thisListHasCover = !!list?.coverImageUri;
+  const thisListHasProfile = !!list?.profileImageUri;
 
   const handlePickPhoto = (target: 'cover' | 'profile') => {
-    if (!isPremium && !thisListCustomized && customizedCount >= FREE_PHOTO_LIMIT) {
-      setShowPlansModal(true);
-      return;
+    if (!isPremium) {
+      if (target === 'cover' && !thisListHasCover && coverCount >= FREE_PHOTO_LIMIT) {
+        setShowPlansModal(true);
+        return;
+      }
+      if (target === 'profile' && !thisListHasProfile && profileCount >= FREE_PHOTO_LIMIT) {
+        setShowPlansModal(true);
+        return;
+      }
     }
     setPhotoPickerTarget(target);
   };

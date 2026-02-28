@@ -16,6 +16,10 @@ export const PickCard: React.FC<PickCardProps> = ({ pick, onPress }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    if (pick.staticImageUrl) {
+      setImageUrl(pick.staticImageUrl);
+      return;
+    }
     fetchFeaturedImage(pick).then(setImageUrl);
   }, [pick.id]);
 
