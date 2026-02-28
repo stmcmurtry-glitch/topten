@@ -129,6 +129,8 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     : localPlacesLists.filter((cl) => cl.category === activeCategory);
 
   const allLocalLists = [...filteredLocal, ...filteredPlaces];
+  // Full location-filtered list (no category filter) for the See All screen
+  const allLocalListsUnfiltered = [...locationFiltered, ...localPlacesLists];
 
   return (
     <ScrollView
@@ -177,7 +179,14 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       {/* Featured Lists */}
       {filteredFeatured.length > 0 && (
         <>
-          <Text style={styles.sectionHeader}>Featured Lists</Text>
+          <TouchableOpacity
+            style={styles.sectionHeaderLink}
+            onPress={() => navigation.navigate('AllFeaturedLists')}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.sectionHeaderInline}>Featured Lists</Text>
+            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
+          </TouchableOpacity>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -198,7 +207,14 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       {filteredCommunity.length > 0 && (
         <>
           <View style={styles.divider} />
-          <Text style={styles.sectionHeader}>Community Lists</Text>
+          <TouchableOpacity
+            style={styles.sectionHeaderLink}
+            onPress={() => navigation.navigate('AllCommunityLists')}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.sectionHeaderInline}>Community Lists</Text>
+            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
+          </TouchableOpacity>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -220,17 +236,27 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       {allLocalLists.length > 0 && (
         <>
           <View style={styles.divider} />
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionHeaderInline}>In your area</Text>
-            <View style={styles.areaHeaderLeft}>
-              <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
-              <Text style={styles.areaRegionLabel}>
-                {detectedLocation
-                  ? (detectedLocation.city || detectedLocation.region)
-                  : ''}
-              </Text>
+          <TouchableOpacity
+            style={styles.sectionHeaderRow}
+            onPress={() => navigation.navigate('AllLocalLists', {
+              lists: allLocalListsUnfiltered,
+              city: detectedLocation?.city || detectedLocation?.region,
+            })}
+            activeOpacity={0.6}
+          >
+            <View style={styles.titleWithIcon}>
+              <Text style={styles.sectionHeaderInline}>In your area</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
             </View>
-          </View>
+            {detectedLocation ? (
+              <View style={styles.areaHeaderLeft}>
+                <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
+                <Text style={styles.areaRegionLabel}>
+                  {detectedLocation.city || detectedLocation.region}
+                </Text>
+              </View>
+            ) : null}
+          </TouchableOpacity>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -385,10 +411,33 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primaryText,
   },
+  sectionHeaderLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  titleWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   manageButton: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.activeTab,
+  },
+  seeAllButton: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.activeTab,
+  },
+  areaHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   areaHeaderLeft: {
     flexDirection: 'row',

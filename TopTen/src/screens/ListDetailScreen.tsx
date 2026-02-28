@@ -116,7 +116,15 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const persistSlots = (updated: string[]) => {
     setSlots(updated);
     const items: TopTenItem[] = updated
-      .map((title, i) => ({ id: `${listId}-${i + 1}`, rank: i + 1, title }))
+      .map((title, i) => {
+        const existing = list?.items.find((item) => item.title === title);
+        return {
+          id: `${listId}-${i + 1}`,
+          rank: i + 1,
+          title,
+          ...(existing?.imageUrl ? { imageUrl: existing.imageUrl } : {}),
+        };
+      })
       .filter((item) => item.title.trim() !== '');
     updateListItems(listId, items);
   };

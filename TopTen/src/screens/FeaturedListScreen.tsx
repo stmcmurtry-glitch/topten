@@ -16,6 +16,7 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
 import { usePostHog } from 'posthog-react-native';
+import { markFeaturedViewed } from '../services/viewedListsService';
 
 export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ route }) => {
   const { featuredId } = route.params as { featuredId: string };
@@ -29,6 +30,7 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
   const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
+    markFeaturedViewed(featuredId);
     if (list.staticImageUrl) {
       setImageUrl(list.staticImageUrl);
     } else {

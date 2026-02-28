@@ -17,6 +17,9 @@ import { FeaturedListScreen } from '../screens/FeaturedListScreen';
 import { CommunityListScreen } from '../screens/CommunityListScreen';
 import { YourDataScreen } from '../screens/YourDataScreen';
 import { FAQScreen } from '../screens/FAQScreen';
+import { AllFeaturedListsScreen } from '../screens/AllFeaturedListsScreen';
+import { AllCommunityListsScreen } from '../screens/AllCommunityListsScreen';
+import { AllLocalListsScreen } from '../screens/AllLocalListsScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -26,6 +29,7 @@ const sharedStackOptions = {
   headerLargeTitle: true,
   headerLargeTitleStyle: { fontFamily: 'System', fontWeight: '700' as const },
   headerTitleStyle: { fontFamily: 'System', fontWeight: '600' as const },
+  headerBackButtonDisplayMode: 'minimal' as const,
 };
 
 const HomeStack = () => (
@@ -65,8 +69,25 @@ const HomeStack = () => (
       component={CommunityListScreen}
       options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
     />
+    <Stack.Screen
+      name="AllFeaturedLists"
+      component={AllFeaturedListsScreen}
+      options={{ headerShown: false, title: 'Featured Lists' }}
+    />
+    <Stack.Screen
+      name="AllCommunityLists"
+      component={AllCommunityListsScreen}
+      options={{ headerShown: false, title: 'Community Lists' }}
+    />
+    <Stack.Screen
+      name="AllLocalLists"
+      component={AllLocalListsScreen}
+      options={{ headerShown: false, title: 'In Your Area' }}
+    />
   </Stack.Navigator>
 );
+
+
 
 const MyListsStack = () => (
   <Stack.Navigator screenOptions={sharedStackOptions}>
@@ -100,6 +121,21 @@ const MyListsStack = () => (
       component={CommunityListScreen}
       options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
     />
+    <Stack.Screen
+      name="AllFeaturedLists"
+      component={AllFeaturedListsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="AllCommunityLists"
+      component={AllCommunityListsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="AllLocalLists"
+      component={AllLocalListsScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -118,7 +154,7 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="FeaturedList"
       component={FeaturedListScreen}
-      options={{ headerShown: false }}
+      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
     />
     <Stack.Screen
       name="Search"
@@ -128,6 +164,21 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="CommunityList"
       component={CommunityListScreen}
+      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
+    />
+    <Stack.Screen
+      name="AllFeaturedLists"
+      component={AllFeaturedListsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="AllCommunityLists"
+      component={AllCommunityListsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="AllLocalLists"
+      component={AllLocalListsScreen}
       options={{ headerShown: false }}
     />
   </Stack.Navigator>

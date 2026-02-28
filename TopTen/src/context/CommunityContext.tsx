@@ -13,6 +13,7 @@ const DEVICE_ID_KEY = '@topten_device_id';
 export interface UserCommunityRanking {
   slots: string[]; // 10 free-form text slots; empty string = unfilled
   submitted: boolean;
+  submittedAt?: number; // epoch ms — set when submitted, used for priority bucketing
 }
 
 interface CommunityContextType {
@@ -52,6 +53,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             migrated[listId] = {
               slots: Array.isArray(ranking.slots) ? ranking.slots : Array(10).fill(''),
               submitted: ranking.submitted ?? false,
+              submittedAt: ranking.submittedAt,
             };
           }
           setUserRankings(migrated);
@@ -144,7 +146,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
 
       // Persist locally first
-      persist({ ...userRankings, [listId]: { ...current, submitted: true } });
+      persist({ ...userRankings, [listId]: { ...current, submitted: true, submittedAt: Date.now() } });
       const filledCount = current.slots.filter((s) => s.trim()).length;
       posthog?.capture('community_vote_submitted', { list_id: listId, filled_slots: filledCount });
 

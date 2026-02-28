@@ -136,7 +136,14 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         /* ── Default browse view ── */
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.browse}>
           {/* Featured Lists */}
-          <Text style={styles.sectionHeader}>Featured Lists</Text>
+          <TouchableOpacity
+            style={styles.sectionHeaderLink}
+            onPress={() => navigation.navigate('AllFeaturedLists')}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.sectionHeaderInline}>Featured Lists</Text>
+            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
+          </TouchableOpacity>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -176,8 +183,18 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           {/* In your area */}
           {allLocalLists.length > 0 && (
             <>
-              <View style={styles.areaSectionHeader}>
-                <Text style={styles.sectionHeader}>In Your Area</Text>
+              <TouchableOpacity
+                style={styles.areaSectionHeader}
+                onPress={() => navigation.navigate('AllLocalLists', {
+                  lists: allLocalLists,
+                  city: detectedLocation?.city || detectedLocation?.region,
+                })}
+                activeOpacity={0.6}
+              >
+                <View style={styles.titleWithIcon}>
+                  <Text style={styles.sectionHeaderInline}>In Your Area</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
+                </View>
                 {detectedLocation && (
                   <View style={styles.areaLocationPill}>
                     <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
@@ -186,7 +203,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                     </Text>
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
               <View style={styles.popularCard}>
                 {allLocalLists.map((list, index) => (
                   <React.Fragment key={list.id}>
@@ -323,11 +340,48 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     marginBottom: spacing.md,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    paddingRight: 0,
+  },
+  sectionHeaderInline: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  sectionHeaderLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  seeAllButton: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.activeTab,
+  },
+  seeAllPadding: {
+    paddingRight: spacing.lg,
+  },
   areaSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingRight: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  titleWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   areaLocationPill: {
     flexDirection: 'row',
@@ -337,8 +391,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     paddingHorizontal: 7,
     paddingVertical: 3,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
   },
   areaLocationText: {
     fontSize: 11,
