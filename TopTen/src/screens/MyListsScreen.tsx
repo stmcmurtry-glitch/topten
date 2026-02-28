@@ -141,6 +141,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       {/* App Logo */}
       <View style={styles.headerRow}>
         <View style={styles.logoRow}>
+          <Image source={require('../../assets/PNG Icon.png')} style={styles.logoIcon} />
           <Text style={styles.logoTop}>Top</Text>
           <Text style={styles.logoTen}>Ten</Text>
         </View>
@@ -349,8 +350,12 @@ const styles = StyleSheet.create({
   },
   logoRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
+    alignItems: 'center',
+    gap: 6,
+  },
+  logoIcon: {
+    width: 30,
+    height: 30,
   },
   logoTop: {
     fontSize: 34,

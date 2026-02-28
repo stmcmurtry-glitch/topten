@@ -62,7 +62,7 @@ const HomeStack = () => (
     <Stack.Screen
       name="FeaturedList"
       component={FeaturedListScreen}
-      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="CommunityList"
@@ -154,7 +154,7 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="FeaturedList"
       component={FeaturedListScreen}
-      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="Search"

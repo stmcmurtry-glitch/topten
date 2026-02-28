@@ -9,6 +9,7 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { FEATURED_LISTS } from '../data/featuredLists';
 import { fetchFeaturedItems, fetchFeaturedImage } from '../services/featuredContentService';
@@ -18,7 +19,7 @@ import { ReportIssueModal } from '../components/ReportIssueModal';
 import { usePostHog } from 'posthog-react-native';
 import { markFeaturedViewed } from '../services/viewedListsService';
 
-export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ route }) => {
+export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { featuredId } = route.params as { featuredId: string };
   const list = FEATURED_LISTS.find(l => l.id === featuredId)!;
   const insets = useSafeAreaInsets();
@@ -54,6 +55,15 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         )}
         <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
+        <TouchableOpacity
+          style={[styles.backBtnWrap, { top: insets.top + 8 }]}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.75}
+        >
+          <BlurView intensity={60} tint="dark" style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={20} color="#FFF" />
+          </BlurView>
+        </TouchableOpacity>
         <View style={[styles.heroContent, { paddingTop: insets.top + 60 }]}>
           <View style={styles.heroCategoryRow}>
             <Ionicons name={list.icon as any} size={14} color="rgba(255,255,255,0.85)" />
@@ -158,6 +168,21 @@ const styles = StyleSheet.create({
   hero: {
     minHeight: 240,
     justifyContent: 'flex-end',
+  },
+  backBtnWrap: {
+    position: 'absolute',
+    left: spacing.md,
+    zIndex: 10,
+    padding: 10,
+    marginLeft: -10,
+  },
+  backBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroScrim: {
     backgroundColor: 'rgba(0,0,0,0.48)',
