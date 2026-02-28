@@ -120,16 +120,15 @@ export const AllLocalListsScreen: React.FC<{ route: any; navigation: any }> = ({
       {/* Header */}
       <View style={styles.header}>
         <BackButton onPress={() => navigation.goBack()} />
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>In Your Area</Text>
-          {city ? (
-            <View style={styles.cityPill}>
-              <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
-              <Text style={styles.cityText}>{city}</Text>
-            </View>
-          ) : null}
-        </View>
-        <View style={styles.backButton} />
+      </View>
+      <View style={styles.titleRow}>
+        <Text style={styles.screenTitle}>In Your Area</Text>
+        {city ? (
+          <View style={styles.cityPill}>
+            <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
+            <Text style={styles.cityText}>{city}</Text>
+          </View>
+        ) : null}
       </View>
 
       {/* Category Pill Bar */}
@@ -213,23 +212,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.xs,
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xs,
+    flexWrap: 'wrap',
   },
-  backButton: {
-    width: 44,
-  },
-  headerCenter: {
-    alignItems: 'center',
-    gap: 3,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
+  screenTitle: {
+    fontSize: 34,
+    fontWeight: '800',
     color: colors.primaryText,
+    letterSpacing: -0.5,
   },
   cityPill: {
     flexDirection: 'row',

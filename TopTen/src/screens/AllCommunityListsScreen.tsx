@@ -111,9 +111,8 @@ export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigat
       {/* Header */}
       <View style={styles.header}>
         <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Community Lists</Text>
-        <View style={styles.backButton} />
       </View>
+      <Text style={styles.screenTitle}>Community Lists</Text>
 
       {/* Category Pill Bar */}
       <View style={styles.pillBarWrapper}>
@@ -196,19 +195,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingTop: spacing.xs,
   },
-  backButton: {
-    width: 44,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
+  screenTitle: {
+    fontSize: 34,
+    fontWeight: '800',
     color: colors.primaryText,
+    letterSpacing: -0.5,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xs,
   },
   pillBarWrapper: {
     paddingVertical: spacing.md,
