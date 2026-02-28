@@ -38,7 +38,10 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
     >
       {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>My Lists</Text>
+        <View style={styles.logoRow}>
+          <Text style={styles.logoLight}>My</Text>
+          <Text style={styles.logoBold}>Lists</Text>
+        </View>
         <TouchableOpacity
           style={styles.addIconButton}
           onPress={() => navigation.navigate('CreateList')}
@@ -151,10 +154,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
   },
-  headerTitle: {
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  logoLight: {
+    fontSize: 34,
+    fontWeight: '300',
+    color: colors.primaryText,
+    letterSpacing: -0.5,
+  },
+  logoBold: {
     fontSize: 34,
     fontWeight: '800',
-    color: colors.primaryText,
+    color: '#CC0000',
     letterSpacing: -0.5,
   },
   addIconButton: {

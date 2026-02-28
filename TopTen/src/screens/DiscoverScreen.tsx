@@ -308,8 +308,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 34,
-    fontWeight: '700',
-    color: colors.primaryText,
+    fontWeight: '800',
+    color: '#CC0000',
     letterSpacing: -0.5,
     marginBottom: spacing.sm,
     marginTop: spacing.sm,

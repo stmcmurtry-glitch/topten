@@ -335,8 +335,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 34,
-    fontWeight: '700',
-    color: colors.primaryText,
+    fontWeight: '800',
+    color: '#CC0000',
     letterSpacing: -0.5,
   },
   sectionHeader: {
