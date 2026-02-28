@@ -153,7 +153,7 @@ const STATIC_ITEMS: Record<string, string[]> = {
   ],
 };
 
-const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v3_`;
+const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v2_`;
 const communityImageMemCache = new Map<string, string | null>();
 
 // ── Community list images ──────────────────────────────────────────────────
