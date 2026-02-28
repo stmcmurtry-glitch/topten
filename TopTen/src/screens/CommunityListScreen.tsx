@@ -221,7 +221,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           activeOpacity={0.8}
         >
           <Text style={[styles.tabPillText, activeTab === tab && styles.tabPillTextActive]}>
-            {tab === 'community' ? 'Community' : 'Yours'}
+            {tab === 'community' ? 'Community' : 'My Ranking'}
           </Text>
         </TouchableOpacity>
       ))}
