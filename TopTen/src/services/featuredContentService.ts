@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTopRatedMovies, getTopRatedTVShows } from './tmdb';
 import { FeaturedList } from '../data/featuredLists';
 
-const CACHE_V = 'v4';
+const CACHE_V = 'v5';
 const ITEMS_PREFIX = `@topten_fitems_${CACHE_V}_`;
 const IMAGE_PREFIX = `@topten_fimg_${CACHE_V}_`;
 
@@ -153,7 +153,7 @@ const STATIC_ITEMS: Record<string, string[]> = {
   ],
 };
 
-const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v2_`;
+const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v3_`;
 const communityImageMemCache = new Map<string, string | null>();
 
 // ── Community list images ──────────────────────────────────────────────────

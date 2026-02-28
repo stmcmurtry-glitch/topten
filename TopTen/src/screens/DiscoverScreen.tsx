@@ -212,7 +212,11 @@ const FeaturedCard: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ l
   const [items, setItems] = useState<string[]>(list.previewItems);
 
   useEffect(() => {
-    fetchFeaturedImage(list).then(setImageUrl);
+    if (list.staticImageUrl) {
+      setImageUrl(list.staticImageUrl);
+    } else {
+      fetchFeaturedImage(list).then(setImageUrl);
+    }
     fetchFeaturedItems(list).then((fetched) => {
       if (fetched.length > 0) setItems(fetched);
     });

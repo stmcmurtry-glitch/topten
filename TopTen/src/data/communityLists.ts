@@ -31,7 +31,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Movies',
     color: '#FF6B6B',
     icon: 'film-outline',
-    imageQuery: 'classic cinema film dark dramatic theater',
+    imageQuery: 'The Godfather 1972 film Marlon Brando Corleone cinematic wide',
     description: 'The films that defined cinema. Cast your vote for the greatest of all time.',
     participantCount: 54,
     items: [
@@ -53,7 +53,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'TV',
     color: '#5B8DEF',
     icon: 'tv-outline',
-    imageQuery: 'television drama dark moody cinematic',
+    imageQuery: 'Breaking Bad drama chemistry desert New Mexico TV cinematic wide',
     description: 'Peak television. Which series changed the way we watch forever?',
     participantCount: 41,
     sponsored: {
@@ -80,7 +80,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Music',
     color: '#A29BFE',
     icon: 'musical-notes-outline',
-    imageQuery: 'concert stage lights crowd music festival',
+    imageQuery: 'Queen Freddie Mercury Bohemian Rhapsody concert stage rock performance wide',
     description: 'The tracks that stopped time. What\'s the greatest song ever recorded?',
     participantCount: 71,
     items: [
@@ -102,7 +102,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#FF9F43',
     icon: 'trophy-outline',
-    imageQuery: 'stadium crowd athlete championship victory',
+    imageQuery: 'Michael Jordan Chicago Bulls basketball dunk silhouette court wide',
     description: 'The GOAT debate, settled by you. Who is the greatest athlete of all time?',
     participantCount: 68,
     items: [
@@ -124,7 +124,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Books',
     color: '#4ECDC4',
     icon: 'book-outline',
-    imageQuery: 'vintage library books shelves warm light',
+    imageQuery: 'To Kill a Mockingbird novel classic American Southern literature wide',
     description: 'Literature that endures. Which books belong in every library?',
     participantCount: 29,
     items: [
@@ -146,7 +146,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Food',
     color: '#FFB347',
     icon: 'restaurant-outline',
-    imageQuery: 'gourmet food spread table feast fine dining',
+    imageQuery: 'pizza margherita wood fired Naples Italy cheese slice wide',
     description: 'The dishes that define delicious. What\'s the greatest food ever made?',
     participantCount: 45,
     items: [
@@ -168,7 +168,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Gaming',
     color: '#6C5CE7',
     icon: 'game-controller-outline',
-    imageQuery: 'zelda nintendo video game landscape adventure',
+    imageQuery: 'Legend of Zelda Ocarina of Time Nintendo fantasy adventure video game wide',
     description: 'Controllers down, debate on. What\'s the greatest video game ever made?',
     participantCount: 34,
     items: [
@@ -190,7 +190,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'People',
     color: '#FD79A8',
     icon: 'people-outline',
-    imageQuery: 'crowd historic black white monument march',
+    imageQuery: 'Isaac Newton physicist gravity scientist historic portrait apple wide',
     description: 'Who changed the world the most? Cast your vote for history\'s greatest influencer.',
     participantCount: 38,
     items: [
@@ -212,7 +212,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Fashion',
     color: '#FDCB6E',
     icon: 'shirt-outline',
-    imageQuery: 'fashion runway editorial style elegant model',
+    imageQuery: 'Audrey Hepburn Breakfast at Tiffany elegant style Hollywood iconic wide',
     description: 'Whose style defined an era? Vote for the most iconic fashion figures of all time.',
     participantCount: 22,
     items: [
@@ -256,7 +256,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Tech',
     color: '#45AAF2',
     icon: 'laptop-outline',
-    imageQuery: 'technology data center server circuit board',
+    imageQuery: 'internet technology global network data connectivity server wide',
     description: 'Which invention changed the world more than any other? Cast your vote.',
     participantCount: 31,
     items: [
@@ -278,7 +278,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Arts',
     color: '#E17055',
     icon: 'color-palette-outline',
-    imageQuery: 'museum gallery painting masterpiece art wide',
+    imageQuery: 'Mona Lisa da Vinci Louvre painting portrait art masterpiece wide',
     description: 'The masterpieces that moved the world. Which work of art stands above all others?',
     participantCount: 14,
     items: [
@@ -300,7 +300,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Miscellaneous',
     color: '#636E72',
     icon: 'grid-outline',
-    imageQuery: 'adventure bucket list sunrise mountain journey wide',
+    imageQuery: 'total solar eclipse dramatic dark sky corona astronomy wide',
     description: 'The ultimate bucket list. What\'s one thing every person should experience in their lifetime?',
     participantCount: 36,
     items: [
@@ -324,7 +324,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#2D9E60',
     icon: 'golf-outline',
-    imageQuery: 'golf course sunset fairway landscape wide',
+    imageQuery: 'Jack Nicklaus golf swing Augusta Masters championship fairway wide',
     description: 'Beyond the trophies — who is the greatest golfer to ever play the game?',
     participantCount: 19,
     items: [
@@ -348,7 +348,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#C8A84B',
     icon: 'tennisball-outline',
-    imageQuery: 'tennis stadium aerial court crowd open',
+    imageQuery: 'Novak Djokovic Wimbledon tennis grand slam champion court wide',
     description: 'Across eras and genders — who is the greatest tennis player in history?',
     participantCount: 32,
     items: [
@@ -372,7 +372,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#C8102E',
     icon: 'baseball-outline',
-    imageQuery: 'baseball stadium aerial panoramic historic black white',
+    imageQuery: 'New York Yankees baseball historic stadium crowd vintage 1920s wide',
     description: 'The most dominant teams ever assembled for a single season.',
     participantCount: 15,
     items: [
@@ -394,7 +394,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#C8102E',
     icon: 'baseball-outline',
-    imageQuery: 'baseball stadium sunset field empty classic',
+    imageQuery: 'Babe Ruth Yankees baseball swing stadium vintage historic wide',
     description: 'From Babe to Barry — who is the greatest to ever play the game?',
     participantCount: 26,
     items: [
@@ -418,7 +418,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#6B3A2A',
     icon: 'american-football-outline',
-    imageQuery: 'american football stadium aerial night lights crowd',
+    imageQuery: 'Jerry Rice San Francisco 49ers wide receiver football touchdown wide',
     description: 'The debate that never ends. Who is the greatest football player in NFL history?',
     participantCount: 58,
     items: [
@@ -440,7 +440,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#6B3A2A',
     icon: 'american-football-outline',
-    imageQuery: 'NFL stadium aerial architecture crowd full game day',
+    imageQuery: 'Lambeau Field Green Bay Packers stadium aerial snow game day wide',
     description: 'The cathedrals of football. Which stadium delivers the best experience on game day?',
     participantCount: 21,
     items: [
@@ -464,7 +464,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#1565C0',
     icon: 'football-outline',
-    imageQuery: 'soccer stadium aerial pitch green crowd',
+    imageQuery: 'Pelé Brazil soccer football 1970 World Cup celebration iconic wide',
     description: 'The beautiful game\'s greatest. Who is the best footballer to ever lace up boots?',
     participantCount: 65,
     items: [
@@ -486,7 +486,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#1565C0',
     icon: 'football-outline',
-    imageQuery: 'soccer team celebration world cup trophy stadium',
+    imageQuery: 'Brazil 1970 World Cup soccer team celebration Pelé Jairzinho wide',
     description: 'The most brilliant national squads ever assembled for a single World Cup tournament.',
     participantCount: 17,
     items: [
@@ -510,7 +510,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#4A90D9',
     icon: 'snow-outline',
-    imageQuery: 'ice hockey rink arena ice surface wide aerial',
+    imageQuery: 'Wayne Gretzky Oilers ice hockey NHL rink skating wide',
     description: 'On the ice, one name stands alone — but who rounds out the all-time list?',
     participantCount: 20,
     items: [
@@ -532,7 +532,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#4A90D9',
     icon: 'snow-outline',
-    imageQuery: 'ice hockey arena crowd packed full game night',
+    imageQuery: 'Montreal Canadiens 1977 ice hockey team NHL championship rink wide',
     description: 'The most dominant teams in NHL history during a single regular season and playoffs.',
     participantCount: 11,
     items: [
@@ -556,7 +556,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#E65C00',
     icon: 'basketball-outline',
-    imageQuery: 'basketball court NBA arena game night crowd full',
+    imageQuery: 'Chicago Bulls 1996 basketball team Michael Jordan championship wide',
     description: 'The most dominant teams ever assembled for a single NBA season.',
     participantCount: 16,
     items: [
@@ -578,7 +578,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#E65C00',
     icon: 'basketball-outline',
-    imageQuery: 'basketball player silhouette court arena spotlight',
+    imageQuery: 'Michael Jordan Chicago Bulls basketball iconic dunk court arena wide',
     description: 'Jordan or LeBron? Russell or Kareem? Cast your vote in the ultimate GOAT debate.',
     participantCount: 62,
     items: [
@@ -607,7 +607,7 @@ export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
     category: 'Food',
     color: '#FFB347',
     icon: 'restaurant-outline',
-    imageQuery: 'pizza wood fired oven cheese landscape',
+    imageQuery: 'Philadelphia pizza restaurant cheese slice wood fired street wide',
     region: 'Philadelphia',
     description: 'Philly takes its pizza seriously. Which slice reigns supreme in the region?',
     participantCount: 13,
@@ -635,7 +635,7 @@ export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
     category: 'Travel',
     color: '#0984E3',
     icon: 'airplane-outline',
-    imageQuery: 'philadelphia skyline city architecture street',
+    imageQuery: 'Philadelphia Museum of Art Rocky Steps facade wide architecture',
     region: 'Philadelphia',
     description: "From the Rocky steps to Reading Terminal — the landmarks and neighborhoods that define Philly.",
     participantCount: 10,
