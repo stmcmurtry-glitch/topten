@@ -67,12 +67,18 @@ export const AllFeaturedListsScreen: React.FC<{ navigation: any }> = ({ navigati
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All');
   const [viewedIds, setViewedIds] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'browse-again'>('all');
 
   useEffect(() => {
     getViewedFeaturedIds().then(setViewedIds);
   }, []);
 
   const allCategories = ['All', ...ALL_CATEGORY_LABELS];
+  const statusOptions = [
+    { key: 'all', label: 'All' },
+    { key: 'new', label: 'New' },
+    { key: 'browse-again', label: 'Browse Again' },
+  ] as const;
 
   const filtered = activeCategory === 'All'
     ? FEATURED_LISTS
@@ -88,8 +94,10 @@ export const AllFeaturedListsScreen: React.FC<{ navigation: any }> = ({ navigati
   };
 
   const sections: Array<{ key: string; data: FeaturedList[]; label: string }> = [];
-  if (unviewed.length > 0) sections.push({ key: 'new', data: unviewed, label: 'NEW' });
-  if (viewed.length > 0) sections.push({ key: 'viewed', data: viewed, label: 'BROWSE MORE' });
+  if ((statusFilter === 'all' || statusFilter === 'new') && unviewed.length > 0)
+    sections.push({ key: 'new', data: unviewed, label: 'NEW' });
+  if ((statusFilter === 'all' || statusFilter === 'browse-again') && viewed.length > 0)
+    sections.push({ key: 'viewed', data: viewed, label: 'BROWSE AGAIN' });
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -121,6 +129,25 @@ export const AllFeaturedListsScreen: React.FC<{ navigation: any }> = ({ navigati
           );
         })}
       </ScrollView>
+      </View>
+
+      {/* Status Segmented Control */}
+      <View style={styles.segmentedControl}>
+        {statusOptions.map(({ key, label }) => {
+          const active = statusFilter === key;
+          return (
+            <TouchableOpacity
+              key={key}
+              style={[styles.segment, active && styles.segmentActive]}
+              onPress={() => setStatusFilter(key)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.segmentText, active && styles.segmentTextActive]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Sections */}
@@ -203,6 +230,38 @@ const styles = StyleSheet.create({
   },
   pillTextActive: {
     color: '#FFF',
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    backgroundColor: '#E5E5EA',
+    borderRadius: borderRadius.md,
+    padding: 2,
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.sm,
+  },
+  segmentActive: {
+    backgroundColor: colors.cardBackground,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.secondaryText,
+  },
+  segmentTextActive: {
+    fontWeight: '600',
+    color: colors.primaryText,
   },
   listContent: {
     paddingBottom: spacing.xxl,
