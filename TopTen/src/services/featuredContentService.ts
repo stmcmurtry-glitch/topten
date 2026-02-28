@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getTopRatedMovies, getTopRatedTVShows } from './tmdb';
+import { getTopRatedMovies, getTopRatedTVShows, searchMovies, searchTVShows } from './tmdb';
 import { FeaturedList } from '../data/featuredLists';
 
 const CACHE_V = 'v5';
@@ -153,12 +153,17 @@ const STATIC_ITEMS: Record<string, string[]> = {
   ],
 };
 
-const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v2_`;
+const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v3_`;
 const communityImageMemCache = new Map<string, string | null>();
 
 // ── Community list images ──────────────────────────────────────────────────
 
-export async function fetchCommunityImage(listId: string, imageQuery: string): Promise<string | null> {
+export async function fetchCommunityImage(
+  listId: string,
+  imageQuery: string | undefined,
+  category?: string,
+  firstItemTitle?: string,
+): Promise<string | null> {
   if (communityImageMemCache.has(listId)) return communityImageMemCache.get(listId)!;
 
   try {
@@ -171,7 +176,17 @@ export async function fetchCommunityImage(listId: string, imageQuery: string): P
 
   let imageUrl: string | null = null;
   try {
-    if (UNSPLASH_KEY) {
+    // Use TMDB title search for Movies/TV community lists — gets the actual #1 item backdrop
+    if (firstItemTitle && category === 'Movies') {
+      const results = await searchMovies(firstItemTitle);
+      imageUrl = results[0]?.backdropUrl ?? null;
+    } else if (firstItemTitle && category === 'TV') {
+      const results = await searchTVShows(firstItemTitle);
+      imageUrl = results[0]?.backdropUrl ?? null;
+    }
+
+    // Fall back to Unsplash for everything else
+    if (!imageUrl && UNSPLASH_KEY && imageQuery) {
       const url =
         `https://api.unsplash.com/photos/random` +
         `?query=${encodeURIComponent(imageQuery)}` +
@@ -231,6 +246,9 @@ export async function fetchFeaturedItems(list: FeaturedList): Promise<string[]> 
 // ── Image ──────────────────────────────────────────────────────────────────
 
 export async function fetchFeaturedImage(list: FeaturedList): Promise<string | null> {
+  // Return pinned image immediately — no API call needed
+  if (list.staticImageUrl) return list.staticImageUrl;
+
   if (imageMemCache.has(list.id)) return imageMemCache.get(list.id)!;
 
   try {
@@ -243,12 +261,21 @@ export async function fetchFeaturedImage(list: FeaturedList): Promise<string | n
 
   let imageUrl: string | null = null;
   try {
-    if (list.category === 'Movies') {
-      const movies = await getTopRatedMovies();
+    if (list.category === 'Movies' && list.previewItems[0]) {
+      // Search by the specific #1 title so the backdrop matches the actual list
+      const movies = await searchMovies(list.previewItems[0]);
       imageUrl = movies[0]?.backdropUrl ?? null;
-    } else if (list.category === 'TV') {
-      const shows = await getTopRatedTVShows();
+      if (!imageUrl) {
+        const topRated = await getTopRatedMovies();
+        imageUrl = topRated[0]?.backdropUrl ?? null;
+      }
+    } else if (list.category === 'TV' && list.previewItems[0]) {
+      const shows = await searchTVShows(list.previewItems[0]);
       imageUrl = shows[0]?.backdropUrl ?? null;
+      if (!imageUrl) {
+        const topRated = await getTopRatedTVShows();
+        imageUrl = topRated[0]?.backdropUrl ?? null;
+      }
     }
     // Fall back to Unsplash landscape for any category (including Movies/TV if backdrop missing)
     if (!imageUrl && UNSPLASH_KEY) {

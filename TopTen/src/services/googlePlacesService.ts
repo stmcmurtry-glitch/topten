@@ -114,6 +114,7 @@ interface PlaceConfig {
   color: string;
   appCategory: string;
   description: (city: string) => string;
+  imageQuery: (city: string) => string;
 }
 
 const PLACE_CONFIGS: PlaceConfig[] = [
@@ -125,6 +126,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#FF7043',
     appCategory: 'Food',
     description: (city) => `The top-rated restaurants in ${city}, ranked by you.`,
+    imageQuery: (city) => `${city} restaurant dining interior food atmosphere wide`,
   },
   {
     slug: 'pizza',
@@ -134,6 +136,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#E17055',
     appCategory: 'Food',
     description: (city) => `Which pizza spot reigns supreme in ${city}?`,
+    imageQuery: () => 'pizza slice cheese wood fired oven Italian restaurant wide',
   },
   {
     slug: 'wings',
@@ -143,6 +146,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#FF9F43',
     appCategory: 'Food',
     description: (city) => `The best buffalo wings and chicken wing spots in ${city}.`,
+    imageQuery: () => 'chicken wings buffalo sauce crispy restaurant food wide',
   },
   {
     slug: 'bars',
@@ -152,6 +156,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#6C5CE7',
     appCategory: 'Food',
     description: (city) => `The top bars and nightlife spots in ${city}.`,
+    imageQuery: () => 'bar cocktails drinks nightlife interior moody wide',
   },
   {
     slug: 'coffee',
@@ -161,6 +166,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#4ECDC4',
     appCategory: 'Food',
     description: (city) => `The best cafes and coffee shops in ${city}.`,
+    imageQuery: () => 'coffee espresso latte art cafe interior cozy wide',
   },
   {
     slug: 'brunch',
@@ -170,6 +176,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#FDCB6E',
     appCategory: 'Food',
     description: (city) => `Eggs benny or avocado toast? The top brunch spots in ${city}, ranked.`,
+    imageQuery: () => 'brunch eggs benedict avocado toast restaurant food wide',
   },
   {
     slug: 'burgers',
@@ -179,6 +186,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#E17055',
     appCategory: 'Food',
     description: (city) => `The best burgers in ${city} — smash, classic, and everything in between.`,
+    imageQuery: () => 'smash burger patty beef restaurant food wide',
   },
   {
     slug: 'sushi',
@@ -188,6 +196,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#00B894',
     appCategory: 'Food',
     description: (city) => `Omakase to AYCE — the top sushi spots in ${city}.`,
+    imageQuery: () => 'sushi omakase fresh fish japanese food plating wide',
   },
   {
     slug: 'steakhouses',
@@ -197,6 +206,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#D63031',
     appCategory: 'Food',
     description: (city) => `Where to get the best cut in ${city}.`,
+    imageQuery: () => 'steak ribeye filet mignon sizzling restaurant food wide',
   },
   {
     slug: 'breweries',
@@ -206,6 +216,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#F9A825',
     appCategory: 'Food',
     description: (city) => `The craft beer scene in ${city}, ranked by locals.`,
+    imageQuery: () => 'craft beer brewery tap room pints wide',
   },
   {
     slug: 'rooftop-bars',
@@ -215,6 +226,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#6C5CE7',
     appCategory: 'Food',
     description: (city) => `Best views and best drinks — the top rooftop bars in ${city}.`,
+    imageQuery: (city) => `${city} rooftop bar skyline cocktails city view wide`,
   },
   {
     slug: 'ice-cream',
@@ -224,6 +236,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#FD79A8',
     appCategory: 'Food',
     description: (city) => `The sweetest spots in ${city}.`,
+    imageQuery: () => 'ice cream dessert colorful scoop cone sweet wide',
   },
   {
     slug: 'live-music',
@@ -233,6 +246,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#A29BFE',
     appCategory: 'Food',
     description: (city) => `From intimate clubs to concert halls — the best live music in ${city}.`,
+    imageQuery: () => 'live music concert venue stage lights performers wide',
   },
   {
     slug: 'sports-bars',
@@ -242,6 +256,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#00B894',
     appCategory: 'Food',
     description: (city) => `The best places to catch the game in ${city}.`,
+    imageQuery: () => 'sports bar big screen tv fans game day wide',
   },
   {
     slug: 'parks',
@@ -251,6 +266,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#27AE60',
     appCategory: 'Travel',
     description: (city) => `The best green spaces, trails, and outdoor spots in ${city}.`,
+    imageQuery: (city) => `${city} park nature green outdoor trail landscape wide`,
   },
   {
     slug: 'places',
@@ -260,6 +276,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     color: '#0984E3',
     appCategory: 'Travel',
     description: (city) => `The landmarks, neighborhoods, and hidden gems that make ${city} worth the trip.`,
+    imageQuery: (city) => `${city} landmark attraction cityscape tourism wide`,
   },
 ];
 
@@ -272,7 +289,7 @@ async function fetchPlacesForConfig(
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const cacheKey = `@topten_places_v3_${citySlug}_${config.slug}`;
+  const cacheKey = `@topten_places_v4_${citySlug}_${config.slug}`;
 
   // Check 24h cache
   try {
@@ -311,6 +328,7 @@ async function fetchPlacesForConfig(
     color: config.color,
     icon: config.icon,
     description: config.description(city),
+    imageQuery: config.imageQuery(city),
     participantCount: 0,
     items,
     region: city,

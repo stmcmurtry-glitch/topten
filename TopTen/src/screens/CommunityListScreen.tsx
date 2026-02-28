@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
+  Image,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -20,6 +21,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { resolveCommunityList } from '../data/dynamicListRegistry';
 import { useCommunity } from '../context/CommunityContext';
+import { fetchCommunityImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
@@ -49,6 +51,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const [submitConfirmed, setSubmitConfirmed] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const hasFetched = useRef(false);
   const buttonScale = useRef(new Animated.Value(1)).current;
 
@@ -102,6 +105,13 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       fetchLiveScores(communityListId);
     }
   }, [activeTab, communityListId, fetchLiveScores]);
+
+  // Fetch hero image
+  useEffect(() => {
+    if (!list) return;
+    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title)
+      .then(setHeroImageUrl);
+  }, [communityListId]);
 
   if (!list) return null;
 
@@ -181,6 +191,9 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const Hero = (
     <View style={[styles.hero, { paddingTop: insets.top + 70 }]}>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: list.color }]} />
+      {heroImageUrl && (
+        <Image source={{ uri: heroImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      )}
       <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
 
       <View style={[styles.heroNav, { top: insets.top + 6 }]}>
@@ -465,7 +478,7 @@ const styles = StyleSheet.create({
 
   /* ── Hero ── */
   hero: { justifyContent: 'flex-end' },
-  heroScrim: { backgroundColor: 'rgba(0,0,0,0.22)' },
+  heroScrim: { backgroundColor: 'rgba(0,0,0,0.42)' },
   heroNav: {
     position: 'absolute',
     left: 0,

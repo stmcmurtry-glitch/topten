@@ -40,7 +40,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress 
   const top3 = list.items.slice(0, 3);
 
   useEffect(() => {
-    fetchCommunityImage(list.id, list.imageQuery).then(setImageUrl);
+    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title).then(setImageUrl);
   }, [list.id]);
 
   return (

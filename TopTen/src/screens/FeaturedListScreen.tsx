@@ -29,7 +29,11 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
   const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
-    fetchFeaturedImage(list).then(setImageUrl);
+    if (list.staticImageUrl) {
+      setImageUrl(list.staticImageUrl);
+    } else {
+      fetchFeaturedImage(list).then(setImageUrl);
+    }
     fetchFeaturedItems(list).then(fetched => {
       if (fetched.length > 0) setItems(fetched);
     });
