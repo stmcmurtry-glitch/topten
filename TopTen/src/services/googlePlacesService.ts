@@ -15,6 +15,7 @@ const VENUE_KEYWORDS = [
 // Keywords that indicate a "places to visit" list (Travel category → tourist_attraction)
 const PLACES_TO_VISIT_KEYWORDS = [
   'places to visit', 'places to see', 'attractions', 'landmarks', 'sights',
+  'park', 'parks', 'outdoor',
 ];
 
 // Keywords that suggest a list is about products/brands (→ do NOT use Google Places)
@@ -56,7 +57,11 @@ export function derivePlacesType(listTitle: string, category: string): string | 
 }
 
 export function derivePlacesQuery(listTitle: string, category: string): string {
-  if (category === 'Travel') return 'top places to visit';
+  if (category === 'Travel') {
+    const t = (listTitle ?? '').toLowerCase();
+    if (t.includes('park') || t.includes('outdoor')) return 'parks and outdoor spaces';
+    return 'top places to visit';
+  }
   const t = (listTitle ?? '').toLowerCase();
   if (t.includes('pizza')) return 'pizza restaurants';
   if (t.includes('wing')) return 'wings restaurants';

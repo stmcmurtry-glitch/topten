@@ -429,6 +429,9 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
               <Text style={styles.sheetTitle}>
                 Enter item for #{typeSlotIndex !== null ? typeSlotIndex + 1 : ''}
               </Text>
+              <Text style={styles.sheetHint}>
+                We try our best to match submissions, but type verbatim for the best chance of landing on the community list.
+              </Text>
               <TextInput
                 style={styles.typeInput}
                 value={typedValue}
@@ -696,7 +699,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primaryText,
     textAlign: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.sm,
+  },
+  sheetHint: {
+    fontSize: 12,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 17,
   },
   sheetOption: {
     flexDirection: 'row',
