@@ -7,7 +7,11 @@ import { searchDrinks } from '../services/cocktaildb';
 import { searchGames } from '../services/rawg';
 import {
   TRAVEL_DESTINATIONS,
+  NATIONAL_PARKS,
+  BEACHES,
+  ISLANDS,
   PEOPLE_NAMES,
+  US_PRESIDENTS,
   FASHION_ITEMS,
   HEALTH_ITEMS,
   TECH_ITEMS,
@@ -89,11 +93,28 @@ export async function searchSuggestions(
       return searchDrinks(query);
     case 'Gaming':
       return searchGames(query);
-    case 'People':
+    case 'People': {
+      const t = listTitle?.toLowerCase() ?? '';
+      if (/\bpresident|presidents\b/.test(t)) {
+        const q = query.toLowerCase();
+        const list = US_PRESIDENTS.filter(
+          (p) => !q || p.title.toLowerCase().includes(q) || p.year.toLowerCase().includes(q)
+        );
+        return list;
+      }
       if (!query.trim()) return searchStaticList(PEOPLE_NAMES, query);
       return searchWikipedia(query).catch(() => searchStaticList(PEOPLE_NAMES, query));
-    case 'Travel':
+    }
+    case 'Travel': {
+      const t = listTitle?.toLowerCase() ?? '';
+      if (/\bnational.park|national.parks\b/.test(t))
+        return searchStaticList(NATIONAL_PARKS, query);
+      if (/\bbeach|beaches\b/.test(t))
+        return searchStaticList(BEACHES, query);
+      if (/\bisland|islands\b/.test(t))
+        return searchStaticList(ISLANDS, query);
       return searchStaticList(TRAVEL_DESTINATIONS, query);
+    }
     case 'Fashion':
       return searchStaticList(FASHION_ITEMS, query);
     case 'Health':

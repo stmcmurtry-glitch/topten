@@ -196,6 +196,82 @@ const DEFAULTS: Record<string, SearchResult[]> = {
     { title: '1996-97 Colorado Avalanche',    year: 'NHL · 49-24-9' },
     { title: '2009-10 Washington Capitals',   year: 'NHL · 54-15-13' },
   ],
+  'F1 Drivers': [
+    { title: 'Ayrton Senna',          year: 'Brazil · 3× World Champion' },
+    { title: 'Michael Schumacher',    year: 'Germany · 7× World Champion' },
+    { title: 'Lewis Hamilton',        year: 'Britain · 7× World Champion' },
+    { title: 'Max Verstappen',        year: 'Netherlands · 4× World Champion' },
+    { title: 'Alain Prost',           year: 'France · 4× World Champion' },
+    { title: 'Juan Manuel Fangio',    year: 'Argentina · 5× World Champion' },
+    { title: 'Jim Clark',             year: 'Scotland · 2× World Champion' },
+    { title: 'Niki Lauda',            year: 'Austria · 3× World Champion' },
+    { title: 'Jackie Stewart',        year: 'Scotland · 3× World Champion' },
+    { title: 'Sebastian Vettel',      year: 'Germany · 4× World Champion' },
+    { title: 'Fernando Alonso',       year: 'Spain · 2× World Champion' },
+    { title: 'Nigel Mansell',         year: 'Britain · 1992 World Champion' },
+    { title: 'Mika Häkkinen',         year: 'Finland · 2× World Champion' },
+    { title: 'Emerson Fittipaldi',    year: 'Brazil · 2× World Champion' },
+    { title: 'Nelson Piquet',         year: 'Brazil · 3× World Champion' },
+    { title: 'Jenson Button',         year: 'Britain · 2009 World Champion' },
+    { title: 'Kimi Räikkönen',        year: 'Finland · 2007 World Champion' },
+    { title: 'Charles Leclerc',       year: 'Monaco · Ferrari' },
+    { title: 'Lando Norris',          year: 'Britain · McLaren' },
+    { title: 'Carlos Sainz Jr.',      year: 'Spain' },
+  ],
+  'UFC Fighters': [
+    { title: 'Jon Jones',             year: 'Light Heavyweight & Heavyweight Champion' },
+    { title: 'Khabib Nurmagomedov',   year: 'Lightweight · 29-0 undefeated' },
+    { title: 'Anderson Silva',        year: 'Middleweight · longest title reign' },
+    { title: 'Georges St-Pierre',     year: 'Welterweight & Middleweight Champion' },
+    { title: 'Conor McGregor',        year: 'Featherweight & Lightweight Champion' },
+    { title: 'Stipe Miocic',          year: 'Heavyweight · most title defenses' },
+    { title: 'Demetrious Johnson',    year: 'Flyweight · 11 consecutive defenses' },
+    { title: 'Chuck Liddell',         year: 'Light Heavyweight Champion' },
+    { title: 'Randy Couture',         year: 'Heavyweight & Light Heavyweight Champion' },
+    { title: 'Royce Gracie',          year: 'UFC 1, 2 & 4 champion · BJJ pioneer' },
+    { title: 'Islam Makhachev',       year: 'Lightweight Champion' },
+    { title: 'Alex Pereira',          year: 'Middleweight & Light Heavyweight Champion' },
+    { title: 'Kamaru Usman',          year: 'Welterweight · 15-0 in UFC' },
+    { title: 'Israel Adesanya',       year: 'Middleweight Champion' },
+    { title: 'Amanda Nunes',          year: 'Bantamweight & Featherweight Champion' },
+    { title: 'Valentina Shevchenko',  year: 'Flyweight Champion' },
+    { title: 'Ronda Rousey',          year: 'Bantamweight · first female UFC champion' },
+    { title: 'Jose Aldo',             year: 'Featherweight · 10-year unbeaten run' },
+    { title: 'Frankie Edgar',         year: 'Lightweight Champion' },
+    { title: 'BJ Penn',               year: 'Lightweight & Welterweight Champion' },
+  ],
+  'Ski Resorts': [
+    { title: 'Whistler Blackcomb',           year: 'British Columbia, Canada' },
+    { title: 'Verbier',                      year: 'Valais, Switzerland' },
+    { title: 'St. Moritz',                   year: 'Graubünden, Switzerland' },
+    { title: 'Zermatt (Matterhorn)',         year: 'Valais, Switzerland' },
+    { title: 'Chamonix-Mont-Blanc',          year: 'Haute-Savoie, France' },
+    { title: 'Courchevel',                   year: 'Savoie, France — Les 3 Vallées' },
+    { title: 'Méribel',                      year: 'Savoie, France — Les 3 Vallées' },
+    { title: 'Val d\'Isère',                 year: 'Savoie, France' },
+    { title: 'Cortina d\'Ampezzo',           year: 'Dolomites, Italy' },
+    { title: 'Aspen Snowmass',               year: 'Colorado, USA' },
+    { title: 'Vail',                         year: 'Colorado, USA' },
+    { title: 'Park City Mountain Resort',    year: 'Utah, USA' },
+    { title: 'Deer Valley Resort',           year: 'Utah, USA — ski-only' },
+    { title: 'Alta Ski Area',                year: 'Utah, USA' },
+    { title: 'Jackson Hole Mountain Resort', year: 'Wyoming, USA' },
+    { title: 'Sun Valley',                   year: 'Idaho, USA — first US ski resort' },
+    { title: 'Telluride Ski Resort',         year: 'Colorado, USA' },
+    { title: 'Mammoth Mountain',             year: 'California, USA' },
+    { title: 'Big Sky Resort',               year: 'Montana, USA' },
+    { title: 'Stowe Mountain Resort',        year: 'Vermont, USA' },
+    { title: 'Niseko United',                year: 'Hokkaido, Japan' },
+    { title: 'Hakuba Valley',                year: 'Nagano, Japan' },
+    { title: 'Queenstown Ski Fields',        year: 'South Island, New Zealand' },
+    { title: 'Les Arcs',                     year: 'Savoie, France' },
+    { title: 'Kitzbühel',                    year: 'Tyrol, Austria — Hahnenkamm race' },
+    { title: 'St. Anton am Arlberg',         year: 'Tyrol, Austria' },
+    { title: 'Ischgl',                       year: 'Tyrol, Austria' },
+    { title: 'Davos Klosters',               year: 'Graubünden, Switzerland' },
+    { title: 'Banff Sunshine Village',       year: 'Alberta, Canada' },
+    { title: 'Lake Louise Ski Resort',       year: 'Alberta, Canada' },
+  ],
   'Golf Courses': [
     { title: 'Augusta National Golf Club',       year: 'Augusta, GA — Masters venue' },
     { title: 'Pebble Beach Golf Links',          year: 'Pebble Beach, CA' },
@@ -371,7 +447,10 @@ const DEFAULT_SPORTS_MIXED: SearchResult[] = [
 
 function detectSport(title: string): string | null {
   const t = title.toLowerCase();
-  // Team / venue lists — check before generic sport keywords
+  // Team / venue / place lists — check before generic sport keywords
+  if (/\bski.resort|ski.resorts|skiing|snowboard\b/.test(t))         return 'Ski Resorts';
+  if (/\bf1.driver|formula.one|formula.1|grand.prix\b/.test(t))      return 'F1 Drivers';
+  if (/\bufc|mma.fighter|mixed.martial|cage.fighter\b/.test(t))      return 'UFC Fighters';
   if (/\bstadium|stadiums|arena|arenas|venue\b/.test(t))             return 'NFL Stadiums';
   if (/\bworld cup team|world cup squad\b/.test(t))                  return 'World Cup Teams';
   if (/\bsingle.season\b.*\bbaseball\b|\bbaseball\b.*\bsingle.season\b/.test(t)) return 'Baseball Teams';
@@ -416,7 +495,7 @@ async function fetchTeams(query: string): Promise<SearchResult[]> {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 // Sports lists that are purely static — typed queries filter the local list, not the API
-const STATIC_SPORTS = ['NFL Stadiums', 'Baseball Teams', 'NHL Teams', 'NBA Teams', 'World Cup Teams', 'Golf Courses'];
+const STATIC_SPORTS = ['NFL Stadiums', 'Baseball Teams', 'NHL Teams', 'NBA Teams', 'World Cup Teams', 'Golf Courses', 'F1 Drivers', 'UFC Fighters', 'Ski Resorts'];
 
 export async function searchSports(query: string, listTitle?: string): Promise<SearchResult[]> {
   const sport = listTitle ? detectSport(listTitle) : null;

@@ -45,12 +45,94 @@ const DEFAULT_ARTISTS: string[] = [
 
 // Keywords that indicate the list is about songs/tracks rather than artists
 const SONG_KEYWORDS = ['song', 'songs', 'track', 'tracks', 'single', 'singles', 'hit', 'hits', 'anthem', 'anthems'];
+const ALBUM_KEYWORDS = ['album', 'albums', 'record', 'records', 'lp', 'lps', 'discography', 'debut'];
 
 function isSongList(listTitle?: string): boolean {
   if (!listTitle) return false;
   const t = listTitle.toLowerCase();
   return SONG_KEYWORDS.some((kw) => t.includes(kw));
 }
+
+function isAlbumList(listTitle?: string): boolean {
+  if (!listTitle) return false;
+  const t = listTitle.toLowerCase();
+  return ALBUM_KEYWORDS.some((kw) => t.includes(kw));
+}
+
+const DEFAULT_ALBUMS: SearchResult[] = [
+  { title: 'Sgt. Pepper\'s Lonely Hearts Club Band', year: 'The Beatles · 1967' },
+  { title: 'Pet Sounds',                             year: 'The Beach Boys · 1966' },
+  { title: 'Revolver',                               year: 'The Beatles · 1966' },
+  { title: 'Abbey Road',                             year: 'The Beatles · 1969' },
+  { title: 'The Dark Side of the Moon',              year: 'Pink Floyd · 1973' },
+  { title: 'Rumours',                                year: 'Fleetwood Mac · 1977' },
+  { title: 'What\'s Going On',                       year: 'Marvin Gaye · 1971' },
+  { title: 'Kind of Blue',                           year: 'Miles Davis · 1959' },
+  { title: 'Purple Rain',                            year: 'Prince · 1984' },
+  { title: 'Thriller',                               year: 'Michael Jackson · 1982' },
+  { title: 'Born to Run',                            year: 'Bruce Springsteen · 1975' },
+  { title: 'Nevermind',                              year: 'Nirvana · 1991' },
+  { title: 'OK Computer',                            year: 'Radiohead · 1997' },
+  { title: 'Led Zeppelin IV',                        year: 'Led Zeppelin · 1971' },
+  { title: 'Exile on Main St.',                      year: 'The Rolling Stones · 1972' },
+  { title: 'Highway 61 Revisited',                   year: 'Bob Dylan · 1965' },
+  { title: 'Blonde on Blonde',                       year: 'Bob Dylan · 1966' },
+  { title: 'The White Album',                        year: 'The Beatles · 1968' },
+  { title: 'A Love Supreme',                         year: 'John Coltrane · 1965' },
+  { title: 'Innervisions',                           year: 'Stevie Wonder · 1973' },
+  { title: 'Songs in the Key of Life',               year: 'Stevie Wonder · 1976' },
+  { title: 'The Joshua Tree',                        year: 'U2 · 1987' },
+  { title: 'Achtung Baby',                           year: 'U2 · 1991' },
+  { title: 'Tapestry',                               year: 'Carole King · 1971' },
+  { title: 'Blue',                                   year: 'Joni Mitchell · 1971' },
+  { title: 'Court and Spark',                        year: 'Joni Mitchell · 1974' },
+  { title: 'Astral Weeks',                           year: 'Van Morrison · 1968' },
+  { title: 'Electric Ladyland',                      year: 'Jimi Hendrix · 1968' },
+  { title: 'Are You Experienced',                    year: 'Jimi Hendrix · 1967' },
+  { title: 'Wish You Were Here',                     year: 'Pink Floyd · 1975' },
+  { title: 'The Wall',                               year: 'Pink Floyd · 1979' },
+  { title: 'London Calling',                         year: 'The Clash · 1979' },
+  { title: 'Never Mind the Bollocks',                year: 'Sex Pistols · 1977' },
+  { title: 'The Velvet Underground & Nico',          year: 'The Velvet Underground · 1967' },
+  { title: 'Marquee Moon',                           year: 'Television · 1977' },
+  { title: 'Remain in Light',                        year: 'Talking Heads · 1980' },
+  { title: 'Fear of Music',                          year: 'Talking Heads · 1979' },
+  { title: 'Appetite for Destruction',               year: 'Guns N\'Roses · 1987' },
+  { title: 'Master of Puppets',                      year: 'Metallica · 1986' },
+  { title: 'The Black Album',                        year: 'Metallica · 1991' },
+  { title: 'Ten',                                    year: 'Pearl Jam · 1991' },
+  { title: 'Vs.',                                    year: 'Pearl Jam · 1993' },
+  { title: 'In Utero',                               year: 'Nirvana · 1993' },
+  { title: 'The Bends',                              year: 'Radiohead · 1995' },
+  { title: 'Kid A',                                  year: 'Radiohead · 2000' },
+  { title: 'Discovery',                              year: 'Daft Punk · 2001' },
+  { title: 'Random Access Memories',                 year: 'Daft Punk · 2013' },
+  { title: '21',                                     year: 'Adele · 2011' },
+  { title: '25',                                     year: 'Adele · 2015' },
+  { title: 'Lemonade',                               year: 'Beyoncé · 2016' },
+  { title: 'Fearless',                               year: 'Taylor Swift · 2008' },
+  { title: '1989',                                   year: 'Taylor Swift · 2014' },
+  { title: 'Midnights',                              year: 'Taylor Swift · 2022' },
+  { title: 'good kid, m.A.A.d city',                 year: 'Kendrick Lamar · 2012' },
+  { title: 'To Pimp a Butterfly',                    year: 'Kendrick Lamar · 2015' },
+  { title: 'The Marshall Mathers LP',                year: 'Eminem · 2000' },
+  { title: 'The Chronic',                            year: 'Dr. Dre · 1992' },
+  { title: 'Illmatic',                               year: 'Nas · 1994' },
+  { title: 'Reasonable Doubt',                       year: 'Jay-Z · 1996' },
+  { title: 'Ready to Die',                           year: 'The Notorious B.I.G. · 1994' },
+  { title: 'Me Against the World',                   year: 'Tupac · 1995' },
+  { title: 'All Eyez on Me',                         year: 'Tupac · 1996' },
+  { title: 'My Beautiful Dark Twisted Fantasy',      year: 'Kanye West · 2010' },
+  { title: 'The College Dropout',                    year: 'Kanye West · 2004' },
+  { title: 'If You\'re Reading This It\'s Too Late', year: 'Drake · 2015' },
+  { title: 'Channel Orange',                         year: 'Frank Ocean · 2012' },
+  { title: 'Blonde',                                 year: 'Frank Ocean · 2016' },
+  { title: 'After Hours',                            year: 'The Weeknd · 2020' },
+  { title: 'Back in Black',                          year: 'AC/DC · 1980' },
+  { title: 'Paranoid',                               year: 'Black Sabbath · 1970' },
+  { title: 'Boston',                                 year: 'Boston · 1976' },
+  { title: 'Hotel California',                       year: 'Eagles · 1976' },
+];
 
 const DEFAULT_SONGS: SearchResult[] = [
   { title: 'Bohemian Rhapsody',          year: 'Queen' },
@@ -138,14 +220,15 @@ const cache = new Map<string, SearchResult[]>();
 
 export async function searchMusic(query: string, listTitle?: string): Promise<SearchResult[]> {
   const songList = isSongList(listTitle);
+  const albumList = !songList && isAlbumList(listTitle);
 
   if (!query.trim()) {
-    return songList
-      ? DEFAULT_SONGS
-      : DEFAULT_ARTISTS.map((name) => ({ title: name }));
+    if (songList)  return DEFAULT_SONGS;
+    if (albumList) return DEFAULT_ALBUMS;
+    return DEFAULT_ARTISTS.map((name) => ({ title: name }));
   }
 
-  const key = `music:${songList ? 'songs:' : ''}${query.toLowerCase().trim()}`;
+  const key = `music:${songList ? 'songs:' : albumList ? 'albums:' : ''}${query.toLowerCase().trim()}`;
   if (cache.has(key)) return cache.get(key)!;
 
   try {
@@ -161,6 +244,21 @@ export async function searchMusic(query: string, listTitle?: string): Promise<Se
         year: r.artistName && r.collectionName
           ? `${r.artistName} · ${r.collectionName}`
           : r.artistName,
+      }));
+      cache.set(key, results);
+      return results;
+    }
+
+    if (albumList) {
+      // Album list: use iTunes Search API with entity=album
+      const res = await fetch(
+        `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=album&limit=25&media=music`
+      );
+      if (!res.ok) throw new Error('iTunes album search failed');
+      const data = await res.json();
+      const results: SearchResult[] = (data.results ?? []).map((r: any) => ({
+        title: r.collectionName,
+        year: r.artistName ? `${r.artistName} · ${new Date(r.releaseDate).getFullYear()}` : undefined,
       }));
       cache.set(key, results);
       return results;
@@ -214,6 +312,11 @@ export async function searchMusic(query: string, listTitle?: string): Promise<Se
     if (songList) {
       return DEFAULT_SONGS.filter(
         (s) => s.title.toLowerCase().includes(q) || (s.year ?? '').toLowerCase().includes(q)
+      );
+    }
+    if (albumList) {
+      return DEFAULT_ALBUMS.filter(
+        (a) => a.title.toLowerCase().includes(q) || (a.year ?? '').toLowerCase().includes(q)
       );
     }
     return DEFAULT_ARTISTS
