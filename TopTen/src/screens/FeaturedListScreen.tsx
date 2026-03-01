@@ -70,13 +70,12 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
             <Text style={styles.heroCategory}>{list.category.toUpperCase()}</Text>
           </View>
           <Text style={styles.heroTitle}>{list.title}</Text>
-          <Text style={styles.heroAuthor}>By {list.author}</Text>
         </View>
       </View>
 
       {/* Description */}
       <View style={styles.descriptionCard}>
-        <Text style={[styles.descriptionLabel, { color: list.color }]}>HOW WE RANKED THIS</Text>
+        <Text style={[styles.descriptionLabel, { color: list.color }]}>RANKING METHODOLOGY</Text>
         <Text style={styles.description}>{list.description}</Text>
       </View>
 
