@@ -14,6 +14,8 @@ export interface FeaturedList {
   sponsored?: { name: string; cta: string; url: string };
   /** "Month YYYY" — shown on stats lists so users know when data was last verified */
   updatedAt?: string;
+  /** Canonical source URL for verifying this list's data (used by the monthly stats reminder) */
+  statsSource?: string;
 }
 
 export interface PopularList {
@@ -427,6 +429,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Jack Nicklaus golf swing Augusta Masters championship fairway wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1605144156546-91acf5e4cffd?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.pgatour.com/stats/detail/02671',
     previewItems: [
       'Jack Nicklaus — 18 Majors',
       'Tiger Woods — 15 Majors',
@@ -451,6 +454,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Novak Djokovic Wimbledon tennis grand slam champion court wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1731957238251-1472b9992c29?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.atptour.com/en/stats/grand-slam-titles',
     previewItems: [
       'Novak Djokovic — 24',
       'Rafael Nadal — 22',
@@ -475,6 +479,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Barry Bonds home run swing baseball stadium Giants wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1756832430925-d1c85f282736?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.baseball-reference.com/leaders/HR_career.shtml',
     previewItems: [
       'Barry Bonds — 762',
       'Hank Aaron — 755',
@@ -499,6 +504,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'baseball pitcher mound stadium crowd classic sports action wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1513879392062-82c9a1d1c614?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.baseball-reference.com/leaders/earned_run_avg_career.shtml',
     previewItems: [
       'Ed Walsh — 1.82',
       'Addie Joss — 1.89',
@@ -523,6 +529,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'baseball pitcher mound stadium green field vintage classic wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1767566822107-f549e0edab19?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.baseball-reference.com/leaders/W_career.shtml',
     previewItems: [
       'Cy Young — 511',
       'Walter Johnson — 417',
@@ -547,6 +554,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'New York Yankees World Series championship baseball stadium celebration confetti',
     staticImageUrl: 'https://images.unsplash.com/photo-1710827758909-d1cc19d4340b?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.baseball-reference.com/postseason/world_series.shtml',
     previewItems: [
       'New York Yankees — 27',
       'St. Louis Cardinals — 11',
@@ -571,6 +579,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'New England Patriots Super Bowl championship football stadium celebration confetti',
     staticImageUrl: 'https://images.unsplash.com/photo-1567256181256-6a0419cd94e7?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.pro-football-reference.com/super-bowl/',
     previewItems: [
       'New England Patriots — 6',
       'Pittsburgh Steelers — 6',
@@ -595,6 +604,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Tom Brady quarterback throw touchdown NFL stadium Patriots wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1675886051964-e54e7d28cece?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.pro-football-reference.com/leaders/pass_yds_career.htm',
     previewItems: [
       'Tom Brady — 89,214 yds',
       'Drew Brees — 80,358 yds',
@@ -619,6 +629,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'football field goal kick stadium uprights crowd NFL action wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1675886051958-f425417f7480?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.pro-football-reference.com/leaders/longest_fg_career.htm',
     previewItems: [
       'Justin Tucker — 66 yds (Ravens, 2021)',
       'Matt Prater — 64 yds (Broncos, 2013)',
@@ -643,6 +654,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'running back football stadium NFL crowd rushing action game wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1702303208608-fc27f8826b9a?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.pro-football-reference.com/leaders/rush_yds_single_season.htm',
     previewItems: [
       'Eric Dickerson — 2,105 yds (Rams, 1984)',
       'Adrian Peterson — 2,097 yds (Vikings, 2012)',
@@ -667,6 +679,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Brazil soccer World Cup celebration trophy team stadium wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1637203727318-fb31b63e2377?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://en.wikipedia.org/wiki/FIFA_World_Cup',
     previewItems: [
       'Brazil — 5 titles (1958, 62, 70, 94, 02)',
       'Germany — 4 titles (1954, 74, 90, 2014)',
@@ -691,6 +704,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'soccer goal net celebration World Cup stadium crowd scoring wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1698786039213-1d3aec21c6ae?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://en.wikipedia.org/wiki/FIFA_World_Cup_records_and_statistics',
     previewItems: [
       'Miroslav Klose — 16',
       'Ronaldo (Brazil) — 15',
@@ -715,6 +729,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Alex Ovechkin ice hockey NHL Washington Capitals goal celebration rink wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1741954034331-fab787e04de6?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.hockey-reference.com/leaders/goals_career.html',
     previewItems: [
       'Alex Ovechkin — 921*',
       'Wayne Gretzky — 894',
@@ -739,6 +754,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Wayne Gretzky hockey NHL passing puck assist rink Oilers wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1769437881488-be0ce0618eef?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.hockey-reference.com/leaders/assists_career.html',
     previewItems: [
       'Wayne Gretzky — 1,963',
       'Ron Francis — 1,249',
@@ -763,6 +779,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Montreal Canadiens Stanley Cup hockey championship celebration ice wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1757889692951-4bf80690cc6a?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.hockey-reference.com/friv/stanley_cup_champions_list.html',
     previewItems: [
       'Montreal Canadiens — 24',
       'Toronto Maple Leafs — 13',
@@ -787,6 +804,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Bill Russell Boston Celtics basketball championship NBA wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1647245953214-82cd23c5af13?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.basketball-reference.com/friv/championships.fcgi',
     previewItems: [
       'Bill Russell — 11 rings',
       'Sam Jones — 10 rings',
@@ -811,6 +829,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Boston Celtics Los Angeles Lakers NBA championship basketball arena wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1518409274682-1cb2fe2955a8?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.basketball-reference.com/friv/championships.fcgi',
     previewItems: [
       'Boston Celtics — 18',
       'Los Angeles Lakers — 17',
@@ -835,6 +854,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'LeBron James scoring basketball NBA court arena action wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1765924705648-9a0731ac5202?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.basketball-reference.com/leaders/pts_career.html',
     previewItems: [
       'LeBron James — 43,066*',
       'Kareem Abdul-Jabbar — 38,387',
@@ -859,6 +879,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Wilt Chamberlain basketball scoring vintage NBA historic wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1725714833427-4e71b50ca712?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
+    statsSource: 'https://www.basketball-reference.com/leaders/pts_per_g_career.html',
     previewItems: [
       'Michael Jordan — 30.12 ppg',
       'Wilt Chamberlain — 30.07 ppg',
