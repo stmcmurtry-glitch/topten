@@ -27,6 +27,12 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [items, setItems] = useState<string[]>(list.previewItems);
+
+  const openWiki = (item: string) => {
+    // Strip trailing stats/notes — e.g. "Michael Jordan — 30.12 ppg" → "Michael Jordan"
+    const name = item.split(/\s[—–]\s/)[0].trim();
+    Linking.openURL(`https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`);
+  };
   const [showShareModal, setShowShareModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
@@ -117,15 +123,16 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
         )}
         {items.slice(0, 10).map((item, i) => (
           <React.Fragment key={i}>
-            <View style={styles.row}>
+            <TouchableOpacity style={styles.row} onPress={() => openWiki(item)} activeOpacity={0.7}>
               <Text style={[styles.rank, i === 0 && styles.rankTop, i === 0 && { color: list.color }]}>{i + 1}</Text>
               <Text style={[styles.itemTitle, i === 0 && styles.itemTitleTop]} numberOfLines={2}>
                 {item}
               </Text>
-              {i === 0 && (
-                <Ionicons name="trophy" size={14} color={list.color} style={styles.trophy} />
-              )}
-            </View>
+              <View style={styles.rowRight}>
+                {i === 0 && <Ionicons name="trophy" size={14} color={list.color} />}
+                <Ionicons name="open-outline" size={13} color={colors.border} />
+              </View>
+            </TouchableOpacity>
             {i < Math.min(items.length, 10) - 1 && <View style={styles.divider} />}
           </React.Fragment>
         ))}
@@ -313,7 +320,10 @@ const styles = StyleSheet.create({
   itemTitleTop: {
     fontWeight: '700',
   },
-  trophy: {
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     flexShrink: 0,
   },
   divider: {
