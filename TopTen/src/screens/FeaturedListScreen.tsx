@@ -39,6 +39,19 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
       case 'TV':
         url = `https://www.imdb.com/find?q=${q}&s=tt`;
         break;
+      case 'Sports':
+        // Only use Sports Reference for factual stats lists (those with statsSource).
+        // Debatable lists like "Greatest Moments" have no statsSource → Wikipedia.
+        // Sports Reference search auto-redirects to the player page on unique matches.
+        if (list.statsSource) {
+          try {
+            const domain = new URL(list.statsSource).hostname;
+            url = `https://${domain}/search/search.fcgi?q=${q}`;
+            break;
+          } catch {}
+        }
+        url = `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
+        break;
       case 'Books':
         url = `https://www.goodreads.com/search?q=${q}`;
         break;
