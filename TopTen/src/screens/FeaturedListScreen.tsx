@@ -28,10 +28,37 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [items, setItems] = useState<string[]>(list.previewItems);
 
-  const openWiki = (item: string) => {
+  const openExternalLink = (item: string) => {
     // Strip trailing stats/notes — e.g. "Michael Jordan — 30.12 ppg" → "Michael Jordan"
     const name = item.split(/\s[—–]\s/)[0].trim();
-    Linking.openURL(`https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`);
+    const q = encodeURIComponent(name);
+
+    let url: string;
+    switch (list.category) {
+      case 'Movies':
+      case 'TV':
+        url = `https://www.imdb.com/find?q=${q}&s=tt`;
+        break;
+      case 'Sports':
+        // Derive the correct Sports Reference site from statsSource (e.g.
+        // basketball-reference.com, hockey-reference.com, etc.)
+        if (list.statsSource) {
+          try {
+            const domain = new URL(list.statsSource).hostname;
+            url = `https://${domain}/search/search.fcgi?q=${q}`;
+            break;
+          } catch {}
+        }
+        url = `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
+        break;
+      case 'Books':
+        url = `https://www.goodreads.com/search?q=${q}`;
+        break;
+      default:
+        url = `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
+    }
+
+    Linking.openURL(url);
   };
   const [showShareModal, setShowShareModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -123,7 +150,7 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
         )}
         {items.slice(0, 10).map((item, i) => (
           <React.Fragment key={i}>
-            <TouchableOpacity style={styles.row} onPress={() => openWiki(item)} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.row} onPress={() => openExternalLink(item)} activeOpacity={0.7}>
               <Text style={[styles.rank, i === 0 && styles.rankTop, i === 0 && { color: list.color }]}>{i + 1}</Text>
               <Text style={[styles.itemTitle, i === 0 && styles.itemTitleTop]} numberOfLines={2}>
                 {item}
