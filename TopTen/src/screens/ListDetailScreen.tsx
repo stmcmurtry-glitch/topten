@@ -92,6 +92,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [photoPickerTarget, setPhotoPickerTarget] = useState<'cover' | 'profile' | null>(null);
   const [showPlansModal, setShowPlansModal] = useState(false);
+  const [showPremiumPrompt, setShowPremiumPrompt] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [typedArtist, setTypedArtist] = useState('');
   const [typedAlbum, setTypedAlbum] = useState('');
@@ -330,24 +331,13 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                 if (isPremium) {
                   setSlots((prev) => [...prev, '']);
                 } else {
-                  setShowPlansModal(true);
+                  setShowPremiumPrompt(true);
                 }
               }}
               activeOpacity={0.7}
             >
-              <Ionicons
-                name={isPremium ? 'add-circle-outline' : 'lock-closed-outline'}
-                size={16}
-                color={isPremium ? categoryColor : colors.secondaryText}
-              />
-              <Text style={[styles.addMoreText, isPremium && { color: categoryColor }]}>
-                {isPremium ? 'Add more items' : 'Add more items'}
-              </Text>
-              {!isPremium && (
-                <View style={styles.addMorePremiumPill}>
-                  <Text style={styles.addMorePremiumPillText}>Premium</Text>
-                </View>
-              )}
+              <Ionicons name="add-circle-outline" size={16} color={categoryColor} />
+              <Text style={[styles.addMoreText, { color: categoryColor }]}>Add more items</Text>
             </TouchableOpacity>
 
             {/* Quick-action chips */}
@@ -538,6 +528,30 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         visible={showPlansModal}
         onClose={() => setShowPlansModal(false)}
       />
+
+      {/* Premium feature prompt */}
+      <Modal visible={showPremiumPrompt} transparent animationType="fade">
+        <Pressable style={styles.overlay} onPress={() => setShowPremiumPrompt(false)}>
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.premiumPromptIcon}>
+              <Ionicons name="star" size={26} color={colors.activeTab} />
+            </View>
+            <Text style={styles.sheetTitle}>Premium Feature</Text>
+            <Text style={styles.premiumPromptBody}>
+              Extend any list beyond 10 items with TopTen Premium.
+            </Text>
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: colors.activeTab }]}
+              onPress={() => { setShowPremiumPrompt(false); setShowPlansModal(true); }}
+            >
+              <Text style={styles.saveText}>Upgrade to Premium</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setShowPremiumPrompt(false)}>
+              <Text style={styles.cancelText}>Not now</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Category picker */}
       <Modal visible={showCategoryPicker} transparent animationType="slide">
@@ -734,18 +748,23 @@ const styles = StyleSheet.create({
   addMoreText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.secondaryText,
   },
-  addMorePremiumPill: {
+  premiumPromptIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     backgroundColor: 'rgba(204,0,0,0.08)',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: spacing.sm,
   },
-  addMorePremiumPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.activeTab,
+  premiumPromptBody: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.lg,
   },
 
   /* ── Footer action card ── */
