@@ -532,12 +532,12 @@ const styles = StyleSheet.create({
   },
   votedBadgeText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
   countBadge: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: borderRadius.lg,
   },
-  countBadgeText: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.9)' },
+  countBadgeText: { fontSize: 11, fontWeight: '600', color: '#FFFFFF' },
   heroContent: {
     paddingHorizontal: spacing.lg,
     paddingBottom: 18,

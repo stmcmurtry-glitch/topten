@@ -46,7 +46,8 @@ const CommunityFeedRow: React.FC<{
   list: CommunityList;
   bucket: PriorityBucket;
   onPress: () => void;
-}> = ({ list, bucket, onPress }) => {
+  liveCount?: number;
+}> = ({ list, bucket, onPress, liveCount }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,7 +73,7 @@ const CommunityFeedRow: React.FC<{
           <StatusBadge bucket={bucket} />
         </View>
         <Text style={styles.rowTitle} numberOfLines={2}>{list.title}</Text>
-        <Text style={styles.rowMeta}>{list.participantCount.toLocaleString()} voted</Text>
+        <Text style={styles.rowMeta}>{(liveCount ?? list.participantCount).toLocaleString()} voted</Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={colors.border} />
     </TouchableOpacity>
@@ -81,7 +82,7 @@ const CommunityFeedRow: React.FC<{
 
 export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { userRankings } = useCommunity();
+  const { userRankings, participantCounts } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
   const [statusFilter, setStatusFilter] = useState<'all' | 'vote-now' | 'voted'>('all');
 
@@ -172,6 +173,7 @@ export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigat
                     list={list}
                     bucket={getCommunityBucket(list.id, userRankings)}
                     onPress={() => navigation.navigate('CommunityList', { communityListId: list.id })}
+                    liveCount={participantCounts[list.id]}
                   />
                   {idx < section.data.length - 1 && <View style={styles.divider} />}
                 </React.Fragment>
