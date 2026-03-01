@@ -3,6 +3,8 @@ export interface TopTenItem {
   rank: number;
   title: string;
   imageUrl?: string;
+  artist?: string;
+  album?: string;
 }
 
 export interface TopTenList {

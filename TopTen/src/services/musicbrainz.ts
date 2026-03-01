@@ -223,7 +223,7 @@ export async function searchMusic(query: string, listTitle?: string): Promise<Se
   const albumList = !songList && isAlbumList(listTitle);
 
   if (!query.trim()) {
-    if (songList)  return DEFAULT_SONGS;
+    if (songList)  return DEFAULT_SONGS.map((s) => ({ ...s, artist: s.year }));
     if (albumList) return DEFAULT_ALBUMS;
     return DEFAULT_ARTISTS.map((name) => ({ title: name }));
   }
@@ -241,6 +241,8 @@ export async function searchMusic(query: string, listTitle?: string): Promise<Se
       const data = await res.json();
       const results: SearchResult[] = (data.results ?? []).map((r: any) => ({
         title: r.trackName,
+        artist: r.artistName,
+        album: r.collectionName,
         year: r.artistName && r.collectionName
           ? `${r.artistName} · ${r.collectionName}`
           : r.artistName,
@@ -292,6 +294,7 @@ export async function searchMusic(query: string, listTitle?: string): Promise<Se
         const artist = r['artist-credit']?.[0]?.artist?.name;
         recordings.push({
           title: r.title,
+          artist,
           year: artist,
         });
       });
@@ -310,9 +313,9 @@ export async function searchMusic(query: string, listTitle?: string): Promise<Se
   } catch {
     const q = query.toLowerCase();
     if (songList) {
-      return DEFAULT_SONGS.filter(
-        (s) => s.title.toLowerCase().includes(q) || (s.year ?? '').toLowerCase().includes(q)
-      );
+      return DEFAULT_SONGS
+        .filter((s) => s.title.toLowerCase().includes(q) || (s.year ?? '').toLowerCase().includes(q))
+        .map((s) => ({ ...s, artist: s.year }));
     }
     if (albumList) {
       return DEFAULT_ALBUMS.filter(

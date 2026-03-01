@@ -116,6 +116,8 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       rank,
       title: result.title,
       imageUrl: result.imageUrl,
+      ...(result.artist ? { artist: result.artist } : {}),
+      ...(result.album ? { album: result.album } : {}),
     };
     updateListItems(listId, [...existing, newItem]);
     navigation.goBack();

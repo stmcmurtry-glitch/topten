@@ -32,6 +32,8 @@ export interface SearchResult {
   title: string;
   imageUrl?: string;
   year?: string;
+  artist?: string;
+  album?: string;
 }
 
 const COVERS_BASE = 'https://covers.openlibrary.org/b/id';

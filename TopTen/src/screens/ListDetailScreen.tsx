@@ -92,6 +92,10 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [photoPickerTarget, setPhotoPickerTarget] = useState<'cover' | 'profile' | null>(null);
   const [showPlansModal, setShowPlansModal] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [typedArtist, setTypedArtist] = useState('');
+  const [typedAlbum, setTypedAlbum] = useState('');
+
+  const isMusicList = list?.category === 'Music';
 
   useEffect(() => {
     Purchases.getCustomerInfo()
@@ -123,6 +127,8 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           rank: i + 1,
           title,
           ...(existing?.imageUrl ? { imageUrl: existing.imageUrl } : {}),
+          ...(existing?.artist ? { artist: existing.artist } : {}),
+          ...(existing?.album ? { album: existing.album } : {}),
         };
       })
       .filter((item) => item.title.trim() !== '');
@@ -154,6 +160,8 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
     setActiveSlot(null);
     setTypeSlotIndex(index);
     setTypedValue('');
+    setTypedArtist('');
+    setTypedAlbum('');
     setShowTypeModal(true);
   };
 
@@ -291,7 +299,14 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
               ) : (
                 <>
                   {thumbUrl && <FlexThumb uri={thumbUrl} />}
-                  <Text style={styles.itemTitle} numberOfLines={1}>{item}</Text>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemTitle} numberOfLines={1}>{item}</Text>
+                    {itemData?.artist && (
+                      <Text style={styles.itemSubtitle} numberOfLines={1}>
+                        {itemData.artist}{itemData.album ? ` · ${itemData.album}` : ''}
+                      </Text>
+                    )}
+                  </View>
                   <View style={styles.moveButtons}>
                     <TouchableOpacity onPress={() => moveSlot(index, index - 1)} disabled={index === 0} hitSlop={8}>
                       <Ionicons name="chevron-up" size={20} color={index === 0 ? colors.border : colors.secondaryText} />
@@ -378,26 +393,79 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                 style={styles.typeInput}
                 value={typedValue}
                 onChangeText={setTypedValue}
-                placeholder="Type a name…"
+                placeholder={isMusicList ? 'Song title…' : 'Type a name…'}
                 placeholderTextColor={colors.secondaryText}
                 autoFocus
-                returnKeyType="done"
+                returnKeyType={isMusicList ? 'next' : 'done'}
                 onSubmitEditing={() => {
-                  if (typedValue.trim() && typeSlotIndex !== null) {
+                  if (!isMusicList && typedValue.trim() && typeSlotIndex !== null) {
                     setSlotValue(typeSlotIndex, typedValue.trim());
                     setShowTypeModal(false);
                     setTypedValue('');
                   }
                 }}
               />
+              {isMusicList && (
+                <>
+                  <TextInput
+                    style={[styles.typeInput, styles.typeInputSecondary]}
+                    value={typedArtist}
+                    onChangeText={setTypedArtist}
+                    placeholder="Artist (optional)"
+                    placeholderTextColor={colors.secondaryText}
+                    returnKeyType="next"
+                  />
+                  <TextInput
+                    style={[styles.typeInput, styles.typeInputSecondary]}
+                    value={typedAlbum}
+                    onChangeText={setTypedAlbum}
+                    placeholder="Album (optional)"
+                    placeholderTextColor={colors.secondaryText}
+                    returnKeyType="done"
+                    onSubmitEditing={() => {
+                      if (typedValue.trim() && typeSlotIndex !== null) {
+                        const existing = list!.items.filter(i => i.rank !== typeSlotIndex + 1);
+                        const newItem: TopTenItem = {
+                          id: `${listId}-${typeSlotIndex + 1}`,
+                          rank: typeSlotIndex + 1,
+                          title: typedValue.trim(),
+                          ...(typedArtist.trim() ? { artist: typedArtist.trim() } : {}),
+                          ...(typedAlbum.trim() ? { album: typedAlbum.trim() } : {}),
+                        };
+                        const updated = [...slots];
+                        updated[typeSlotIndex] = typedValue.trim();
+                        setSlots(updated);
+                        updateListItems(listId, [...existing, newItem]);
+                        setShowTypeModal(false);
+                        setTypedValue(''); setTypedArtist(''); setTypedAlbum('');
+                      }
+                    }}
+                  />
+                </>
+              )}
               <TouchableOpacity
                 style={[styles.saveButton, { backgroundColor: categoryColor }, !typedValue.trim() && styles.saveDisabled]}
                 disabled={!typedValue.trim()}
                 onPress={() => {
-                  if (typeSlotIndex !== null) {
-                    setSlotValue(typeSlotIndex, typedValue.trim());
+                  if (typeSlotIndex !== null && typedValue.trim()) {
+                    if (isMusicList) {
+                      const existing = list!.items.filter(i => i.rank !== typeSlotIndex + 1);
+                      const newItem: TopTenItem = {
+                        id: `${listId}-${typeSlotIndex + 1}`,
+                        rank: typeSlotIndex + 1,
+                        title: typedValue.trim(),
+                        ...(typedArtist.trim() ? { artist: typedArtist.trim() } : {}),
+                        ...(typedAlbum.trim() ? { album: typedAlbum.trim() } : {}),
+                      };
+                      const updated = [...slots];
+                      updated[typeSlotIndex] = typedValue.trim();
+                      setSlots(updated);
+                      updateListItems(listId, [...existing, newItem]);
+                    } else {
+                      setSlotValue(typeSlotIndex, typedValue.trim());
+                    }
                     setShowTypeModal(false);
-                    setTypedValue('');
+                    setTypedValue(''); setTypedArtist(''); setTypedAlbum('');
                   }
                 }}
               >
@@ -614,7 +682,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     overflow: 'hidden',
   },
-  itemTitle: { flex: 1, fontSize: 16, color: colors.primaryText },
+  itemInfo: { flex: 1, gap: 2 },
+  itemTitle: { fontSize: 16, color: colors.primaryText },
+  itemSubtitle: { fontSize: 12, color: colors.secondaryText },
   emptyText: { flex: 1, fontSize: 16, color: colors.secondaryText },
   moveButtons: { alignItems: 'center', gap: 2 },
 
@@ -721,6 +791,10 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: colors.primaryText,
     marginBottom: spacing.lg,
+  },
+  typeInputSecondary: {
+    fontSize: 15,
+    marginBottom: spacing.sm,
   },
   saveButton: {
     borderRadius: borderRadius.sm,
