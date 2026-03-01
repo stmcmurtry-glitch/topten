@@ -180,6 +180,9 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
           </TouchableOpacity>
         )}
       </View>
+      <Text style={styles.hint}>
+        Suggestions are based on your list's category and may not always match. Can't find it? Type the name above and tap Add.
+      </Text>
 
       {loading ? (
         <ActivityIndicator style={styles.loader} color={colors.activeTab} />
@@ -197,6 +200,19 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
           data={results}
           keyExtractor={(item, i) => `${item.title}-${i}`}
           keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={
+            query.trim().length > 0 ? (
+              <TouchableOpacity
+                style={[styles.row, styles.rowNoImage, styles.addManualRow]}
+                onPress={() => handleSelect({ title: query.trim() })}
+              >
+                <View style={styles.rowInfo}>
+                  <Text style={styles.addManualText}>Add "{query.trim()}"</Text>
+                </View>
+                <Ionicons name="add-circle" size={22} color={colors.activeTab} />
+              </TouchableOpacity>
+            ) : null
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.row, !item.imageUrl && styles.rowNoImage]}
@@ -213,7 +229,9 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
             </TouchableOpacity>
           )}
           ListEmptyComponent={
-            <Text style={styles.empty}>No results found</Text>
+            query.trim().length === 0 ? (
+              <Text style={styles.empty}>No results found</Text>
+            ) : null
           }
         />
       )}
@@ -267,6 +285,14 @@ const styles = StyleSheet.create({
     color: colors.primaryText,
     paddingVertical: spacing.md,
   },
+  hint: {
+    fontSize: 12,
+    color: colors.secondaryText,
+    marginHorizontal: spacing.lg,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.sm,
+    lineHeight: 17,
+  },
   loader: {
     marginTop: spacing.xxl,
   },
@@ -283,6 +309,16 @@ const styles = StyleSheet.create({
   rowNoImage: {
     paddingLeft: spacing.lg,
     paddingVertical: spacing.md,
+  },
+  addManualRow: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    marginBottom: spacing.xs,
+  },
+  addManualText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.activeTab,
   },
   poster: {
     width: 44,
