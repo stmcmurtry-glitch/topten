@@ -196,6 +196,72 @@ const DEFAULTS: Record<string, SearchResult[]> = {
     { title: '1996-97 Colorado Avalanche',    year: 'NHL · 49-24-9' },
     { title: '2009-10 Washington Capitals',   year: 'NHL · 54-15-13' },
   ],
+  'Boxers': [
+    { title: 'Muhammad Ali',           year: 'Heavyweight · 3× World Champion' },
+    { title: 'Sugar Ray Robinson',     year: 'Welterweight & Middleweight' },
+    { title: 'Mike Tyson',             year: 'Heavyweight · youngest world champion' },
+    { title: 'Floyd Mayweather Jr.',   year: 'Undefeated · 50-0' },
+    { title: 'Manny Pacquiao',         year: '8-division world champion' },
+    { title: 'Sugar Ray Leonard',      year: '5-division world champion' },
+    { title: 'Roberto Durán',          year: '4-division world champion' },
+    { title: 'Joe Louis',              year: 'Heavyweight · 25 defenses' },
+    { title: 'Rocky Marciano',         year: 'Heavyweight · 49-0 undefeated' },
+    { title: 'Joe Frazier',            year: 'Heavyweight · Olympic gold 1964' },
+    { title: 'George Foreman',         year: 'Heavyweight · 2× world champion' },
+    { title: 'Lennox Lewis',           year: 'Heavyweight · Olympic gold 1988' },
+    { title: 'Oscar De La Hoya',       year: '6-division world champion' },
+    { title: 'Julio César Chávez',     year: 'Lightweight & Junior Welterweight' },
+    { title: 'Marvin Hagler',          year: 'Middleweight · 12-year reign' },
+    { title: 'Thomas Hearns',          year: '5-division world champion' },
+    { title: 'Evander Holyfield',      year: 'Heavyweight & Cruiserweight' },
+    { title: 'Canelo Álvarez',         year: '4-division world champion' },
+    { title: 'Oleksandr Usyk',         year: 'Heavyweight & Cruiserweight' },
+    { title: 'Terence Crawford',       year: 'Welterweight · unified champion' },
+  ],
+  'NASCAR Drivers': [
+    { title: 'Dale Earnhardt Sr.',     year: 'The Intimidator · 7× champion' },
+    { title: 'Richard Petty',          year: 'The King · 7× champion · 200 wins' },
+    { title: 'Jeff Gordon',            year: '4× champion · 93 wins' },
+    { title: 'Jimmie Johnson',         year: '7× champion · most in modern era' },
+    { title: 'Dale Earnhardt Jr.',     year: 'NASCAR\'s most popular driver (15×)' },
+    { title: 'Tony Stewart',           year: '3× champion' },
+    { title: 'Darrell Waltrip',        year: '3× champion · 84 wins' },
+    { title: 'Cale Yarborough',        year: '3× consecutive champion' },
+    { title: 'Bobby Allison',          year: 'Daytona 500 winner · 84 wins' },
+    { title: 'David Pearson',          year: '3× champion · 105 wins' },
+    { title: 'Kyle Busch',             year: '2× champion' },
+    { title: 'Kevin Harvick',          year: '2014 champion' },
+    { title: 'Matt Kenseth',           year: '2003 champion' },
+    { title: 'Ryan Newman',            year: 'Rocket Man · engineer-driver' },
+    { title: 'Ryan Blaney',            year: '2023 champion' },
+    { title: 'Joey Logano',            year: '2018 champion' },
+    { title: 'Martin Truex Jr.',       year: '2017 champion' },
+    { title: 'Chase Elliott',          year: '2020 champion · most popular 6×' },
+    { title: 'Denny Hamlin',           year: '3× Daytona 500 winner' },
+    { title: 'Kyle Larson',            year: '2021 champion' },
+  ],
+  'Olympic Athletes': [
+    { title: 'Michael Phelps',         year: 'Swimming · 23 Olympic gold medals' },
+    { title: 'Usain Bolt',             year: 'Track · 8 Olympic gold medals' },
+    { title: 'Simone Biles',           year: 'Gymnastics · most decorated gymnast' },
+    { title: 'Carl Lewis',             year: 'Track & Field · 9 Olympic gold medals' },
+    { title: 'Larisa Latynina',        year: 'Gymnastics · 9 Olympic gold medals' },
+    { title: 'Mark Spitz',             year: 'Swimming · 7 gold medals at 1972 Olympics' },
+    { title: 'Jesse Owens',            year: 'Track · 4 gold medals at 1936 Berlin Olympics' },
+    { title: 'Nadia Comaneci',         year: 'Gymnastics · first perfect 10' },
+    { title: 'Serena Williams',        year: 'Tennis · 4 Olympic gold medals' },
+    { title: 'LeBron James',           year: 'Basketball · 2× Olympic gold medals' },
+    { title: 'Florence Griffith-Joyner', year: 'Track · 3 gold medals at 1988 Olympics' },
+    { title: 'Paavo Nurmi',            year: 'Running · 9 Olympic gold medals' },
+    { title: 'Aleksandr Dityatin',     year: 'Gymnastics · 8 medals at single Olympics' },
+    { title: 'Allyson Felix',          year: 'Track · most decorated US track athlete' },
+    { title: 'Eliud Kipchoge',         year: 'Marathon · 2× Olympic champion' },
+    { title: 'Cathy Freeman',          year: 'Track · 400m gold at Sydney 2000' },
+    { title: 'Shaquem Griffin',        year: 'Inspirational story' },
+    { title: 'Lindsey Vonn',           year: 'Alpine Skiing · Olympic gold 2010' },
+    { title: 'Shaun White',            year: 'Snowboard · 3× Olympic gold' },
+    { title: 'Katie Ledecky',          year: 'Swimming · 7 Olympic gold medals' },
+  ],
   'F1 Drivers': [
     { title: 'Ayrton Senna',          year: 'Brazil · 3× World Champion' },
     { title: 'Michael Schumacher',    year: 'Germany · 7× World Champion' },
@@ -448,9 +514,12 @@ const DEFAULT_SPORTS_MIXED: SearchResult[] = [
 function detectSport(title: string): string | null {
   const t = title.toLowerCase();
   // Team / venue / place lists — check before generic sport keywords
-  if (/\bski.resort|ski.resorts|skiing|snowboard\b/.test(t))         return 'Ski Resorts';
-  if (/\bf1.driver|formula.one|formula.1|grand.prix\b/.test(t))      return 'F1 Drivers';
-  if (/\bufc|mma.fighter|mixed.martial|cage.fighter\b/.test(t))      return 'UFC Fighters';
+  if (/\bski.resort|ski.resorts|skiing|snowboard\b/.test(t))              return 'Ski Resorts';
+  if (/\bf1.driver|formula.one|formula.1|grand.prix\b/.test(t))           return 'F1 Drivers';
+  if (/\bufc|mma.fighter|mixed.martial|cage.fighter\b/.test(t))           return 'UFC Fighters';
+  if (/\bbox|boxer|boxers|boxing|heavyweight|prizefight\b/.test(t))        return 'Boxers';
+  if (/\bnascar|stock.car|daytona|cup.series\b/.test(t))                   return 'NASCAR Drivers';
+  if (/\bolympic|olympian|olympics|olympiad\b/.test(t))                    return 'Olympic Athletes';
   if (/\bstadium|stadiums|arena|arenas|venue\b/.test(t))             return 'NFL Stadiums';
   if (/\bworld cup team|world cup squad\b/.test(t))                  return 'World Cup Teams';
   if (/\bsingle.season\b.*\bbaseball\b|\bbaseball\b.*\bsingle.season\b/.test(t)) return 'Baseball Teams';
@@ -495,7 +564,7 @@ async function fetchTeams(query: string): Promise<SearchResult[]> {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 // Sports lists that are purely static — typed queries filter the local list, not the API
-const STATIC_SPORTS = ['NFL Stadiums', 'Baseball Teams', 'NHL Teams', 'NBA Teams', 'World Cup Teams', 'Golf Courses', 'F1 Drivers', 'UFC Fighters', 'Ski Resorts'];
+const STATIC_SPORTS = ['NFL Stadiums', 'Baseball Teams', 'NHL Teams', 'NBA Teams', 'World Cup Teams', 'Golf Courses', 'F1 Drivers', 'UFC Fighters', 'Ski Resorts', 'Boxers', 'NASCAR Drivers', 'Olympic Athletes'];
 
 export async function searchSports(query: string, listTitle?: string): Promise<SearchResult[]> {
   const sport = listTitle ? detectSport(listTitle) : null;

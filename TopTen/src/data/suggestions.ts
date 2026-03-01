@@ -12,12 +12,20 @@ import {
   ISLANDS,
   PEOPLE_NAMES,
   US_PRESIDENTS,
+  ACTORS,
+  SCIENTISTS,
+  BUSINESS_LEADERS,
   FASHION_ITEMS,
   HEALTH_ITEMS,
   TECH_ITEMS,
   NATURE_ITEMS,
+  ANIMALS,
+  BIRDS,
+  MOUNTAINS,
+  WATERFALLS,
   ARTS_ITEMS,
   MISC_ITEMS,
+  RESTAURANT_CHAINS,
 } from './staticSearchLists';
 
 export interface SearchResult {
@@ -87,8 +95,12 @@ export async function searchSuggestions(
       return searchSports(query, listTitle).catch(() => searchAthletes(query));
     case 'Music':
       return searchMusic(query, listTitle);
-    case 'Food':
+    case 'Food': {
+      const t = listTitle?.toLowerCase() ?? '';
+      if (/\brestaurant|restaurants|chain|chains|fast.food|steakhouse|diner|franchise\b/.test(t))
+        return searchStaticList(RESTAURANT_CHAINS, query);
       return searchMeals(query);
+    }
     case 'Drinks':
       return searchDrinks(query);
     case 'Gaming':
@@ -97,11 +109,16 @@ export async function searchSuggestions(
       const t = listTitle?.toLowerCase() ?? '';
       if (/\bpresident|presidents\b/.test(t)) {
         const q = query.toLowerCase();
-        const list = US_PRESIDENTS.filter(
+        return US_PRESIDENTS.filter(
           (p) => !q || p.title.toLowerCase().includes(q) || p.year.toLowerCase().includes(q)
         );
-        return list;
       }
+      if (/\bactor|actress|actors|actresses\b/.test(t))
+        return searchStaticList(ACTORS, query);
+      if (/\bscientist|scientists|physicist|biologist|chemist|inventor\b/.test(t))
+        return searchStaticList(SCIENTISTS, query);
+      if (/\bceo|ceos|entrepreneur|entrepreneurs|business leader|founder|founders\b/.test(t))
+        return searchStaticList(BUSINESS_LEADERS, query);
       if (!query.trim()) return searchStaticList(PEOPLE_NAMES, query);
       return searchWikipedia(query).catch(() => searchStaticList(PEOPLE_NAMES, query));
     }
@@ -121,8 +138,18 @@ export async function searchSuggestions(
       return searchStaticList(HEALTH_ITEMS, query);
     case 'Tech':
       return searchStaticList(TECH_ITEMS, query);
-    case 'Nature':
+    case 'Nature': {
+      const t = listTitle?.toLowerCase() ?? '';
+      if (/\banimal|animals|wildlife|mammal|mammals\b/.test(t))
+        return searchStaticList(ANIMALS, query);
+      if (/\bbird|birds|raptor|waterfowl\b/.test(t))
+        return searchStaticList(BIRDS, query);
+      if (/\bmountain|mountains|peak|peaks|summit\b/.test(t))
+        return searchStaticList(MOUNTAINS, query);
+      if (/\bwaterfall|waterfalls|falls\b/.test(t))
+        return searchStaticList(WATERFALLS, query);
       return searchStaticList(NATURE_ITEMS, query);
+    }
     case 'Arts':
       return searchStaticList(ARTS_ITEMS, query);
     case 'Miscellaneous':

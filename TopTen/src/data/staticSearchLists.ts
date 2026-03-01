@@ -1,5 +1,255 @@
 // Large curated static lists for categories without dedicated APIs
 
+// ── Nature sub-lists ──────────────────────────────────────────────────────────
+
+export const ANIMALS: string[] = [
+  // Big cats
+  'Lion', 'Tiger', 'Leopard', 'Cheetah', 'Jaguar', 'Snow Leopard', 'Cougar', 'Clouded Leopard',
+  // Bears
+  'Grizzly Bear', 'Polar Bear', 'Black Bear', 'Giant Panda', 'Spectacled Bear', 'Sun Bear',
+  // Primates
+  'Chimpanzee', 'Gorilla', 'Orangutan', 'Bonobo', 'Baboon', 'Howler Monkey', 'Gibbon',
+  // Marine
+  'Blue Whale', 'Humpback Whale', 'Orca', 'Sperm Whale', 'Narwhal', 'Beluga Whale',
+  'Great White Shark', 'Hammerhead Shark', 'Whale Shark', 'Manta Ray',
+  'Bottlenose Dolphin', 'Spinner Dolphin', 'Octopus', 'Giant Squid', 'Sea Turtle',
+  'Walrus', 'Elephant Seal', 'Sea Otter', 'Manatee', 'Dugong',
+  // African wildlife
+  'African Elephant', 'Rhinoceros', 'Hippopotamus', 'Giraffe', 'Zebra',
+  'Wildebeest', 'Cape Buffalo', 'Hyena', 'African Wild Dog', 'Meerkat',
+  'Cheetah', 'Serval', 'Aardvark', 'Pangolin', 'Okapi',
+  // Reptiles
+  'Komodo Dragon', 'Saltwater Crocodile', 'Nile Crocodile', 'King Cobra',
+  'Anaconda', 'Reticulated Python', 'Galapagos Tortoise', 'Leatherback Sea Turtle',
+  'Iguana', 'Chameleon', 'Gila Monster',
+  // Birds (notable)
+  'Bald Eagle', 'Peregrine Falcon', 'Great Horned Owl', 'Emperor Penguin',
+  'Flamingo', 'Peacock', 'Toucan', 'Macaw', 'Albatross',
+  // Other mammals
+  'Wolf', 'Red Fox', 'Arctic Fox', 'Coyote', 'Lynx', 'Wolverine',
+  'Moose', 'Elk', 'Caribou', 'Bison', 'Musk Ox',
+  'Platypus', 'Echidna', 'Kangaroo', 'Koala', 'Wombat', 'Tasmanian Devil',
+  'Sloth', 'Armadillo', 'Capybara', 'Giant Anteater', 'Tapir',
+  'Snow Monkey (Japanese Macaque)', 'Red Panda', 'Clouded Leopard',
+  // Insects / Other
+  'Monarch Butterfly', 'Atlas Moth', 'Goliath Beetle', 'Mantis Shrimp', 'Horseshoe Crab',
+];
+
+export const BIRDS: string[] = [
+  // Raptors
+  'Bald Eagle', 'Golden Eagle', 'Peregrine Falcon', 'Osprey', 'Red-tailed Hawk',
+  'Great Horned Owl', 'Barn Owl', 'Snowy Owl', 'Harpy Eagle', 'Philippine Eagle',
+  'Andean Condor', 'California Condor', 'Secretary Bird', 'Martial Eagle',
+  // Waterbirds
+  'Flamingo', 'Great Blue Heron', 'Whooping Crane', 'Sandhill Crane',
+  'Emperor Penguin', 'King Penguin', 'Atlantic Puffin', 'Albatross',
+  'Pelican', 'Frigatebird', 'Gannet', 'Cormorant', 'Spoonbill',
+  // Tropical / Colorful
+  'Scarlet Macaw', 'Blue-and-yellow Macaw', 'Toucan', 'Keel-billed Toucan',
+  'Resplendent Quetzal', 'Bird of Paradise', 'Peacock', 'Mandarin Duck',
+  'Painted Bunting', 'Rainbow Lorikeet', 'Eclectus Parrot',
+  // Songbirds
+  'American Robin', 'Northern Cardinal', 'Bluebird', 'Baltimore Oriole',
+  'Cedar Waxwing', 'Indigo Bunting', 'Nightingale', 'Lyrebird',
+  // Flightless
+  'Emperor Penguin', 'Ostrich', 'Emu', 'Cassowary', 'Kiwi', 'Rhea',
+  // Other notable
+  'Snowy Owl', 'Arctic Tern', 'Ruby-throated Hummingbird', 'Bee Hummingbird',
+  'Kakapo', 'Kea', 'Secretary Bird', 'Shoebill Stork', 'Marabou Stork',
+  'Clark\'s Nutcracker', 'Raven', 'Crow', 'Magpie', 'Blue Jay',
+];
+
+export const MOUNTAINS: string[] = [
+  // Highest peaks (by continent)
+  'Mount Everest (8,849m) — Nepal/Tibet',
+  'K2 (8,611m) — Pakistan/China',
+  'Kangchenjunga (8,586m) — Nepal/India',
+  'Lhotse (8,516m) — Nepal',
+  'Makalu (8,485m) — Nepal',
+  'Cho Oyu (8,188m) — Nepal/Tibet',
+  'Dhaulagiri (8,167m) — Nepal',
+  'Manaslu (8,163m) — Nepal',
+  'Nanga Parbat (8,126m) — Pakistan',
+  'Annapurna (8,091m) — Nepal',
+  'Denali (6,190m) — Alaska, USA',
+  'Aconcagua (6,961m) — Argentina',
+  'Mount Kilimanjaro (5,895m) — Tanzania',
+  'Mont Blanc (4,808m) — France/Italy',
+  'Matterhorn (4,478m) — Switzerland/Italy',
+  'Mount Elbrus (5,642m) — Russia',
+  'Puncak Jaya (4,884m) — Indonesia',
+  'Vinson Massif (4,892m) — Antarctica',
+  // Iconic / Famous
+  'Mount Fuji (3,776m) — Japan',
+  'Mount Rainier (4,392m) — Washington, USA',
+  'Mount Whitney (4,421m) — California, USA',
+  'Grand Teton (4,199m) — Wyoming, USA',
+  'Mount Olympus (2,918m) — Greece',
+  'Table Mountain — South Africa',
+  'Uluru (Ayers Rock) — Australia',
+  'Mount Cook / Aoraki (3,724m) — New Zealand',
+  'Torres del Paine — Chile',
+  'Cerro Torre — Patagonia, Argentina',
+  'Fitz Roy — Patagonia, Argentina',
+  'The Eiger (3,967m) — Switzerland',
+  'The Jungfrau (4,158m) — Switzerland',
+  'Dolomites — Italy',
+  'Mount McKinley — Alaska, USA',
+  'Mount Logan (5,959m) — Canada',
+  'Pico de Orizaba (5,636m) — Mexico',
+  'Mount St. Helens — Washington, USA',
+  'Mauna Kea (from ocean floor) — Hawaii',
+  'Snowdon (1,085m) — Wales',
+  'Ben Nevis (1,345m) — Scotland',
+];
+
+export const WATERFALLS: string[] = [
+  'Victoria Falls — Zambia/Zimbabwe',
+  'Iguazu Falls — Argentina/Brazil',
+  'Angel Falls (979m) — Venezuela — world\'s highest',
+  'Niagara Falls — USA/Canada',
+  'Yosemite Falls — California, USA',
+  'Kaieteur Falls — Guyana',
+  'Plitvice Falls — Croatia',
+  'Skógafoss — Iceland',
+  'Seljalandsfoss — Iceland',
+  'Dettifoss — Iceland — most powerful in Europe',
+  'Gullfoss — Iceland',
+  'Sutherland Falls — New Zealand',
+  'Milford Sound Falls — New Zealand',
+  'Havasu Falls — Arizona, USA',
+  'Multnomah Falls — Oregon, USA',
+  'Bridalveil Fall — Yosemite, California',
+  'Horsetail Fall — Yosemite, California',
+  'Cumberland Falls — Kentucky, USA',
+  'Rainbow Falls — Hawaii, USA',
+  'Waimoku Falls — Maui, Hawaii',
+  'Browne Falls — New Zealand',
+  'Rhine Falls — Switzerland',
+  'Trümmelbach Falls — Switzerland',
+  'Krimml Falls — Austria',
+  'Marmore Falls — Italy',
+  'Tugela Falls (948m) — South Africa',
+  'Mutarazi Falls — Zimbabwe',
+  'Blue Nile Falls — Ethiopia',
+  'Augrabies Falls — South Africa',
+  'Dunn\'s River Falls — Jamaica',
+  'Montmorency Falls — Quebec, Canada',
+  'Helmcken Falls — British Columbia, Canada',
+  'Takakkaw Falls — British Columbia, Canada',
+  'Ban Gioc–Detian Falls — Vietnam/China',
+  'Huangguoshu Falls — China',
+  'Nachi Falls — Japan',
+  'Kempty Falls — India',
+  'Jog Falls — India',
+  'Langfoss — Norway',
+  'Vøringsfossen — Norway',
+  'Steinsdalsfossen — Norway',
+];
+
+// ── People sub-lists ──────────────────────────────────────────────────────────
+
+export const ACTORS: string[] = [
+  // Classic Hollywood
+  'Marlon Brando', 'Humphrey Bogart', 'James Stewart', 'Cary Grant',
+  'Gregory Peck', 'Clark Gable', 'Katharine Hepburn', 'Audrey Hepburn',
+  'Marilyn Monroe', 'Ingrid Bergman', 'Bette Davis', 'Grace Kelly',
+  'Orson Welles', 'Spencer Tracy', 'Henry Fonda', 'John Wayne',
+  // Modern legends
+  'Meryl Streep', 'Jack Nicholson', 'Al Pacino', 'Robert De Niro',
+  'Dustin Hoffman', 'Gene Hackman', 'Anthony Hopkins', 'Daniel Day-Lewis',
+  'Cate Blanchett', 'Judi Dench', 'Helen Mirren', 'Jodie Foster',
+  'Denzel Washington', 'Morgan Freeman', 'Tom Hanks', 'Harrison Ford',
+  'Robert Duvall', 'Harvey Keitel', 'Jeff Bridges', 'Paul Newman',
+  // Contemporary
+  'Joaquin Phoenix', 'Christian Bale', 'Leonardo DiCaprio', 'Brad Pitt',
+  'Chadwick Boseman', 'Idris Elba', 'Mahershala Ali', 'Viola Davis',
+  'Frances McDormand', 'Natalie Portman', 'Charlize Theron', 'Sandra Bullock',
+  'Ryan Gosling', 'Benedict Cumberbatch', 'Michael Fassbender', 'Tom Hardy',
+  'Saoirse Ronan', 'Florence Pugh', 'Margot Robbie', 'Zendaya',
+  'Austin Butler', 'Timothée Chalamet', 'Adam Driver', 'Andrew Garfield',
+  // International
+  'Gong Li', 'Tony Leung', 'Antonio Banderas', 'Javier Bardem',
+  'Isabelle Huppert', 'Marion Cotillard', 'Penélope Cruz', 'Toshiro Mifune',
+];
+
+export const SCIENTISTS: string[] = [
+  // Physics
+  'Albert Einstein', 'Isaac Newton', 'Nikola Tesla', 'Richard Feynman',
+  'Stephen Hawking', 'Niels Bohr', 'Max Planck', 'Werner Heisenberg',
+  'Erwin Schrödinger', 'Paul Dirac', 'Enrico Fermi', 'J. Robert Oppenheimer',
+  'Ernest Rutherford', 'Michael Faraday', 'James Clerk Maxwell',
+  // Biology / Medicine
+  'Charles Darwin', 'Gregor Mendel', 'Louis Pasteur', 'Robert Koch',
+  'Alexander Fleming', 'Francis Crick', 'James Watson', 'Rosalind Franklin',
+  'Jonas Salk', 'Edward Jenner', 'Elizabeth Blackwell', 'Barbara McClintock',
+  'Lynn Margulis', 'Carl Woese',
+  // Chemistry
+  'Marie Curie', 'Dmitri Mendeleev', 'Antoine Lavoisier', 'Linus Pauling',
+  'Fritz Haber', 'Dorothy Hodgkin',
+  // Astronomy / Space
+  'Galileo Galilei', 'Nicolaus Copernicus', 'Johannes Kepler', 'Edwin Hubble',
+  'Carl Sagan', 'Neil deGrasse Tyson', 'Katherine Johnson',
+  // Computing / Math
+  'Alan Turing', 'Ada Lovelace', 'John von Neumann', 'Claude Shannon',
+  'Leonhard Euler', 'Blaise Pascal', 'Georg Cantor',
+  // Other
+  'Leonardo da Vinci', 'Archimedes', 'Hippocrates', 'Aristotle',
+];
+
+export const BUSINESS_LEADERS: string[] = [
+  // Tech
+  'Steve Jobs', 'Bill Gates', 'Elon Musk', 'Jeff Bezos', 'Mark Zuckerberg',
+  'Larry Page', 'Sergey Brin', 'Tim Cook', 'Satya Nadella', 'Jensen Huang',
+  'Reed Hastings', 'Jack Dorsey', 'Brian Chesky', 'Travis Kalanick',
+  'Patrick Collison', 'Sam Altman', 'Marc Andreessen', 'Paul Graham',
+  // Finance / Investing
+  'Warren Buffett', 'Charlie Munger', 'Jamie Dimon', 'Ray Dalio',
+  'George Soros', 'Michael Bloomberg', 'Carl Icahn', 'Peter Lynch',
+  // Retail / Consumer
+  'Sam Walton', 'Howard Schultz', 'Phil Knight', 'Oprah Winfrey',
+  'Richard Branson', 'Walt Disney', 'Henry Ford', 'John D. Rockefeller',
+  'Andrew Carnegie', 'J.P. Morgan',
+  // International
+  'Jack Ma', 'Mukesh Ambani', 'Bernard Arnault', 'Carlos Slim',
+  'Masayoshi Son', 'Tadashi Yanai',
+  // Modern innovators
+  'Sara Blakely', 'Yvon Chouinard', 'Patagonia founder',
+  'Whitney Wolfe Herd', 'Anne Wojcicki', 'Arianna Huffington',
+];
+
+// ── Food sub-lists ────────────────────────────────────────────────────────────
+
+export const RESTAURANT_CHAINS: string[] = [
+  // Fast food — burgers
+  'McDonald\'s', 'Burger King', 'Wendy\'s', 'Five Guys', 'Shake Shack',
+  'In-N-Out Burger', 'Whataburger', 'Culver\'s', 'Smashburger', 'Jack in the Box',
+  'Carl\'s Jr. / Hardee\'s', 'Steak \'n Shake', 'White Castle',
+  // Fast food — chicken
+  'Chick-fil-A', 'Popeyes', 'KFC', 'Raising Cane\'s', 'Zaxby\'s',
+  'Wingstop', 'Buffalo Wild Wings', 'Dave\'s Hot Chicken', 'Church\'s Chicken',
+  // Fast food — other
+  'Taco Bell', 'Chipotle', 'Qdoba', 'Moe\'s Southwest Grill',
+  'Subway', 'Jersey Mike\'s', 'Jimmy John\'s', 'Firehouse Subs', 'Potbelly',
+  'Arby\'s', 'Panda Express', 'Pei Wei', 'Panera Bread', 'Jason\'s Deli',
+  // Pizza
+  'Domino\'s', 'Pizza Hut', 'Papa John\'s', 'Little Caesars',
+  "Lou Malnati's", 'Giordano\'s', 'Sbarro', "Papa Murphy's",
+  // Casual dining
+  'Olive Garden', 'Applebee\'s', 'Chili\'s', 'TGI Fridays', 'Red Lobster',
+  'Outback Steakhouse', 'Texas Roadhouse', 'LongHorn Steakhouse', 'Ruth\'s Chris',
+  'The Cheesecake Factory', 'BJ\'s Restaurant', 'Red Robin', 'Denny\'s', 'IHOP',
+  'Cracker Barrel', 'Bob Evans', 'First Watch',
+  // Coffee / Bakery
+  'Starbucks', 'Dunkin\'', 'Dutch Bros', 'Peet\'s Coffee', 'Tim Hortons',
+  'Caribou Coffee', 'Panera Bread', 'La Madeleine',
+  // Ice cream / Dessert
+  'Dairy Queen', 'Baskin-Robbins', 'Cold Stone Creamery', 'Jeni\'s', 'Shake Shack',
+  // Fine dining chains
+  'Morton\'s The Steakhouse', 'Capital Grille', 'Fleming\'s', 'STK',
+  'Nobu', 'Wolfgang Puck', 'José Andrés (ThinkFoodGroup)',
+];
+
 export const NATIONAL_PARKS: string[] = [
   // USA — most visited / iconic
   'Grand Canyon National Park',
