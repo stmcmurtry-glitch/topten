@@ -42,6 +42,25 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
   const posthog = usePostHog();
 
+  // Bulk-fetch participant counts for all lists at startup
+  useEffect(() => {
+    if (!supabase) return;
+    supabase
+      .from('community_scores')
+      .select('list_id, participant_count')
+      .then(({ data }) => {
+        if (!data || data.length === 0) return;
+        const counts: Record<string, number> = {};
+        data.forEach((row: { list_id: string; participant_count: number }) => {
+          if (!counts[row.list_id] || row.participant_count > counts[row.list_id]) {
+            counts[row.list_id] = row.participant_count;
+          }
+        });
+        setParticipantCounts(counts);
+      })
+      .catch(() => {/* silent fallback to seed counts */});
+  }, []);
+
   // Load persisted rankings
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((raw) => {

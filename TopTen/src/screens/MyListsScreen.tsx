@@ -33,9 +33,10 @@ interface CommunityCardProps {
   list: CommunityList;
   submitted: boolean;
   onPress: () => void;
+  liveCount?: number;
 }
 
-const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress }) => {
+const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress, liveCount }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const top3 = list.items.slice(0, 3);
 
@@ -63,7 +64,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress 
       <View style={styles.communityCardBody}>
         <Text style={styles.communityCardTitle} numberOfLines={2}>{list.title}</Text>
         <Text style={styles.communityCardCount}>
-          {list.participantCount.toLocaleString()} voted
+          {(liveCount ?? list.participantCount).toLocaleString()} voted
         </Text>
         {top3.map((item, idx) => (
           <Text key={item.id} style={styles.communityCardItem} numberOfLines={1}>
@@ -77,7 +78,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress 
 
 export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { lists } = useListContext();
-  const { userRankings } = useCommunity();
+  const { userRankings, participantCounts } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
   // undefined = still detecting, null = failed / no match
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
@@ -227,6 +228,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                 list={cl}
                 submitted={userRankings[cl.id]?.submitted ?? false}
                 onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
+                liveCount={participantCounts[cl.id]}
               />
             ))}
           </ScrollView>
@@ -269,6 +271,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                 list={cl}
                 submitted={userRankings[cl.id]?.submitted ?? false}
                 onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
+                liveCount={participantCounts[cl.id]}
               />
             ))}
           </ScrollView>
