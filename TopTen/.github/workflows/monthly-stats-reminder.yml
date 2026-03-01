@@ -1,0 +1,109 @@
+name: Monthly Stats Update Reminder
+
+on:
+  schedule:
+    # Runs at 9am UTC on the 1st of every month
+    - cron: '0 9 1 * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+  create-reminder-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create monthly stats update issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            const body = `
+            ## Monthly Stats Update — ${today}
+
+            Time to verify the statistics in \`src/data/featuredLists.ts\` and update \`updatedAt\` fields.
+            Check each list against its source, correct any numbers, and bump the date.
+
+            ---
+
+            ### 🏀 Basketball Reference
+            https://www.basketball-reference.com/leaders/pts_per_g_career.html
+            - [ ] **f-34** Highest Career PPG — active players (Luka, Embiid, Durant, LeBron) will shift
+
+            https://www.basketball-reference.com/leaders/pts_career.html
+            - [ ] **f-33** Most Career Points — LeBron and Kevin Durant totals will increase
+
+            https://www.basketball-reference.com/friv/championships.fcgi
+            - [ ] **f-31** Most NBA Championships — Players (stable, all retired)
+            - [ ] **f-32** Most NBA Championships — Franchise (update if season just ended)
+
+            ---
+
+            ### 🏒 Hockey Reference
+            https://www.hockey-reference.com/leaders/goals_career.html
+            - [ ] **f-28** Most Career Goals — Ovechkin is active, total will increase
+
+            https://www.hockey-reference.com/leaders/assists_career.html
+            - [ ] **f-29** Most Career Assists — Sidney Crosby is active
+
+            https://www.hockey-reference.com/friv/stanley_cup_champions_list.html
+            - [ ] **f-30** Most Stanley Cup Championships — Franchise (update after playoffs)
+
+            ---
+
+            ### ⚾ Baseball Reference
+            https://www.baseball-reference.com/leaders/HR_career.shtml
+            - [ ] **f-18** Most Career Home Runs (all retired — stable)
+
+            https://www.baseball-reference.com/leaders/earned_run_avg_career.shtml
+            - [ ] **f-19** Lowest Career ERA (all retired — stable)
+
+            https://www.baseball-reference.com/leaders/W_career.shtml
+            - [ ] **f-20** Most Career Pitching Wins (all retired — stable)
+
+            https://www.baseball-reference.com/postseason/world_series.shtml
+            - [ ] **f-21** Most World Series Championships — Franchise (update after World Series)
+
+            ---
+
+            ### 🏈 Pro Football Reference
+            https://www.pro-football-reference.com/leaders/pass_yds_career.htm
+            - [ ] **f-23** Most Career Passing Yards (all retired — stable)
+
+            https://www.pro-football-reference.com/leaders/longest_fg_career.htm
+            - [ ] **f-24** Longest Field Goals (stable unless broken)
+
+            https://www.pro-football-reference.com/leaders/rush_yds_single_season.htm
+            - [ ] **f-25** Best Single-Season Rushing (stable unless broken this season)
+
+            https://www.pro-football-reference.com/super-bowl/
+            - [ ] **f-22** Most Super Bowl Championships — Franchise (update after Super Bowl)
+
+            ---
+
+            ### ⛳ Golf / Tennis / Soccer
+            https://www.pgatour.com/stats/detail/02671
+            - [ ] **f-16** Most Major Championships — Golf (Tiger Woods is retired)
+
+            https://www.atptour.com/en/stats/grand-slam-titles
+            - [ ] **f-17** Most Grand Slam Titles — Men's Tennis (Djokovic still active)
+
+            https://www.fifa.com/tournaments/mens/worldcup
+            - [ ] **f-26** Most FIFA World Cup Titles (stable until 2026 World Cup)
+            - [ ] **f-27** Most World Cup Goals — All Time (stable until 2026 World Cup)
+
+            ---
+
+            ### After updating
+            1. Correct any numbers in \`src/data/featuredLists.ts\`
+            2. Bump **all** \`updatedAt\` fields to \`'${today}'\`
+            3. Commit with message: \`Update stats lists — ${today}\`
+
+            /cc @daniellemcmurtry
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📊 Monthly Stats Update — ${today}`,
+              body: body.trim(),
+              labels: ['stats-update'],
+            });
