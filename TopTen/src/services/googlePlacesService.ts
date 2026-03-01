@@ -37,6 +37,12 @@ export function isVenueList(listTitle: string, category: string): boolean {
   if (category === 'Travel') {
     return PLACES_TO_VISIT_KEYWORDS.some((kw) => t.includes(kw));
   }
+  if (category === 'Drinks') {
+    // Breweries and bars are physical venues — allow Places lookup
+    if (t.includes('brewery') || t.includes('breweries') || t.includes('brewpub')) return true;
+    if (t.includes('bar') || t.includes('bars') || t.includes('pub') || t.includes('nightlife')) return true;
+    return false;
+  }
   if (category !== 'Food') return false;
   if (PRODUCT_KEYWORDS.some((kw) => t.includes(kw))) return false;
   if (VENUE_KEYWORDS.some((kw) => t.includes(kw))) return true;
@@ -214,7 +220,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     title: (city) => `Best Breweries in ${city}`,
     icon: 'beer-outline',
     color: '#F9A825',
-    appCategory: 'Food',
+    appCategory: 'Drinks',
     description: (city) => `The craft beer scene in ${city}, ranked by locals.`,
     imageQuery: () => 'craft beer brewery tap room pints wide',
   },
@@ -289,7 +295,7 @@ async function fetchPlacesForConfig(
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const cacheKey = `@topten_places_v4_${citySlug}_${config.slug}`;
+  const cacheKey = `@topten_places_v5_${citySlug}_${config.slug}`;
 
   // Check 24h cache
   try {
