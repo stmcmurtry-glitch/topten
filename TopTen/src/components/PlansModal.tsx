@@ -16,6 +16,7 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 
 const PREMIUM_FEATURES = [
   'Unlimited lists',
+  'Lists beyond 10 items',
   'Unlimited custom cover photos',
   'No ads',
 ];
@@ -105,6 +106,12 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, onClose }) => {
   const annualPrice = annualPkg?.product.priceString ?? '$9.99';
   const selectedPkg = selectedPlan === 'annual' ? annualPkg : monthlyPkg;
 
+  const savingsPct = (() => {
+    const mo = monthlyPkg?.product.price ?? 2.49;
+    const yr = annualPkg?.product.price ?? 9.99;
+    return Math.round((1 - yr / (mo * 12)) * 100);
+  })();
+
   return (
     <Modal
       visible={visible}
@@ -161,7 +168,7 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, onClose }) => {
                     Annual
                   </Text>
                   <View style={styles.saveBadge}>
-                    <Text style={styles.saveBadgeText}>Save 33%</Text>
+                    <Text style={styles.saveBadgeText}>Save {savingsPct}%</Text>
                   </View>
                 </View>
                 <Text style={[styles.togglePrice, selectedPlan === 'annual' && styles.togglePriceActive]}>

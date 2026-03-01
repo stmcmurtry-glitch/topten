@@ -72,9 +72,10 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const list = lists.find((l) => l.id === listId);
 
   const buildSlots = useCallback((): string[] => {
-    const slots = Array(10).fill('');
+    const maxRank = Math.max(10, ...(list?.items.map((i) => i.rank) ?? [10]));
+    const slots = Array(maxRank).fill('');
     list?.items.forEach((item) => {
-      if (item.rank >= 1 && item.rank <= 10) slots[item.rank - 1] = item.title;
+      if (item.rank >= 1 && item.rank <= maxRank) slots[item.rank - 1] = item.title;
     });
     return slots;
   }, [list]);
@@ -147,7 +148,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   };
 
   const moveSlot = (from: number, to: number) => {
-    if (to < 0 || to >= 10) return;
+    if (to < 0 || to >= slots.length) return;
     const updated = [...slots];
     const [moved] = updated.splice(from, 1);
     updated.splice(to, 0, moved);
@@ -311,8 +312,8 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                     <TouchableOpacity onPress={() => moveSlot(index, index - 1)} disabled={index === 0} hitSlop={8}>
                       <Ionicons name="chevron-up" size={20} color={index === 0 ? colors.border : colors.secondaryText} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => moveSlot(index, index + 1)} disabled={index === 9} hitSlop={8}>
-                      <Ionicons name="chevron-down" size={20} color={index === 9 ? colors.border : colors.secondaryText} />
+                    <TouchableOpacity onPress={() => moveSlot(index, index + 1)} disabled={index === slots.length - 1} hitSlop={8}>
+                      <Ionicons name="chevron-down" size={20} color={index === slots.length - 1 ? colors.border : colors.secondaryText} />
                     </TouchableOpacity>
                   </View>
                 </>
@@ -322,6 +323,33 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         }}
         ListFooterComponent={
           <>
+            {/* Add more items — Premium gate */}
+            <TouchableOpacity
+              style={styles.addMoreButton}
+              onPress={() => {
+                if (isPremium) {
+                  setSlots((prev) => [...prev, '']);
+                } else {
+                  setShowPlansModal(true);
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isPremium ? 'add-circle-outline' : 'lock-closed-outline'}
+                size={16}
+                color={isPremium ? categoryColor : colors.secondaryText}
+              />
+              <Text style={[styles.addMoreText, isPremium && { color: categoryColor }]}>
+                {isPremium ? 'Add more items' : 'Add more items'}
+              </Text>
+              {!isPremium && (
+                <View style={styles.addMorePremiumPill}>
+                  <Text style={styles.addMorePremiumPillText}>Premium</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             {/* Quick-action chips */}
             <ScrollView
               horizontal
@@ -687,6 +715,38 @@ const styles = StyleSheet.create({
   itemSubtitle: { fontSize: 12, color: colors.secondaryText },
   emptyText: { flex: 1, fontSize: 16, color: colors.secondaryText },
   moveButtons: { alignItems: 'center', gap: 2 },
+
+  /* ── Add more items ── */
+  addMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+  },
+  addMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.secondaryText,
+  },
+  addMorePremiumPill: {
+    backgroundColor: 'rgba(204,0,0,0.08)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  addMorePremiumPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.activeTab,
+  },
 
   /* ── Footer action card ── */
   actionCard: {
