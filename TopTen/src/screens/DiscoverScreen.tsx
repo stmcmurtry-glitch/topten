@@ -16,9 +16,10 @@ import { FEATURED_LISTS, POPULAR_LISTS, STARTER_LISTS, FeaturedList, PopularList
 import { LOCAL_COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
 import { fetchLocalPlacesLists } from '../services/googlePlacesService';
 import { registerDynamicLists } from '../data/dynamicListRegistry';
-import { fetchFeaturedItems, fetchFeaturedImage } from '../services/featuredContentService';
+import { fetchFeaturedItems, fetchFeaturedImage, fetchCommunityImage, fetchCityImage } from '../services/featuredContentService';
 import { CATEGORY_COLORS } from '../components/FeedRow';
 import { getDetectedLocation, regionMatches, DetectedLocation } from '../services/locationService';
+import { EXPLORE_CITIES, ExploreCity } from '../data/exploreCities';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
@@ -138,6 +139,29 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       ) : (
         /* ── Default browse view ── */
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.browse}>
+          {/* Explore Other Areas */}
+          <TouchableOpacity
+            style={styles.sectionHeaderLink}
+            onPress={() => navigation.navigate('ExploreAreas')}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.sectionHeaderInline}>Explore Other Areas</Text>
+            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
+          </TouchableOpacity>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carousel}
+          >
+            {EXPLORE_CITIES.map((city) => (
+              <CityCarouselCard
+                key={city.id}
+                city={city}
+                onPress={() => navigation.navigate('CityLists', { city: city.name })}
+              />
+            ))}
+          </ScrollView>
+
           {/* Featured Lists */}
           <TouchableOpacity
             style={styles.sectionHeaderLink}
@@ -162,23 +186,23 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           </ScrollView>
 
           {/* Popular */}
-          <Text style={styles.sectionHeader}>Popular</Text>
+          <Text style={styles.sectionHeader}>Trending Lists</Text>
           <View style={styles.popularCard}>
-            {POPULAR_LISTS.map((list, index) => (
+            {POPULAR_LISTS.slice(0, 10).map((list, index, arr) => (
               <React.Fragment key={list.id}>
                 <PopularRow list={list} onPress={() => handlePopularPress(list)} />
-                {index < POPULAR_LISTS.length - 1 && <View style={styles.popularDivider} />}
+                {index < arr.length - 1 && <View style={styles.popularDivider} />}
               </React.Fragment>
             ))}
           </View>
 
-          {/* Starters */}
-          <Text style={styles.sectionHeader}>Starters</Text>
+          {/* Common Lists */}
+          <Text style={styles.sectionHeader}>Common Lists</Text>
           <View style={styles.popularCard}>
-            {STARTER_LISTS.map((list, index) => (
+            {STARTER_LISTS.slice(0, 10).map((list, index, arr) => (
               <React.Fragment key={list.id}>
                 <PopularRow list={list} onPress={() => handlePopularPress(list)} />
-                {index < STARTER_LISTS.length - 1 && <View style={styles.popularDivider} />}
+                {index < arr.length - 1 && <View style={styles.popularDivider} />}
               </React.Fragment>
             ))}
           </View>
@@ -208,13 +232,13 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                 )}
               </TouchableOpacity>
               <View style={styles.popularCard}>
-                {allLocalLists.map((list, index) => (
+                {allLocalLists.slice(0, 10).map((list, index, arr) => (
                   <React.Fragment key={list.id}>
                     <CommunityRow
                       list={list}
                       onPress={() => navigation.navigate('CommunityList', { communityListId: list.id })}
                     />
-                    {index < allLocalLists.length - 1 && <View style={styles.popularDivider} />}
+                    {index < arr.length - 1 && <View style={styles.popularDivider} />}
                   </React.Fragment>
                 ))}
               </View>
@@ -284,6 +308,29 @@ const CommunityRow: React.FC<{ list: CommunityList; onPress: () => void }> = ({ 
     <Ionicons name="chevron-forward" size={14} color={colors.border} />
   </TouchableOpacity>
 );
+
+/* ── City Carousel Card (Explore Other Areas) ── */
+const CityCarouselCard: React.FC<{ city: ExploreCity; onPress: () => void }> = ({ city, onPress }) => {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCityImage(city.id, city.wikiTitle).then(setImageUrl);
+  }, [city.id]);
+
+  return (
+    <TouchableOpacity style={styles.cityCard} onPress={onPress} activeOpacity={0.85}>
+      <View style={[styles.cityCardInner, { backgroundColor: '#2C2C2E' }]}>
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : null}
+        <View style={styles.cityCardOverlay} />
+        <View style={styles.cityCardLabel}>
+          <Text style={styles.cityCardName} numberOfLines={1}>{city.name}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 /* ── Featured Row (search results) ── */
 const FeaturedRow: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ list, onPress }) => (
@@ -496,6 +543,39 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginLeft: spacing.md + 10 + spacing.md,
+  },
+  /* City Carousel Card */
+  cityCard: {
+    width: 140,
+    height: 90,
+    borderRadius: borderRadius.squircle,
+    overflow: 'hidden',
+    ...shadow,
+    shadowOpacity: 0.12,
+  },
+  cityCardInner: {
+    flex: 1,
+    borderRadius: borderRadius.squircle,
+    overflow: 'hidden',
+  },
+  cityCardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+  },
+  cityCardLabel: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.52)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  cityCardName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.1,
   },
   /* Search results */
   searchResults: {

@@ -28,38 +28,23 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [items, setItems] = useState<string[]>(list.previewItems);
 
-  const openExternalLink = (item: string) => {
+  const getItemUrl = (item: string): string | null => {
+    if (list.disableItemLinks) return null;
     // Strip trailing stats/notes — e.g. "Michael Jordan — 30.12 ppg" → "Michael Jordan"
     const name = item.split(/\s[—–]\s/)[0].trim();
     const q = encodeURIComponent(name);
-
-    let url: string;
     switch (list.category) {
       case 'Movies':
       case 'TV':
-        url = `https://www.imdb.com/find?q=${q}&s=tt`;
-        break;
+        return `https://www.imdb.com/find?q=${q}&s=tt`;
       case 'Sports':
-        // Only use Sports Reference for factual stats lists (those with statsSource).
-        // Debatable lists like "Greatest Moments" have no statsSource → Wikipedia.
-        // Sports Reference search auto-redirects to the player page on unique matches.
-        if (list.statsSource) {
-          try {
-            const domain = new URL(list.statsSource).hostname;
-            url = `https://${domain}/search/search.fcgi?q=${q}`;
-            break;
-          } catch {}
-        }
-        url = `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
-        break;
+      case 'People':
+        return `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
       case 'Books':
-        url = `https://www.goodreads.com/search?q=${q}`;
-        break;
+        return `https://www.goodreads.com/search?q=${q}`;
       default:
-        url = `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
+        return null;
     }
-
-    Linking.openURL(url);
   };
   const [showShareModal, setShowShareModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -149,21 +134,33 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
             <View style={styles.divider} />
           </>
         )}
-        {items.slice(0, 10).map((item, i) => (
-          <React.Fragment key={i}>
-            <TouchableOpacity style={styles.row} onPress={() => openExternalLink(item)} activeOpacity={0.7}>
+        {items.slice(0, 10).map((item, i) => {
+          const url = getItemUrl(item);
+          const rowContent = (
+            <>
               <Text style={[styles.rank, i === 0 && styles.rankTop, i === 0 && { color: list.color }]}>{i + 1}</Text>
               <Text style={[styles.itemTitle, i === 0 && styles.itemTitleTop]} numberOfLines={2}>
                 {item}
               </Text>
               <View style={styles.rowRight}>
                 {i === 0 && <Ionicons name="trophy" size={14} color={list.color} />}
-                <Ionicons name="open-outline" size={13} color={colors.border} />
+                {url && <Ionicons name="open-outline" size={13} color={colors.border} />}
               </View>
-            </TouchableOpacity>
-            {i < Math.min(items.length, 10) - 1 && <View style={styles.divider} />}
-          </React.Fragment>
-        ))}
+            </>
+          );
+          return (
+            <React.Fragment key={i}>
+              {url ? (
+                <TouchableOpacity style={styles.row} onPress={() => Linking.openURL(url)} activeOpacity={0.7}>
+                  {rowContent}
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.row}>{rowContent}</View>
+              )}
+              {i < Math.min(items.length, 10) - 1 && <View style={styles.divider} />}
+            </React.Fragment>
+          );
+        })}
       </View>
 
       {/* Share button */}

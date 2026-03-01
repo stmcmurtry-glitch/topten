@@ -156,6 +156,45 @@ const STATIC_ITEMS: Record<string, string[]> = {
 const COMMUNITY_IMAGE_PREFIX = `@topten_cimg_v3_`;
 const communityImageMemCache = new Map<string, string | null>();
 
+// ── City images via Wikipedia (no rate limits) ─────────────────────────────
+const CITY_IMAGE_PREFIX = `@topten_cityimg_v2_`;
+const cityImageMemCache = new Map<string, string | null>();
+
+export async function fetchCityImage(
+  cityId: string,
+  wikiTitle: string,
+): Promise<string | null> {
+  if (cityImageMemCache.has(cityId)) return cityImageMemCache.get(cityId)!;
+
+  try {
+    const stored = await AsyncStorage.getItem(CITY_IMAGE_PREFIX + cityId);
+    if (stored) {
+      cityImageMemCache.set(cityId, stored);
+      return stored;
+    }
+  } catch {}
+
+  try {
+    const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'TopTenApp/1.0' } });
+    if (res.ok) {
+      const data = await res.json();
+      // Prefer thumbnail (fast, ~320px) over full originalimage (can be 3–5 MB)
+      const imageUrl: string | null =
+        data.thumbnail?.source ?? data.originalimage?.source ?? null;
+      if (imageUrl) {
+        cityImageMemCache.set(cityId, imageUrl);
+        try { await AsyncStorage.setItem(CITY_IMAGE_PREFIX + cityId, imageUrl); } catch {}
+        return imageUrl;
+      }
+    }
+  } catch {}
+
+  cityImageMemCache.set(cityId, null);
+  return null;
+}
+
+
 // ── Community list images ──────────────────────────────────────────────────
 
 export async function fetchCommunityImage(

@@ -22,7 +22,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
   navigation,
 }) => {
-  const { listId, rank, category, communityListId, slotIndex, listTitle = '' } = route.params;
+  const { listId, rank, category, communityListId, slotIndex, listTitle = '', region } = route.params;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -73,15 +73,21 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
 
   useEffect(() => {
     if (isVenueList(listTitle, category)) {
-      getDetectedLocation().then((loc) => {
-        const city = loc?.city || null;
-        setPlacesCity(city);
-        if (city) {
-          doPlacesSearch('', city);
-        } else {
-          doSearch('');
-        }
-      });
+      if (region) {
+        // Community list with a known city — use it directly, no location detection needed
+        setPlacesCity(region);
+        doPlacesSearch('', region);
+      } else {
+        getDetectedLocation().then((loc) => {
+          const city = loc?.city || null;
+          setPlacesCity(city);
+          if (city) {
+            doPlacesSearch('', city);
+          } else {
+            doSearch('');
+          }
+        });
+      }
     } else {
       doSearch('');
     }

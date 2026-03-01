@@ -16,6 +16,7 @@ const VENUE_KEYWORDS = [
 const PLACES_TO_VISIT_KEYWORDS = [
   'places to visit', 'places to see', 'attractions', 'landmarks', 'sights',
   'park', 'parks', 'outdoor',
+  'hotel', 'hotels', 'stay', 'lodging',
 ];
 
 // Keywords that suggest a list is about products/brands (→ do NOT use Google Places)
@@ -54,8 +55,11 @@ export const isPlacesCategory = (category: string): boolean =>
   ['Food', 'Drinks'].includes(category);
 
 export function derivePlacesType(listTitle: string, category: string): string | undefined {
-  if (category === 'Travel') return undefined; // no filter — return all place types
   const t = (listTitle ?? '').toLowerCase();
+  if (category === 'Travel') {
+    if (t.includes('hotel') || t.includes('hotels') || t.includes('stay') || t.includes('lodging')) return 'lodging';
+    return undefined; // no filter for general places to visit
+  }
   if (t.includes('coffee') || t.includes('cafe')) return 'cafe';
   if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bar';
   if (category === 'Drinks') return 'bar';
@@ -65,6 +69,7 @@ export function derivePlacesType(listTitle: string, category: string): string | 
 export function derivePlacesQuery(listTitle: string, category: string): string {
   if (category === 'Travel') {
     const t = (listTitle ?? '').toLowerCase();
+    if (t.includes('hotel') || t.includes('hotels') || t.includes('stay') || t.includes('lodging')) return 'hotels';
     if (t.includes('park') || t.includes('outdoor')) return 'parks and outdoor spaces';
     return 'top places to visit';
   }
@@ -86,6 +91,26 @@ export function derivePlacesQuery(listTitle: string, category: string): string {
   if (t.includes('restaurant') || t.includes('dining')) return 'restaurants';
   if (category === 'Drinks') return 'bars';
   return 'restaurants';
+}
+
+export async function searchCities(
+  query: string
+): Promise<Array<{ name: string; secondary: string }>> {
+  if (!GOOGLE_PLACES_KEY || !query.trim()) return [];
+  const url =
+    `https://maps.googleapis.com/maps/api/place/autocomplete/json` +
+    `?input=${encodeURIComponent(query)}&types=(cities)&key=${GOOGLE_PLACES_KEY}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.predictions ?? []).slice(0, 8).map((p: any) => ({
+      name: p.structured_formatting?.main_text ?? p.description,
+      secondary: p.structured_formatting?.secondary_text ?? '',
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function searchLocalPlaces(
@@ -265,6 +290,17 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     imageQuery: () => 'sports bar big screen tv fans game day wide',
   },
   {
+    slug: 'hotels',
+    queryTerm: 'hotels',
+    placeType: 'lodging',
+    title: (city) => `Best Hotels in ${city}`,
+    icon: 'bed-outline',
+    color: '#2980B9',
+    appCategory: 'Travel',
+    description: (city) => `The top-rated places to stay in ${city}, ranked by locals and visitors.`,
+    imageQuery: (city) => `${city} hotel lobby luxury interior elegant wide`,
+  },
+  {
     slug: 'parks',
     queryTerm: 'parks and outdoor spaces',
     title: (city) => `Best Parks & Outdoor Spaces in ${city}`,
@@ -302,7 +338,7 @@ async function fetchPlacesForConfig(
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const cacheKey = `@topten_places_v6_${citySlug}_${config.slug}`;
+  const cacheKey = `@topten_places_v7_${citySlug}_${config.slug}`;
 
   // Check 24h cache
   try {

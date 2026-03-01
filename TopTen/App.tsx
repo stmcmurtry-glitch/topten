@@ -82,23 +82,23 @@ export default function App() {
   }
 
   return (
-    <PostHogProvider
-      apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ''}
-      options={{ host: 'https://us.i.posthog.com' }}
-    >
-      <PostHogIdentifier />
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <ListProvider>
-            <CommunityProvider>
-              <NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ListProvider>
+          <NavigationContainer>
+            <PostHogProvider
+              apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ''}
+              options={{ host: 'https://us.i.posthog.com' }}
+            >
+              <PostHogIdentifier />
+              <CommunityProvider>
                 <TabNavigator />
                 <StatusBar style="auto" />
-              </NavigationContainer>
-            </CommunityProvider>
-          </ListProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </PostHogProvider>
+              </CommunityProvider>
+            </PostHogProvider>
+          </NavigationContainer>
+        </ListProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

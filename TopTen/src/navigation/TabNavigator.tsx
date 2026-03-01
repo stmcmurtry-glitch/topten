@@ -19,6 +19,8 @@ import { FAQScreen } from '../screens/FAQScreen';
 import { AllFeaturedListsScreen } from '../screens/AllFeaturedListsScreen';
 import { AllCommunityListsScreen } from '../screens/AllCommunityListsScreen';
 import { AllLocalListsScreen } from '../screens/AllLocalListsScreen';
+import { ExploreAreasScreen } from '../screens/ExploreAreasScreen';
+import { CityListsScreen } from '../screens/CityListsScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -78,6 +80,16 @@ const HomeStack = () => (
       component={AllLocalListsScreen}
       options={{ headerShown: false, title: 'In Your Area' }}
     />
+    <Stack.Screen
+      name="ExploreAreas"
+      component={ExploreAreasScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="CityLists"
+      component={CityListsScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -125,6 +137,16 @@ const MyListsStack = () => (
       component={AllLocalListsScreen}
       options={{ headerShown: false }}
     />
+    <Stack.Screen
+      name="ExploreAreas"
+      component={ExploreAreasScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="CityLists"
+      component={CityListsScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -168,6 +190,16 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="AllLocalLists"
       component={AllLocalListsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ExploreAreas"
+      component={ExploreAreasScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="CityLists"
+      component={CityListsScreen}
       options={{ headerShown: false }}
     />
   </Stack.Navigator>

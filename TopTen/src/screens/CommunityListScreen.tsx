@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -47,6 +48,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const list = resolveCommunityList(communityListId);
   const posthog = usePostHog();
   const [activeTab, setActiveTab] = useState<'community' | 'yours'>('community');
+  const [showVoteOrderModal, setShowVoteOrderModal] = useState(false);
   const [loadingScores, setLoadingScores] = useState(true);
   const [submitConfirmed, setSubmitConfirmed] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -99,6 +101,27 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     return () => { cancelled = true; };
   }, [communityListId, fetchLiveScores]);
 
+  // Vote-order preference: show once, then remember choice
+  // Skip entirely if user has already voted on this list
+  useEffect(() => {
+    if (submitted) return; // already voted — go straight to community tab
+    AsyncStorage.removeItem('@topten_vote_order_pref'); // TEMP: force modal for testing
+    AsyncStorage.getItem('@topten_vote_order_pref').then(pref => {
+      if (pref === 'vote_first') {
+        setActiveTab('yours');
+      } else if (!pref) {
+        setShowVoteOrderModal(true);
+      }
+      // 'see_first' → stay on community (default)
+    });
+  }, []);
+
+  const handleVoteOrderChoice = useCallback((choice: 'vote_first' | 'see_first') => {
+    AsyncStorage.setItem('@topten_vote_order_pref', choice);
+    setShowVoteOrderModal(false);
+    if (choice === 'vote_first') setActiveTab('yours');
+  }, []);
+
   // Re-fetch when switching to community tab (after first mount)
   useEffect(() => {
     if (activeTab === 'community' && hasFetched.current) {
@@ -150,6 +173,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       rank: index + 1,
       category: list.category,
       listTitle: list.title,
+      region: list.region,
     });
   };
 
@@ -233,7 +257,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           activeOpacity={0.8}
         >
           <Text style={[styles.tabPillText, activeTab === tab && styles.tabPillTextActive]}>
-            {tab === 'community' ? 'Community' : 'My Ranking'}
+            {tab === 'community' ? 'Community' : 'My Vote'}
           </Text>
         </TouchableOpacity>
       ))}
@@ -390,7 +414,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
             <TouchableOpacity onPress={handleSubmit} activeOpacity={0.9} disabled={submitConfirmed}>
               <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: submitConfirmed ? '#2ECC71' : list.color }]}>
                 <Text style={styles.submitButtonText}>
-                  {submitConfirmed ? '✓ Submitted!' : submitted ? 'Update My Ranking' : 'Submit My Ranking'}
+                  {submitConfirmed ? '✓ Submitted!' : submitted ? 'Update My Vote' : 'Submit My Vote'}
                 </Text>
               </Animated.View>
             </TouchableOpacity>
@@ -416,6 +440,36 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
         listTitle={list.title}
         listType="Community"
       />
+
+      {/* ── Vote order preference modal ── */}
+      <Modal visible={showVoteOrderModal} transparent animationType="fade">
+        <BlurView intensity={70} tint="dark" style={styles.voteOrderOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => handleVoteOrderChoice('see_first')} />
+          <Pressable style={styles.voteOrderSheet} onPress={e => e.stopPropagation()}>
+            <View style={styles.voteOrderIcon}>
+              <Ionicons name="podium-outline" size={28} color="#555" />
+            </View>
+            <Text style={styles.voteOrderTitle}>How do you like to rank?</Text>
+            <Text style={styles.voteOrderBody}>
+              Vote first for a more unbiased pick, or jump straight to see how others ranked.
+            </Text>
+            <TouchableOpacity
+              style={styles.voteOrderBtn}
+              onPress={() => handleVoteOrderChoice('vote_first')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.voteOrderBtnText}>Vote First</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.voteOrderBtnSecondary}
+              onPress={() => handleVoteOrderChoice('see_first')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.voteOrderBtnSecondaryText}>See Results</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </BlurView>
+      </Modal>
 
       {/* ── Choice sheet ── */}
       <Modal visible={activeSlot !== null} transparent animationType="fade">
@@ -724,6 +778,67 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
+  },
+  voteOrderOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  voteOrderSheet: {
+    backgroundColor: colors.cardBackground,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    padding: spacing.xl,
+    paddingBottom: spacing.xxl + 8,
+    alignItems: 'center',
+  },
+  voteOrderIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  voteOrderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.primaryText,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  voteOrderBody: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.sm,
+  },
+  voteOrderBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: borderRadius.squircle,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    backgroundColor: '#1C1C1E',
+  },
+  voteOrderBtnText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  voteOrderBtnSecondary: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: borderRadius.squircle,
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  voteOrderBtnSecondaryText: {
+    color: colors.secondaryText,
+    fontSize: 15,
+    fontWeight: '600',
   },
   sheet: {
     backgroundColor: colors.cardBackground,
