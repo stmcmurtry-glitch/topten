@@ -56,11 +56,6 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'Breaking Bad drama chemistry desert New Mexico TV cinematic wide',
     description: 'Peak television. Which series changed the way we watch forever?',
     participantCount: 41,
-    sponsored: {
-      name: 'Drops of God',
-      cta: 'Watch now on Apple TV+',
-      url: 'https://tv.apple.com/show/drops-of-god',
-    },
     items: [
       { id: 'ct-1', title: 'Breaking Bad',          seedScore: 435 },
       { id: 'ct-2', title: 'The Wire',              seedScore: 411 },
@@ -611,11 +606,6 @@ export const LOCAL_COMMUNITY_LISTS: CommunityList[] = [
     region: 'Philadelphia',
     description: 'Philly takes its pizza seriously. Which slice reigns supreme in the region?',
     participantCount: 13,
-    sponsored: {
-      name: 'Pizzeria Beddia',
-      cta: 'Book a table now',
-      url: 'https://pizzeriabeddia.com',
-    },
     items: [
       { id: 'lpp-1',  title: "Angelo's Pizzeria",                seedScore: 121 },
       { id: 'lpp-2',  title: "Santucci's Original Square Pizza", seedScore: 107 },

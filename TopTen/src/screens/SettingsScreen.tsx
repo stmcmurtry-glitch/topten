@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   SectionList,
   TextInput,
@@ -250,8 +251,9 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           sections={sections}
           keyExtractor={(item) => item.label}
           ListHeaderComponent={
-            <View style={{ paddingTop: insets.top + spacing.sm }}>
+            <View style={{ paddingTop: insets.top + spacing.md }}>
               <View style={styles.titleBar}>
+                <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
                 <Text style={styles.title}>Account</Text>
               </View>
               {/* Membership section */}
@@ -329,9 +331,16 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl * 2,
   },
   titleBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.background,
+  },
+  logoIcon: {
+    width: 45,
+    height: 45,
   },
   title: {
     fontSize: 34,

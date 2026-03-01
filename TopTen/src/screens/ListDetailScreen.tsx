@@ -306,61 +306,45 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           );
         }}
         ListFooterComponent={
-          <View style={styles.actionCard}>
-            {/* Share */}
-            <TouchableOpacity style={styles.actionRow} onPress={() => setShowShareModal(true)} activeOpacity={0.7}>
-              <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
+          <>
+            {/* Quick-action chips */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.actionTileBar}
+              style={styles.actionTileRow}
+            >
+              <TouchableOpacity style={styles.actionTile} onPress={() => setShowShareModal(true)} activeOpacity={0.7}>
                 <Ionicons name="share-outline" size={18} color={categoryColor} />
-              </View>
-              <Text style={styles.actionLabel}>Share</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.border} />
-            </TouchableOpacity>
+                <Text style={styles.actionTileLabel}>Share</Text>
+              </TouchableOpacity>
 
-            <View style={styles.actionDivider} />
-
-            {/* Report */}
-            <TouchableOpacity style={styles.actionRow} onPress={() => setShowReportModal(true)} activeOpacity={0.7}>
-              <View style={[styles.actionIconWrap, { backgroundColor: colors.secondaryText + '18' }]}>
-                <Ionicons name="flag-outline" size={18} color={colors.secondaryText} />
-              </View>
-              <Text style={[styles.actionLabel, { color: colors.secondaryText }]}>Report an Issue</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.border} />
-            </TouchableOpacity>
-
-            <View style={styles.actionDivider} />
-
-            {/* Profile image */}
-            <TouchableOpacity style={styles.actionRow} onPress={() => handlePickPhoto('profile')} activeOpacity={0.7}>
-              <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
+              <TouchableOpacity style={styles.actionTile} onPress={() => handlePickPhoto('profile')} activeOpacity={0.7}>
                 <Ionicons name="person-circle-outline" size={18} color={categoryColor} />
-              </View>
-              <Text style={styles.actionLabel}>Profile Image</Text>
-              {list.profileImageUri && <Text style={[styles.actionValue, { color: categoryColor }]}>Set</Text>}
-              <Ionicons name="chevron-forward" size={16} color={colors.border} />
-            </TouchableOpacity>
+                <Text style={styles.actionTileLabel}>List Avatar</Text>
+              </TouchableOpacity>
 
-            <View style={styles.actionDivider} />
+              <TouchableOpacity style={styles.actionTile} onPress={() => handlePickPhoto('cover')} activeOpacity={0.7}>
+                <Ionicons name="image-outline" size={18} color={categoryColor} />
+                <Text style={styles.actionTileLabel}>Cover Photo</Text>
+              </TouchableOpacity>
 
-            {/* Category */}
-            <TouchableOpacity style={styles.actionRow} onPress={() => setShowCategoryPicker(true)} activeOpacity={0.7}>
-              <View style={[styles.actionIconWrap, { backgroundColor: categoryColor + '22' }]}>
+              <TouchableOpacity style={styles.actionTile} onPress={() => setShowCategoryPicker(true)} activeOpacity={0.7}>
                 <Ionicons name="grid-outline" size={18} color={categoryColor} />
-              </View>
-              <Text style={styles.actionLabel}>Category</Text>
-              <Text style={[styles.actionValue, { color: categoryColor }]}>{list.category}</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.border} />
-            </TouchableOpacity>
+                <Text style={styles.actionTileLabel}>Category</Text>
+              </TouchableOpacity>
 
-            <View style={styles.actionDivider} />
+              <TouchableOpacity style={styles.actionTile} onPress={() => setShowReportModal(true)} activeOpacity={0.7}>
+                <Ionicons name="flag-outline" size={18} color={colors.danger} />
+                <Text style={[styles.actionTileLabel, { color: colors.secondaryText }]}>Report Issue</Text>
+              </TouchableOpacity>
 
-            {/* Delete */}
-            <TouchableOpacity style={styles.actionRow} onPress={handleDeleteList} activeOpacity={0.7}>
-              <View style={[styles.actionIconWrap, { backgroundColor: colors.danger + '18' }]}>
+              <TouchableOpacity style={styles.actionTile} onPress={handleDeleteList} activeOpacity={0.7}>
                 <Ionicons name="trash-outline" size={18} color={colors.danger} />
-              </View>
-              <Text style={[styles.actionLabel, { color: colors.danger }]}>Delete List</Text>
-            </TouchableOpacity>
-          </View>
+                <Text style={[styles.actionTileLabel, { color: colors.secondaryText }]}>Delete List</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </>
         }
       />
 
@@ -636,7 +620,6 @@ const styles = StyleSheet.create({
 
   /* ── Footer action card ── */
   actionCard: {
-    marginTop: spacing.xxl,
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     backgroundColor: colors.cardBackground,
@@ -644,6 +627,30 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...shadow,
     shadowOpacity: 0.06,
+  },
+  actionTileRow: {
+    marginTop: spacing.xxl,
+  },
+  actionTileBar: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+    gap: spacing.sm,
+  },
+  actionTile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    ...shadow,
+    shadowOpacity: 0.06,
+  },
+  actionTileLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primaryText,
   },
   actionRow: {
     flexDirection: 'row',

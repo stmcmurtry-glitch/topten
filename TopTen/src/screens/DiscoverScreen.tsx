@@ -92,10 +92,13 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const isSearching = q.length > 0;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Discover</Text>
+        <View style={styles.logoRow}>
+          <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
+          <Text style={styles.headerTitle}>Discover</Text>
+        </View>
         <View style={styles.searchBar}>
           <Ionicons name="search" size={16} color={colors.secondaryText} />
           <TextInput
@@ -306,13 +309,21 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     backgroundColor: colors.background,
   },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.sm,
+  },
+  logoIcon: {
+    width: 45,
+    height: 45,
+  },
   headerTitle: {
     fontSize: 34,
     fontWeight: '800',
     color: '#CC0000',
     letterSpacing: -0.5,
-    marginBottom: spacing.sm,
-    marginTop: spacing.sm,
   },
   searchBar: {
     flexDirection: 'row',

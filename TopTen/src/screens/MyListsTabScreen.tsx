@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -18,17 +19,38 @@ const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 const ALL_PILLS = ['All', ...ALL_CATEGORY_LABELS];
 
 export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { lists, updateListMeta } = useListContext();
+  const { lists, updateListMeta, reorderLists } = useListContext();
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All');
   const [editingListId, setEditingListId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const editingList = lists.find((l) => l.id === editingListId);
+
+  useEffect(() => {
+    setShowAll(false);
+  }, [activeCategory]);
 
   const filteredLists = activeCategory === 'All'
     ? lists
     : lists.filter((l) => l.category === activeCategory);
 
-  const displayLists = filteredLists.slice(0, 10);
+  const displayLists = showAll ? filteredLists : filteredLists.slice(0, 10);
+
+  const moveUp = (itemId: string) => {
+    const idx = lists.findIndex((l) => l.id === itemId);
+    if (idx <= 0) return;
+    const next = [...lists];
+    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+    reorderLists(next);
+  };
+
+  const moveDown = (itemId: string) => {
+    const idx = lists.findIndex((l) => l.id === itemId);
+    if (idx >= lists.length - 1) return;
+    const next = [...lists];
+    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+    reorderLists(next);
+  };
 
   return (
     <ScrollView
@@ -39,6 +61,7 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       {/* Header */}
       <View style={styles.headerRow}>
         <View style={styles.logoRow}>
+          <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
           <Text style={styles.logoLight}>My</Text>
           <Text style={styles.logoBold}>Lists</Text>
         </View>
@@ -79,26 +102,47 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
           {filteredLists.length} list{filteredLists.length !== 1 ? 's' : ''}
           {activeCategory !== 'All' ? `  ·  ${activeCategory}` : ''}
         </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('AllLists')} activeOpacity={0.7}>
-          <Text style={styles.manageButton}>Manage</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Feed card */}
       {displayLists.length > 0 ? (
         <View style={styles.feedCard}>
-          {displayLists.map((list, index) => (
-            <React.Fragment key={list.id}>
-              <FeedRow
-                list={list}
-                onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
-                flat
-                rank={index + 1}
-                onPressThumb={() => setEditingListId(list.id)}
-              />
-              {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
-            </React.Fragment>
-          ))}
+          {displayLists.map((list, index) => {
+            const globalIdx = lists.findIndex((l) => l.id === list.id);
+            return (
+              <React.Fragment key={list.id}>
+                <View style={styles.feedRowWrap}>
+                  <View style={{ flex: 1 }}>
+                    <FeedRow
+                      list={list}
+                      onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
+                      flat
+                      rank={index + 1}
+                      onPressThumb={() => setEditingListId(list.id)}
+                      inlineChevron
+                    />
+                  </View>
+                  <View style={styles.reorderBtns}>
+                    <TouchableOpacity
+                      onPress={() => moveUp(list.id)}
+                      disabled={globalIdx === 0}
+                      hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="chevron-up" size={20} color={globalIdx === 0 ? colors.border : colors.secondaryText} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => moveDown(list.id)}
+                      disabled={globalIdx === lists.length - 1}
+                      hitSlop={{ top: 4, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="chevron-down" size={20} color={globalIdx === lists.length - 1 ? colors.border : colors.secondaryText} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
+              </React.Fragment>
+            );
+          })}
         </View>
       ) : (
         <View style={styles.emptyContainer}>
@@ -115,17 +159,13 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
         </View>
       )}
 
-      {/* All Lists link */}
-      {filteredLists.length > 0 && (
-        <TouchableOpacity
-          style={styles.allListsLink}
-          onPress={() => navigation.navigate('AllLists')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.allListsText}>All Lists</Text>
-          <Ionicons name="chevron-forward" size={15} color={colors.activeTab} />
+      {!showAll && filteredLists.length > 10 && (
+        <TouchableOpacity style={styles.seeMore} onPress={() => setShowAll(true)} activeOpacity={0.7}>
+          <Text style={styles.seeMoreText}>See more</Text>
+          <Ionicons name="chevron-down" size={14} color={colors.activeTab} />
         </TouchableOpacity>
       )}
+
       <PhotoPickerModal
         visible={editingListId !== null}
         onClose={() => setEditingListId(null)}
@@ -156,8 +196,12 @@ const styles = StyleSheet.create({
   },
   logoRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
+    alignItems: 'center',
+    gap: 6,
+  },
+  logoIcon: {
+    width: 45,
+    height: 45,
   },
   logoLight: {
     fontSize: 34,
@@ -218,11 +262,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  manageButton: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.activeTab,
-  },
   feedCard: {
     backgroundColor: colors.cardBackground,
     marginHorizontal: spacing.lg,
@@ -257,14 +296,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
   },
-  allListsLink: {
+  feedRowWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reorderBtns: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+    alignItems: 'center',
+  },
+  seeMore: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md,
-    gap: 2,
+    gap: 4,
+    paddingVertical: spacing.lg,
   },
-  allListsText: {
+  seeMoreText: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.activeTab,

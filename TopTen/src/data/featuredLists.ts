@@ -57,11 +57,6 @@ export const FEATURED_LISTS: FeaturedList[] = [
     imageQuery: 'Breaking Bad drama chemistry desert New Mexico cinematic wide',
     previewItems: ['The Wire', 'Breaking Bad', 'The Sopranos', 'Succession', 'Band of Brothers'],
     description: 'Ranked by a combined score drawn from TMDB audience ratings, Rotten Tomatoes critic consensus, and Emmy Award recognition across a show\'s full run.',
-    sponsored: {
-      name: 'Drops of God',
-      cta: 'Watch now on Apple TV+',
-      url: 'https://tv.apple.com/show/drops-of-god',
-    },
   },
   {
     id: 'f-1',

@@ -13,9 +13,10 @@ interface FeedRowProps {
   flat?: boolean;
   rank?: number;
   onPressThumb?: () => void;
+  inlineChevron?: boolean;
 }
 
-export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank, onPressThumb }) => {
+export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank, onPressThumb, inlineChevron }) => {
   const thumbColor = CATEGORY_COLORS[list.category] ?? '#AAAAAA';
   const filled = list.items.length;
 
@@ -36,10 +37,17 @@ export const FeedRow: React.FC<FeedRowProps> = ({ list, onPress, flat, rank, onP
           </View>
         </TouchableOpacity>
         <View style={styles.info}>
-          <Text style={styles.flatTitle} numberOfLines={1}>{list.title}</Text>
+          {inlineChevron ? (
+            <View style={styles.titleRow}>
+              <Text style={[styles.flatTitle, { flexShrink: 1 }]} numberOfLines={1}>{list.title}</Text>
+              <Ionicons name="chevron-forward" size={12} color={colors.border} />
+            </View>
+          ) : (
+            <Text style={styles.flatTitle} numberOfLines={1}>{list.title}</Text>
+          )}
           <Text style={styles.subtitle}>{filled} of 10 filled</Text>
         </View>
-        <Ionicons name="chevron-forward" size={14} color={colors.border} />
+        {!inlineChevron && <Ionicons name="chevron-forward" size={14} color={colors.border} />}
       </TouchableOpacity>
     );
   }
@@ -113,6 +121,12 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginBottom: 1,
   },
   title: {
     fontSize: 16,

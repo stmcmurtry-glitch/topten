@@ -141,7 +141,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       {/* App Logo */}
       <View style={styles.headerRow}>
         <View style={styles.logoRow}>
-          <Image source={require('../../assets/icon-transparent.png')} style={styles.logoIcon} />
+          <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
           <Text style={styles.logoTop}>Top</Text>
           <Text style={styles.logoTen}>Ten</Text>
         </View>
@@ -280,9 +280,9 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
       {/* My Lists */}
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionHeaderInline}>My Lists</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('AllLists')} activeOpacity={0.7}>
-          <Text style={styles.manageButton}>Manage</Text>
+        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={() => navigation.navigate('MyLists')} activeOpacity={0.7}>
+          <Text style={styles.sectionHeaderInline}>My Lists</Text>
+          <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
         </TouchableOpacity>
       </View>
 
@@ -311,15 +311,6 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
           </TouchableOpacity>
         </View>
       )}
-
-      <TouchableOpacity
-        style={styles.allListsLink}
-        onPress={() => navigation.navigate('AllLists')}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.allListsText}>All Lists</Text>
-        <Ionicons name="chevron-forward" size={15} color={colors.activeTab} />
-      </TouchableOpacity>
 
       {/* Add List Footer */}
       <TouchableOpacity
@@ -429,11 +420,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  manageButton: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.activeTab,
-  },
   seeAllButton: {
     fontSize: 15,
     fontWeight: '600',
@@ -453,18 +439,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: colors.secondaryText,
-  },
-  allListsLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    gap: 2,
-  },
-  allListsText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.activeTab,
   },
   carousel: {
     paddingHorizontal: spacing.lg,

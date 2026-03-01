@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
   const [customName, setCustomName] = useState('');
   const { addList } = useListContext();
   const posthog = usePostHog();
+  const scrollRef = useRef<ScrollView>(null);
 
   const canCreate = selectedCategory.length > 0;
 
@@ -58,9 +59,11 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
     >
       <Text style={styles.label}>Category</Text>
       <View style={styles.grid}>

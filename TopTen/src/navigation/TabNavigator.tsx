@@ -6,7 +6,6 @@ import { MyListsScreen } from '../screens/MyListsScreen';
 import { MyListsTabScreen } from '../screens/MyListsTabScreen';
 import { ListDetailScreen } from '../screens/ListDetailScreen';
 import { CreateListScreen } from '../screens/CreateListScreen';
-import { AllListsScreen } from '../screens/AllListsScreen';
 import { SearchScreen } from '../screens/SearchScreen';
 import { DiscoverScreen } from '../screens/DiscoverScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
@@ -50,11 +49,6 @@ const HomeStack = () => (
       options={{ presentation: 'modal', title: 'New List', headerLargeTitle: false }}
     />
     <Stack.Screen
-      name="AllLists"
-      component={AllListsScreen}
-      options={{ title: 'My Lists', headerLargeTitle: false }}
-    />
-    <Stack.Screen
       name="Search"
       component={SearchScreen}
       options={{ title: 'Search', headerLargeTitle: false }}
@@ -95,11 +89,6 @@ const MyListsStack = () => (
       name="MyListsTabHome"
       component={MyListsTabScreen}
       options={{ headerShown: false, title: 'Lists' }}
-    />
-    <Stack.Screen
-      name="AllLists"
-      component={AllListsScreen}
-      options={{ title: 'My Lists', headerLargeTitle: false }}
     />
     <Stack.Screen
       name="ListDetail"
