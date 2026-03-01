@@ -196,6 +196,48 @@ const DEFAULTS: Record<string, SearchResult[]> = {
     { title: '1996-97 Colorado Avalanche',    year: 'NHL · 49-24-9' },
     { title: '2009-10 Washington Capitals',   year: 'NHL · 54-15-13' },
   ],
+  'Golf Courses': [
+    { title: 'Augusta National Golf Club',       year: 'Augusta, GA — Masters venue' },
+    { title: 'Pebble Beach Golf Links',          year: 'Pebble Beach, CA' },
+    { title: 'St Andrews Links (Old Course)',    year: 'St Andrews, Scotland — Home of Golf' },
+    { title: 'Pinehurst No. 2',                  year: 'Pinehurst, NC — US Open venue' },
+    { title: 'Cypress Point Club',               year: 'Pebble Beach, CA' },
+    { title: 'Shinnecock Hills Golf Club',       year: 'Southampton, NY — US Open venue' },
+    { title: 'Merion Golf Club (East)',          year: 'Ardmore, PA' },
+    { title: 'Oakmont Country Club',             year: 'Oakmont, PA — US Open venue' },
+    { title: 'Royal County Down',                year: 'Newcastle, Northern Ireland' },
+    { title: 'Royal Portrush Golf Club',         year: 'Portrush, Northern Ireland' },
+    { title: 'Muirfield',                        year: 'Gullane, Scotland — The Open venue' },
+    { title: 'Carnoustie Golf Links',            year: 'Carnoustie, Scotland — The Open venue' },
+    { title: 'Turnberry (Ailsa Course)',         year: 'Turnberry, Scotland' },
+    { title: 'Royal Birkdale Golf Club',         year: 'Southport, England — The Open venue' },
+    { title: 'Winged Foot Golf Club (West)',     year: 'Mamaroneck, NY — US Open venue' },
+    { title: 'TPC Sawgrass (Stadium Course)',    year: 'Ponte Vedra Beach, FL — THE PLAYERS venue' },
+    { title: 'Bethpage Black',                   year: 'Farmingdale, NY — US Open venue' },
+    { title: 'Torrey Pines (South Course)',      year: 'La Jolla, CA' },
+    { title: 'Whistling Straits',                year: 'Kohler, WI — Ryder Cup venue' },
+    { title: 'Kiawah Island (Ocean Course)',     year: 'Kiawah Island, SC' },
+    { title: 'Congressional Country Club (Blue)', year: 'Bethesda, MD — US Open venue' },
+    { title: 'Quail Hollow Club',                year: 'Charlotte, NC — PGA Championship venue' },
+    { title: 'Riviera Country Club',             year: 'Pacific Palisades, CA — Genesis Invitational' },
+    { title: 'Medinah Country Club (No. 3)',     year: 'Medinah, IL — Ryder Cup venue' },
+    { title: 'Seminole Golf Club',               year: 'Juno Beach, FL' },
+    { title: 'Sand Hills Golf Club',             year: 'Mullen, NE' },
+    { title: 'Pacific Dunes',                    year: 'Bandon, OR — Bandon Dunes Resort' },
+    { title: 'Bandon Dunes Golf Course',         year: 'Bandon, OR' },
+    { title: 'Crystal Downs Country Club',       year: 'Frankfort, MI' },
+    { title: 'Chicago Golf Club',                year: 'Wheaton, IL — oldest 18-hole US course' },
+    { title: 'Garden City Golf Club',            year: 'Garden City, NY' },
+    { title: 'Prairie Dunes Country Club',       year: 'Hutchinson, KS' },
+    { title: 'Los Angeles Country Club (North)', year: 'Los Angeles, CA — US Open 2023' },
+    { title: 'Erin Hills',                       year: 'Erin, WI — US Open 2017' },
+    { title: 'Harbour Town Golf Links',          year: 'Hilton Head Island, SC — RBC Heritage' },
+    { title: 'Spyglass Hill Golf Course',        year: 'Pebble Beach, CA' },
+    { title: 'Kapalua (Plantation Course)',      year: 'Maui, HI — Sentry Tournament' },
+    { title: 'Amen Corner (Augusta National)',   year: 'Augusta, GA — holes 11–13' },
+    { title: 'Royal Melbourne Golf Club (West)', year: 'Melbourne, Australia' },
+    { title: 'Kingston Heath Golf Club',         year: 'Melbourne, Australia' },
+  ],
   'NBA Teams': [
     { title: '1995-96 Chicago Bulls',              year: 'NBA · 72-10' },
     { title: '2015-16 Golden State Warriors',       year: 'NBA · 73-9' },
@@ -335,7 +377,8 @@ function detectSport(title: string): string | null {
   if (/\bsingle.season\b.*\bbaseball\b|\bbaseball\b.*\bsingle.season\b/.test(t)) return 'Baseball Teams';
   if (/\bsingle.season\b.*\bnhl\b|\bnhl\b.*\bsingle.season\b/.test(t))           return 'NHL Teams';
   if (/\bsingle.season\b.*\bnba\b|\bnba\b.*\bsingle.season\b/.test(t))           return 'NBA Teams';
-  // Individual player lists
+  // Golf courses vs golfers
+  if (/\bgolf.course|golf.courses|course.*golf|links\b/.test(t))      return 'Golf Courses';
   if (/\bgolf|golfer|pga|masters\b/.test(t))                          return 'Golf';
   if (/\btennis|wimbledon|grand slam|atp|wta\b/.test(t))             return 'Tennis';
   if (/\bbaseball|mlb|pitcher|home run|world series\b/.test(t))      return 'Baseball';
@@ -373,7 +416,7 @@ async function fetchTeams(query: string): Promise<SearchResult[]> {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 // Sports lists that are purely static — typed queries filter the local list, not the API
-const STATIC_SPORTS = ['NFL Stadiums', 'Baseball Teams', 'NHL Teams', 'NBA Teams', 'World Cup Teams'];
+const STATIC_SPORTS = ['NFL Stadiums', 'Baseball Teams', 'NHL Teams', 'NBA Teams', 'World Cup Teams', 'Golf Courses'];
 
 export async function searchSports(query: string, listTitle?: string): Promise<SearchResult[]> {
   const sport = listTitle ? detectSport(listTitle) : null;
