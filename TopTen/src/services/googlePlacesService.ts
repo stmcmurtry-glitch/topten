@@ -290,12 +290,19 @@ function slugify(city: string): string {
   return city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+/** Stable pseudo-random seed count (8–28) derived from slug — same value every time. */
+function seedParticipantCount(slug: string): number {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) h = (Math.imul(31, h) + slug.charCodeAt(i)) | 0;
+  return 8 + (Math.abs(h) % 21); // 8..28
+}
+
 async function fetchPlacesForConfig(
   config: PlaceConfig,
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const cacheKey = `@topten_places_v5_${citySlug}_${config.slug}`;
+  const cacheKey = `@topten_places_v6_${citySlug}_${config.slug}`;
 
   // Check 24h cache
   try {
@@ -335,7 +342,7 @@ async function fetchPlacesForConfig(
     icon: config.icon,
     description: config.description(city),
     imageQuery: config.imageQuery(city),
-    participantCount: 0,
+    participantCount: seedParticipantCount(`${config.slug}-${citySlug}`),
     items,
     region: city,
   };
