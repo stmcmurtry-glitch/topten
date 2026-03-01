@@ -205,6 +205,15 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       <View style={styles.heroContent}>
         <Text style={styles.heroTitle} numberOfLines={2}>{list.title}</Text>
         <Text style={styles.heroDescription}>{list.description}</Text>
+        <View style={styles.heroMeta}>
+          <Ionicons name="people" size={13} color="rgba(255,255,255,0.8)" />
+          <Text style={styles.heroMetaText}>{participantDisplay} voted</Text>
+          {submitted && (
+            <View style={styles.heroVotedPill}>
+              <Text style={styles.heroVotedPillText}>✓ You voted</Text>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -240,14 +249,6 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       >
         {Hero}
         {TabSwitcher}
-        <View style={styles.voteCountRow}>
-          {submitted ? (
-            <View style={styles.votedBadgeInline}>
-              <Text style={styles.votedBadgeInlineText}>Voted ✓</Text>
-            </View>
-          ) : null}
-          <Text style={styles.voteCountText}>{participantDisplay} people have voted</Text>
-        </View>
 
         {/* ── Community tab ── */}
         {activeTab === 'community' && (
@@ -521,29 +522,29 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     marginBottom: 4,
   },
-  voteCountRow: {
+  heroMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.background,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    gap: 5,
+    marginTop: spacing.sm,
   },
-  voteCountText: {
+  heroMetaText: {
     fontSize: 12,
-    color: colors.secondaryText,
+    color: 'rgba(255,255,255,0.8)',
     fontWeight: '500',
   },
-  votedBadgeInline: {
+  heroVotedPill: {
     backgroundColor: '#2ECC71',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: borderRadius.lg,
+    marginLeft: 2,
   },
-  votedBadgeInlineText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
+  heroVotedPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFF',
+  },
   heroContent: {
     paddingHorizontal: spacing.lg,
     paddingBottom: 18,
