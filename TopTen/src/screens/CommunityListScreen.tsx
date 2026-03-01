@@ -199,17 +199,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       <View style={[styles.heroNav, { top: insets.top + 6 }]}>
         <View style={{ width: 44 }} />
         <Text style={styles.heroNavCategory} numberOfLines={1}>{list.category.toUpperCase()}</Text>
-        <View style={styles.heroBadge}>
-          {submitted ? (
-            <View style={styles.votedBadge}>
-              <Text style={styles.votedBadgeText}>Voted ✓</Text>
-            </View>
-          ) : (
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{participantDisplay} voted</Text>
-            </View>
-          )}
-        </View>
+        <View style={{ width: 44 }} />
       </View>
 
       <View style={styles.heroContent}>
@@ -250,6 +240,14 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
       >
         {Hero}
         {TabSwitcher}
+        <View style={styles.voteCountRow}>
+          {submitted ? (
+            <View style={styles.votedBadgeInline}>
+              <Text style={styles.votedBadgeInlineText}>Voted ✓</Text>
+            </View>
+          ) : null}
+          <Text style={styles.voteCountText}>{participantDisplay} people have voted</Text>
+        </View>
 
         {/* ── Community tab ── */}
         {activeTab === 'community' && (
@@ -523,21 +521,29 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     marginBottom: 4,
   },
-  heroBadge: { flexShrink: 0, alignItems: 'flex-end' },
-  votedBadge: {
+  voteCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  voteCountText: {
+    fontSize: 12,
+    color: colors.secondaryText,
+    fontWeight: '500',
+  },
+  votedBadgeInline: {
     backgroundColor: '#2ECC71',
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: borderRadius.lg,
   },
-  votedBadgeText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
-  countBadge: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: borderRadius.lg,
-  },
-  countBadgeText: { fontSize: 11, fontWeight: '600', color: '#FFFFFF' },
+  votedBadgeInlineText: { fontSize: 11, fontWeight: '700', color: '#FFF' },
   heroContent: {
     paddingHorizontal: spacing.lg,
     paddingBottom: 18,
