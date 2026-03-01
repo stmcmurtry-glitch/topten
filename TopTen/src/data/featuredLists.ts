@@ -12,6 +12,8 @@ export interface FeaturedList {
   description: string;
   staticImageUrl?: string;
   sponsored?: { name: string; cta: string; url: string };
+  /** "Month YYYY" — shown on stats lists so users know when data was last verified */
+  updatedAt?: string;
 }
 
 export interface PopularList {
@@ -424,6 +426,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Jack Nicklaus golf swing Augusta Masters championship fairway wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1605144156546-91acf5e4cffd?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Jack Nicklaus — 18 Majors',
       'Tiger Woods — 15 Majors',
@@ -447,6 +450,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Novak Djokovic Wimbledon tennis grand slam champion court wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1731957238251-1472b9992c29?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Novak Djokovic — 24',
       'Rafael Nadal — 22',
@@ -470,19 +474,20 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Barry Bonds home run swing baseball stadium Giants wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1756832430925-d1c85f282736?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Barry Bonds — 762',
       'Hank Aaron — 755',
       'Babe Ruth — 714',
-      'Albert Pujols — 700',
+      'Albert Pujols — 703',
       'Alex Rodriguez — 696',
       'Willie Mays — 660',
       'Ken Griffey Jr. — 630',
       'Jim Thome — 612',
       'Sammy Sosa — 609',
-      'David Ortiz — 541',
+      'Frank Robinson — 586',
     ],
-    description: 'Official MLB career home run totals as recorded in the historical record — the definitive list of the most prolific power hitters in the history of the game.',
+    description: 'Official MLB career home run totals via Baseball Reference. All players retired — this list is now a closed record.',
   },
   {
     id: 'f-19',
@@ -493,6 +498,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'baseball pitcher mound stadium crowd classic sports action wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1513879392062-82c9a1d1c614?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Ed Walsh — 1.82',
       'Addie Joss — 1.89',
@@ -516,6 +522,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'baseball pitcher mound stadium green field vintage classic wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1767566822107-f549e0edab19?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Cy Young — 511',
       'Walter Johnson — 417',
@@ -528,7 +535,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Steve Carlton — 329',
       'John Clarkson — 328',
     ],
-    description: 'Official career win totals for MLB starting pitchers. Cy Young leads by nearly 100 wins — a gap so large the sport named its best-pitcher award after him.',
+    description: 'Official career win totals for MLB starting pitchers via Baseball Reference. Cy Young leads by nearly 100 wins — a gap so large the sport named its best-pitcher award after him.',
   },
   {
     id: 'f-21',
@@ -539,6 +546,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'New York Yankees World Series championship baseball stadium celebration confetti',
     staticImageUrl: 'https://images.unsplash.com/photo-1710827758909-d1cc19d4340b?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'New York Yankees — 27',
       'St. Louis Cardinals — 11',
@@ -551,7 +559,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Detroit Tigers — 4',
       'Minnesota Twins — 3',
     ],
-    description: "Total World Series titles by franchise across MLB history. The Yankees' 27 championships are more than double any other team's total.",
+    description: "Total World Series titles by franchise across MLB history via Baseball Reference. The Yankees' 27 championships are more than double any other team's total.",
   },
   {
     id: 'f-22',
@@ -562,6 +570,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'New England Patriots Super Bowl championship football stadium celebration confetti',
     staticImageUrl: 'https://images.unsplash.com/photo-1567256181256-6a0419cd94e7?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'New England Patriots — 6',
       'Pittsburgh Steelers — 6',
@@ -574,7 +583,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Las Vegas Raiders — 3',
       'Miami Dolphins — 2',
     ],
-    description: 'Total Lombardi Trophies by NFL franchise through Super Bowl LVIII. Two franchises share the all-time record with six championships each.',
+    description: 'Total Lombardi Trophies by NFL franchise through Super Bowl LVIII via Pro Football Reference. Two franchises share the all-time record with six championships each.',
   },
   {
     id: 'f-23',
@@ -585,6 +594,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Tom Brady quarterback throw touchdown NFL stadium Patriots wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1675886051964-e54e7d28cece?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Tom Brady — 89,214 yds',
       'Drew Brees — 80,358 yds',
@@ -597,7 +607,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Eli Manning — 57,023 yds',
       'John Elway — 51,475 yds',
     ],
-    description: 'Official NFL career passing yard totals. Tom Brady surpassed Drew Brees in 2021 and retired with a record that may stand for a generation.',
+    description: 'Official NFL career passing yard totals via Pro Football Reference. Tom Brady surpassed Drew Brees in 2021 and retired with a record that may stand for a generation.',
   },
   {
     id: 'f-24',
@@ -608,6 +618,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'football field goal kick stadium uprights crowd NFL action wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1675886051958-f425417f7480?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Justin Tucker — 66 yds (Ravens, 2021)',
       'Matt Prater — 64 yds (Broncos, 2013)',
@@ -620,7 +631,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Blair Walsh — 62 yds (Vikings, 2013)',
       'Jake Elliott — 61 yds (Eagles, 2017)',
     ],
-    description: "Official NFL record kicks by distance, verified in the league's historical records. Justin Tucker's 66-yarder in 2021 shattered the previous record.",
+    description: "Official NFL record kicks by distance via Pro Football Reference. Justin Tucker's 66-yarder in 2021 shattered the previous record.",
   },
   {
     id: 'f-25',
@@ -631,19 +642,20 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'running back football stadium NFL crowd rushing action game wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1702303208608-fc27f8826b9a?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Eric Dickerson — 2,105 yds (Rams, 1984)',
       'Adrian Peterson — 2,097 yds (Vikings, 2012)',
       'Jamal Lewis — 2,066 yds (Ravens, 2003)',
       'Barry Sanders — 2,053 yds (Lions, 1997)',
       'Derrick Henry — 2,027 yds (Titans, 2020)',
-      'Chris Johnson — 2,006 yds (Titans, 2009)',
       'Terrell Davis — 2,008 yds (Broncos, 1998)',
+      'Chris Johnson — 2,006 yds (Titans, 2009)',
       'O.J. Simpson — 2,003 yds (Bills, 1973)',
-      'Walter Payton — 1,852 yds (Bears, 1977)',
       'Earl Campbell — 1,934 yds (Oilers, 1980)',
+      'Walter Payton — 1,852 yds (Bears, 1977)',
     ],
-    description: 'Official single-season rushing yard totals from NFL record books. The 2,000-yard season is the benchmark of greatness — only nine backs have ever crossed it.',
+    description: 'Official single-season rushing yard totals via Pro Football Reference. The 2,000-yard season is the benchmark of greatness — only eight backs have ever crossed it.',
   },
   {
     id: 'f-26',
@@ -654,6 +666,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Brazil soccer World Cup celebration trophy team stadium wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1637203727318-fb31b63e2377?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Brazil — 5 titles (1958, 62, 70, 94, 02)',
       'Germany — 4 titles (1954, 74, 90, 2014)',
@@ -677,6 +690,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'soccer goal net celebration World Cup stadium crowd scoring wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1698786039213-1d3aec21c6ae?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Miroslav Klose — 16',
       'Ronaldo (Brazil) — 15',
@@ -698,9 +712,11 @@ export const FEATURED_LISTS: FeaturedList[] = [
     icon: 'snow-outline',
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
-    imageQuery: 'Wayne Gretzky ice hockey NHL Oilers rink skating goal wide',
+    imageQuery: 'Alex Ovechkin ice hockey NHL Washington Capitals goal celebration rink wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1741954034331-fab787e04de6?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
+      'Alex Ovechkin — 921*',
       'Wayne Gretzky — 894',
       'Gordie Howe — 801',
       'Jaromír Jagr — 766',
@@ -710,9 +726,8 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Mike Gartner — 708',
       'Mark Messier — 694',
       'Steve Yzerman — 692',
-      'Mario Lemieux — 690',
     ],
-    description: 'Official NHL career goal totals from the league record books. Gretzky scored 894 — more than 90 ahead of second place. The gap defines the word "untouchable."',
+    description: 'Official NHL career goal totals via Hockey Reference. Ovechkin surpassed Gretzky\'s record of 894 in 2024 and continues to add to his total. (* still active)',
   },
   {
     id: 'f-29',
@@ -723,6 +738,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Wayne Gretzky hockey NHL passing puck assist rink Oilers wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1769437881488-be0ce0618eef?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Wayne Gretzky — 1,963',
       'Ron Francis — 1,249',
@@ -730,12 +746,12 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Ray Bourque — 1,169',
       'Jaromír Jagr — 1,155',
       'Paul Coffey — 1,135',
+      'Joe Thornton — 1,109',
+      'Sidney Crosby — 1,094*',
       'Adam Oates — 1,079',
       'Steve Yzerman — 1,063',
-      'Gordie Howe — 1,049',
-      'Marcel Dionne — 1,040',
     ],
-    description: "Official NHL career assist totals. Gretzky's 1,963 assists exceed the total points of every other player in NHL history — the most astonishing stat in professional sports.",
+    description: "Official NHL career assist totals via Hockey Reference. Gretzky's 1,963 assists exceed the total points of every other player in NHL history. (* still active)",
   },
   {
     id: 'f-30',
@@ -746,6 +762,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Montreal Canadiens Stanley Cup hockey championship celebration ice wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1757889692951-4bf80690cc6a?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Montreal Canadiens — 24',
       'Toronto Maple Leafs — 13',
@@ -758,7 +775,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'New York Rangers — 4',
       'New Jersey Devils — 3',
     ],
-    description: "Total Stanley Cup championships by NHL franchise. The Montreal Canadiens' 24 titles represent the most dominant dynasty record of any team in the four major North American sports.",
+    description: "Total Stanley Cup championships by NHL franchise via Hockey Reference. The Montreal Canadiens' 24 titles represent the most dominant dynasty record of any team in the four major North American sports.",
   },
   {
     id: 'f-31',
@@ -769,6 +786,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Bill Russell Boston Celtics basketball championship NBA wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1647245953214-82cd23c5af13?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Bill Russell — 11 rings',
       'Sam Jones — 10 rings',
@@ -781,7 +799,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Michael Jordan — 6 rings',
       'LeBron James — 4 rings',
     ],
-    description: "Official NBA championship ring counts by player. Bill Russell's 11 titles in 13 seasons with the Boston Celtics remain the most dominant run in American professional sports history.",
+    description: "Official NBA championship ring counts by player via Basketball Reference. Bill Russell's 11 titles in 13 seasons with the Boston Celtics remain the most dominant run in American professional sports history.",
   },
   {
     id: 'f-32',
@@ -792,6 +810,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Boston Celtics Los Angeles Lakers NBA championship basketball arena wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1518409274682-1cb2fe2955a8?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Boston Celtics — 18',
       'Los Angeles Lakers — 17',
@@ -804,7 +823,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
       'Houston Rockets — 2',
       'New York Knicks — 2',
     ],
-    description: 'Total NBA championship titles by franchise through the 2024 season. The Celtics lead with 18 titles, edging the Lakers in the longest rivalry in league history.',
+    description: 'Total NBA championship titles by franchise via Basketball Reference. The Celtics lead with 18 titles after their 2024 championship, edging the Lakers by one.',
   },
   {
     id: 'f-33',
@@ -815,19 +834,20 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'LeBron James scoring basketball NBA court arena action wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1765924705648-9a0731ac5202?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
-      'LeBron James — 40,000+',
+      'LeBron James — 43,066*',
       'Kareem Abdul-Jabbar — 38,387',
       'Karl Malone — 36,928',
       'Kobe Bryant — 33,643',
       'Michael Jordan — 32,292',
+      'Kevin Durant — 32,038*',
       'Dirk Nowitzki — 31,560',
       'Wilt Chamberlain — 31,419',
+      'Julius Erving — 30,026',
       'Moses Malone — 29,580',
-      'Elvin Hayes — 27,313',
-      'Hakeem Olajuwon — 26,946',
     ],
-    description: 'Official NBA career scoring totals. LeBron James surpassed Kareem Abdul-Jabbar in February 2023 to become the all-time leading scorer — a record Kareem held for 38 years.',
+    description: 'Official NBA/ABA career scoring totals via Basketball Reference. LeBron surpassed Kareem in 2023 and continues to extend his record. (* still active)',
   },
   {
     id: 'f-34',
@@ -838,18 +858,19 @@ export const FEATURED_LISTS: FeaturedList[] = [
     author: 'Top Ten Editors',
     imageQuery: 'Wilt Chamberlain basketball scoring vintage NBA historic wide',
     staticImageUrl: 'https://images.unsplash.com/photo-1725714833427-4e71b50ca712?w=600&fit=crop&crop=center&auto=format&q=80',
+    updatedAt: 'March 2026',
     previewItems: [
       'Michael Jordan — 30.12 ppg',
       'Wilt Chamberlain — 30.07 ppg',
-      'Luka Dončić — 28.8 ppg*',
-      'Joel Embiid — 27.9 ppg*',
-      'Elgin Baylor — 27.4 ppg',
-      'LeBron James — 27.1 ppg',
-      'Jerry West — 27.0 ppg',
-      'Kevin Durant — 27.0 ppg',
-      'Bob Pettit — 26.4 ppg',
-      'Oscar Robertson — 25.7 ppg',
+      'Luka Dončić — 28.99 ppg*',
+      'Joel Embiid — 27.63 ppg*',
+      'Elgin Baylor — 27.36 ppg',
+      'Kevin Durant — 27.17 ppg*',
+      'Jerry West — 27.03 ppg',
+      'LeBron James — 26.87 ppg*',
+      'Allen Iverson — 26.66 ppg',
+      'Bob Pettit — 26.36 ppg',
     ],
-    description: 'Official NBA career scoring averages, minimum 400 games played. Jordan edges Chamberlain 30.12 to 30.07 — the two greatest scorers in league history separated by a fraction. (* still active)',
+    description: 'Official NBA career scoring averages (min. 400 games) via Basketball Reference. Jordan edges Chamberlain 30.12 to 30.07. (* still active — averages will shift)',
   },
 ];

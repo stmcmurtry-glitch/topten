@@ -80,6 +80,16 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
         <Text style={styles.description}>{list.description}</Text>
       </View>
 
+      {/* Stats verification badge */}
+      {list.updatedAt && (
+        <View style={styles.verifiedRow}>
+          <Ionicons name="checkmark-circle" size={13} color={colors.secondaryText} />
+          <Text style={styles.verifiedText}>
+            Verified via Sports Reference · {list.updatedAt}
+          </Text>
+        </View>
+      )}
+
       {/* Ranked list */}
       <View style={styles.listCard}>
         {list.sponsored && (
@@ -338,5 +348,17 @@ const styles = StyleSheet.create({
   reportButtonText: {
     fontSize: 12,
     color: colors.secondaryText,
+  },
+  verifiedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  verifiedText: {
+    fontSize: 11,
+    color: colors.secondaryText,
+    fontStyle: 'italic',
   },
 });
