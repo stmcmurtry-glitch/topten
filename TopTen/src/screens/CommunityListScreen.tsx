@@ -288,7 +288,12 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                 return (
                   <View key={item.id} style={styles.communityRow}>
                     <Text style={styles.rankNum}>{idx + 1}</Text>
-                    <Text style={styles.communityItemTitle} numberOfLines={1}>{item.title}</Text>
+                    <View style={styles.communityItemInfo}>
+                      <Text style={styles.communityItemTitle} numberOfLines={1}>{item.title}</Text>
+                      {item.artist && (
+                        <Text style={styles.communityItemArtist} numberOfLines={1}>{item.artist}</Text>
+                      )}
+                    </View>
                     <View style={styles.scoreCol}>
                       <View style={[styles.scoreBar, { width: barWidth, backgroundColor: list.color }]} />
                       <Text style={styles.scorePts}>{score.toLocaleString()} pts</Text>
@@ -341,7 +346,17 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                     </>
                   ) : (
                     <>
-                      <Text style={styles.yoursItemTitle} numberOfLines={1}>{slotTitle}</Text>
+                      <View style={styles.yoursItemInfo}>
+                        <Text style={styles.yoursItemTitle} numberOfLines={1}>{slotTitle}</Text>
+                        {(() => {
+                          const artist = list.items.find(
+                            i => i.title.toLowerCase() === slotTitle.toLowerCase()
+                          )?.artist;
+                          return artist ? (
+                            <Text style={styles.communityItemArtist} numberOfLines={1}>{artist}</Text>
+                          ) : null;
+                        })()}
+                      </View>
                       <View style={styles.moveButtons}>
                         <TouchableOpacity
                           onPress={() => moveSlot(idx, idx - 1)}
@@ -634,7 +649,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   rankNumEmpty: { opacity: 0.4 },
-  communityItemTitle: { flex: 1, fontSize: 15, fontWeight: '500', color: colors.primaryText },
+  communityItemInfo: { flex: 1, gap: 1 },
+  communityItemTitle: { fontSize: 15, fontWeight: '500', color: colors.primaryText },
+  communityItemArtist: { fontSize: 12, color: colors.secondaryText },
   scoreCol: { alignItems: 'flex-end', gap: 3 },
   scoreBar: { height: 4, borderRadius: 2, minWidth: 4 }, // backgroundColor applied inline via list.color
   scorePts: { fontSize: 11, color: colors.secondaryText, fontWeight: '500' },
@@ -660,7 +677,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
-  yoursItemTitle: { flex: 1, fontSize: 16, color: colors.primaryText },
+  yoursItemInfo: { flex: 1, gap: 1 },
+  yoursItemTitle: { fontSize: 16, color: colors.primaryText },
   emptyText: { flex: 1, fontSize: 16, color: colors.secondaryText },
   moveButtons: { alignItems: 'center', gap: 2 },
   submitButton: {

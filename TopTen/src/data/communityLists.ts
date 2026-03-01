@@ -2,6 +2,7 @@ export interface CommunityItem {
   id: string;
   title: string;
   seedScore: number;
+  artist?: string;
 }
 
 export interface Sponsored {
@@ -79,16 +80,16 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     description: 'The tracks that stopped time. What\'s the greatest song ever recorded?',
     participantCount: 71,
     items: [
-      { id: 'cs-1', title: 'Bohemian Rhapsody',       seedScore: 789 },
-      { id: 'cs-2', title: 'Imagine',                 seedScore: 762 },
-      { id: 'cs-3', title: 'Smells Like Teen Spirit', seedScore: 732 },
-      { id: 'cs-4', title: 'What\'s Going On',        seedScore: 700 },
-      { id: 'cs-5', title: 'Like a Rolling Stone',    seedScore: 665 },
-      { id: 'cs-6', title: 'God Only Knows',          seedScore:  627 },
-      { id: 'cs-7', title: 'Purple Rain',             seedScore:  586 },
-      { id: 'cs-8', title: 'Good Vibrations',         seedScore:  541 },
-      { id: 'cs-9', title: 'Waterloo Sunset',         seedScore:  492 },
-      { id: 'cs-10', title: 'I Will Always Love You', seedScore:  438 },
+      { id: 'cs-1', title: 'Bohemian Rhapsody',       artist: 'Queen',            seedScore: 789 },
+      { id: 'cs-2', title: 'Imagine',                 artist: 'John Lennon',      seedScore: 762 },
+      { id: 'cs-3', title: 'Smells Like Teen Spirit', artist: 'Nirvana',          seedScore: 732 },
+      { id: 'cs-4', title: 'What\'s Going On',        artist: 'Marvin Gaye',      seedScore: 700 },
+      { id: 'cs-5', title: 'Like a Rolling Stone',    artist: 'Bob Dylan',        seedScore: 665 },
+      { id: 'cs-6', title: 'God Only Knows',          artist: 'The Beach Boys',   seedScore: 627 },
+      { id: 'cs-7', title: 'Purple Rain',             artist: 'Prince',           seedScore: 586 },
+      { id: 'cs-8', title: 'Good Vibrations',         artist: 'The Beach Boys',   seedScore: 541 },
+      { id: 'cs-9', title: 'Waterloo Sunset',         artist: 'The Kinks',        seedScore: 492 },
+      { id: 'cs-10', title: 'I Will Always Love You', artist: 'Whitney Houston',  seedScore: 438 },
     ],
   },
   {
