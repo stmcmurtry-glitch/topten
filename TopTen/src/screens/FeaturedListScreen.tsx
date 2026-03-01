@@ -39,18 +39,6 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
       case 'TV':
         url = `https://www.imdb.com/find?q=${q}&s=tt`;
         break;
-      case 'Sports':
-        // Derive the correct Sports Reference site from statsSource (e.g.
-        // basketball-reference.com, hockey-reference.com, etc.)
-        if (list.statsSource) {
-          try {
-            const domain = new URL(list.statsSource).hostname;
-            url = `https://${domain}/search/search.fcgi?q=${q}`;
-            break;
-          } catch {}
-        }
-        url = `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
-        break;
       case 'Books':
         url = `https://www.goodreads.com/search?q=${q}`;
         break;
