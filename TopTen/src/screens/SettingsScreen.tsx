@@ -21,9 +21,10 @@ import { PlansModal } from '../components/PlansModal';
 import { sendFeedbackEmail } from '../services/emailService';
 import {
   getDetectedLocation,
-  clearLocationCache,
   DetectedLocation,
 } from '../services/locationService';
+import { ChangeLocationModal } from '../components/ChangeLocationModal';
+import { useAuth } from '../context/AuthContext';
 
 const BASIC_LIMIT = 100;
 
@@ -182,9 +183,11 @@ const FeedbackCard: React.FC = () => {
 /* ── Main Screen ── */
 export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { user, signOut } = useAuth();
   const [plansVisible, setPlansVisible] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
+  const [changeLocationVisible, setChangeLocationVisible] = useState(false);
 
   const checkPremium = () => {
     Purchases.getCustomerInfo()
@@ -198,30 +201,18 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   }, []);
 
   const locationLabel = detectedLocation
-    ? `${detectedLocation.city || detectedLocation.region}${detectedLocation.region && detectedLocation.city ? `, ${detectedLocation.region}` : ''}`
+    ? `${detectedLocation.city || detectedLocation.region}${detectedLocation.region && detectedLocation.city ? `, ${detectedLocation.region}` : ''}${detectedLocation.isManual ? ' (manual)' : ''}`
     : detectedLocation === null ? 'Unknown' : 'Detecting…';
 
-  const handleResetLocation = () => {
-    Alert.alert(
-      'Reset Location',
-      `Currently detected as ${locationLabel}. Reset to re-detect on next launch?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            await clearLocationCache();
-            setDetectedLocation(undefined);
-            const fresh = await getDetectedLocation();
-            setDetectedLocation(fresh);
-          },
-        },
-      ]
-    );
+  type SettingItem = {
+    label: string;
+    route?: string;
+    routeParams?: Record<string, unknown>;
+    value?: string;
+    isLocation?: boolean;
+    isDestructive?: boolean;
   };
-
-  const sections = [
+  const sections: Array<{ title: string; data: SettingItem[] }> = [
     {
       title: 'Preferences',
       data: [
@@ -256,6 +247,42 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                 <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
                 <Text style={styles.title}>Account</Text>
               </View>
+
+              {/* Auth section */}
+              <Text style={styles.sectionHeader}>Profile</Text>
+              {user ? (
+                <View style={styles.profileCard}>
+                  <View style={styles.profileRow}>
+                    <View style={styles.profileAvatar}>
+                      <Ionicons name="person" size={22} color={colors.secondaryText} />
+                    </View>
+                    <View style={styles.profileInfo}>
+                      <Text style={styles.profileEmail} numberOfLines={1}>{user.email}</Text>
+                      <Text style={styles.profileSince}>
+                        Member since {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.profileDivider} />
+                  <TouchableOpacity
+                    style={styles.signOutRow}
+                    onPress={signOut}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.signOutText}>Sign Out</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.signInCard}
+                  onPress={() => navigation.navigate('AuthScreen')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.signInLabel}>Sign In / Create Account</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+                </TouchableOpacity>
+              )}
+
               {/* Membership section */}
               <Text style={styles.sectionHeader}>Membership</Text>
               <MembershipCard isPremium={isPremium} onViewPlans={() => setPlansVisible(true)} />
@@ -270,13 +297,13 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               return (
                 <TouchableOpacity
                   style={[styles.row, isLast && styles.rowLast]}
-                  onPress={handleResetLocation}
+                  onPress={() => setChangeLocationVisible(true)}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.label}>{item.label}</Text>
                   <View style={styles.locationValue}>
                     <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
-                    <Text style={styles.value}>{item.value}</Text>
+                    <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">{item.value}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -317,6 +344,13 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       <PlansModal
         visible={plansVisible}
         onClose={() => { setPlansVisible(false); checkPremium(); }}
+      />
+
+      <ChangeLocationModal
+        visible={changeLocationVisible}
+        currentCity={detectedLocation?.city || detectedLocation?.region || ''}
+        onClose={() => setChangeLocationVisible(false)}
+        onLocationChanged={(newLoc) => setDetectedLocation(newLoc)}
       />
     </>
   );
@@ -385,6 +419,74 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flexShrink: 1,
+    maxWidth: '55%',
+  },
+
+  /* ── Profile Card ── */
+  profileCard: {
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.squircle,
+    overflow: 'hidden',
+    ...shadow,
+    shadowOpacity: 0.06,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  profileAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileEmail: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primaryText,
+    marginBottom: 2,
+  },
+  profileSince: {
+    fontSize: 12,
+    color: colors.secondaryText,
+  },
+  profileDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.lg,
+  },
+  signOutRow: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  signOutText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FF3B30',
+  },
+  signInCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.squircle,
+    padding: spacing.md,
+    ...shadow,
+    shadowOpacity: 0.06,
+  },
+  signInLabel: {
+    fontSize: 16,
+    color: colors.primaryText,
   },
 
   /* ── Membership Card ── */

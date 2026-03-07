@@ -6,6 +6,7 @@ import { usePostHog } from 'posthog-react-native';
 import { resolveCommunityList } from '../data/dynamicListRegistry';
 import { supabase } from '../services/supabase';
 import { containsProfanity } from '../services/profanityFilter';
+import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = '@topten_community';
 const DEVICE_ID_KEY = '@topten_device_id';
@@ -36,6 +37,7 @@ const buildDefaultRanking = (_listId: string): UserCommunityRanking => {
 };
 
 export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [userRankings, setUserRankings] = useState<Record<string, UserCommunityRanking>>({});
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [liveScoreCache, setLiveScoreCache] = useState<Record<string, Record<string, number>>>({});
@@ -45,20 +47,19 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Bulk-fetch participant counts for all lists at startup
   useEffect(() => {
     if (!supabase) return;
-    supabase
+    Promise.resolve(supabase
       .from('community_scores')
       .select('list_id, participant_count')
-      .then(({ data }) => {
-        if (!data || data.length === 0) return;
-        const counts: Record<string, number> = {};
-        data.forEach((row: { list_id: string; participant_count: number }) => {
-          if (!counts[row.list_id] || row.participant_count > counts[row.list_id]) {
-            counts[row.list_id] = row.participant_count;
-          }
-        });
-        setParticipantCounts(counts);
-      })
-      .catch(() => {/* silent fallback to seed counts */});
+    ).then(({ data }) => {
+      if (!data || data.length === 0) return;
+      const counts: Record<string, number> = {};
+      data.forEach((row: { list_id: string; participant_count: number }) => {
+        if (!counts[row.list_id] || row.participant_count > counts[row.list_id]) {
+          counts[row.list_id] = row.participant_count;
+        }
+      });
+      setParticipantCounts(counts);
+    }).catch(() => {/* silent fallback to seed counts */});
   }, []);
 
   // Load persisted rankings
@@ -169,13 +170,18 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const filledCount = current.slots.filter((s) => s.trim()).length;
       posthog?.capture('community_vote_submitted', { list_id: listId, filled_slots: filledCount });
 
-      // Upsert to Supabase if we have a device ID and client is configured
-      if (deviceId && supabase) {
+      // Use authenticated user ID if available, fall back to device ID for guests
+      const voterId = user?.id ?? deviceId;
+
+      // Upsert to Supabase if we have a voter ID and client is configured
+      if (voterId && supabase) {
         try {
           await supabase.from('community_votes').upsert(
-            { device_id: deviceId, list_id: listId, slots: current.slots, submitted_at: new Date().toISOString() },
+            { device_id: voterId, list_id: listId, slots: current.slots, submitted_at: new Date().toISOString() },
             { onConflict: 'device_id,list_id' }
           );
+          // Refresh aggregated scores after vote is saved
+          await supabase.rpc('refresh_community_scores');
         } catch {
           // Non-fatal — local state already saved
         }
@@ -184,7 +190,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // Optimistically refresh scores
       await fetchLiveScores(listId);
     },
-    [userRankings, deviceId, persist, fetchLiveScores]
+    [userRankings, deviceId, user, persist, fetchLiveScores]
   );
 
   return (

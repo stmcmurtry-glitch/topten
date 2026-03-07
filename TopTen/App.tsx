@@ -15,6 +15,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ListProvider } from './src/data/ListContext';
+import { AuthProvider } from './src/context/AuthContext';
 import { CommunityProvider } from './src/context/CommunityContext';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -91,10 +92,12 @@ export default function App() {
               options={{ host: 'https://us.i.posthog.com' }}
             >
               <PostHogIdentifier />
-              <CommunityProvider>
-                <TabNavigator />
-                <StatusBar style="auto" />
-              </CommunityProvider>
+              <AuthProvider>
+                <CommunityProvider>
+                  <TabNavigator />
+                  <StatusBar style="auto" />
+                </CommunityProvider>
+              </AuthProvider>
             </PostHogProvider>
           </NavigationContainer>
         </ListProvider>

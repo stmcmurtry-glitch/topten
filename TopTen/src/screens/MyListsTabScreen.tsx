@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,11 +15,14 @@ import { FeedRow } from '../components/FeedRow';
 import { PhotoPickerModal } from '../components/PhotoPickerModal';
 import { CATEGORIES, CATEGORY_COLORS } from '../data/categories';
 import { colors, spacing, borderRadius, shadow } from '../theme';
+import { useAuth } from '../context/AuthContext';
+import { SignInPrompt } from '../components/SignInPrompt';
 
 const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 const ALL_PILLS = ['All', ...ALL_CATEGORY_LABELS];
 
 export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { user, loading: authLoading } = useAuth();
   const { lists, updateListMeta, reorderLists } = useListContext();
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All');
@@ -51,6 +55,25 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
     [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
     reorderLists(next);
   };
+
+  if (authLoading) {
+    return (
+      <View style={[styles.container, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={colors.activeTab} />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SignInPrompt
+        icon="list-outline"
+        title="Your Lists"
+        message="Sign in to create and save your top 10 lists."
+        onSignIn={() => navigation.navigate('AuthScreen')}
+      />
+    );
+  }
 
   return (
     <ScrollView

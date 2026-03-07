@@ -21,6 +21,7 @@ import { AllCommunityListsScreen } from '../screens/AllCommunityListsScreen';
 import { AllLocalListsScreen } from '../screens/AllLocalListsScreen';
 import { ExploreAreasScreen } from '../screens/ExploreAreasScreen';
 import { CityListsScreen } from '../screens/CityListsScreen';
+import { AuthScreen } from '../screens/AuthScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -90,6 +91,11 @@ const HomeStack = () => (
       component={CityListsScreen}
       options={{ headerShown: false }}
     />
+    <Stack.Screen
+      name="AuthScreen"
+      component={AuthScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -146,6 +152,11 @@ const MyListsStack = () => (
       name="CityLists"
       component={CityListsScreen}
       options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="AuthScreen"
+      component={AuthScreen}
+      options={{ presentation: 'modal', headerShown: false }}
     />
   </Stack.Navigator>
 );
@@ -236,6 +247,11 @@ const SettingsStack = () => (
       name="FAQ"
       component={FAQScreen}
       options={{ title: 'FAQ', headerLargeTitle: false }}
+    />
+    <Stack.Screen
+      name="AuthScreen"
+      component={AuthScreen}
+      options={{ presentation: 'modal', headerShown: false }}
     />
   </Stack.Navigator>
 );

@@ -3,6 +3,7 @@
     "name": "TopTen",
     "slug": "TopTen",
     "version": "1.0.0",
+    "scheme": "topten",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.toptenapp.topten",
+      "usesAppleSignIn": true,
       "privacyManifests": {},
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -34,7 +36,9 @@
     },
     "plugins": [
       "@sentry/react-native",
-      "expo-localization"
+      "expo-localization",
+      "expo-web-browser",
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {

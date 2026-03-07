@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -25,6 +26,9 @@ import {
   regionMatches,
   DetectedLocation,
 } from '../services/locationService';
+import { ChangeLocationModal } from '../components/ChangeLocationModal';
+import { InYourAreaLockCard } from '../components/InYourAreaLockCard';
+import { useAuth } from '../context/AuthContext';
 
 const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 
@@ -41,7 +45,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress,
   const top3 = list.items.slice(0, 3);
 
   useEffect(() => {
-    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title).then(setImageUrl);
+    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title, list.staticImageUrl).then(setImageUrl);
   }, [list.id]);
 
   return (
@@ -77,17 +81,21 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress,
 };
 
 export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { user } = useAuth();
   const { lists } = useListContext();
   const { userRankings, participantCounts } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
   // undefined = still detecting, null = failed / no match
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
   const [localPlacesLists, setLocalPlacesLists] = useState<CommunityList[]>([]);
+  const [changeLocationVisible, setChangeLocationVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    getDetectedLocation().then(setDetectedLocation);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getDetectedLocation().then(setDetectedLocation);
+    }, [])
+  );
 
   useEffect(() => {
     if (!detectedLocation?.city) return;
@@ -147,7 +155,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
           <Text style={styles.logoTen}>Ten</Text>
         </View>
         <TouchableOpacity
-          style={styles.addIconButton}
+          style={styles.addButton}
           onPress={() => navigation.navigate('CreateList')}
           activeOpacity={0.7}
         >
@@ -236,45 +244,55 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       )}
 
       {/* In your area */}
-      {allLocalLists.length > 0 && (
+      {(!user || allLocalLists.length > 0) && (
         <>
           <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.sectionHeaderRow}
-            onPress={() => navigation.navigate('AllLocalLists', {
-              lists: allLocalListsUnfiltered,
-              city: detectedLocation?.city || detectedLocation?.region,
-            })}
-            activeOpacity={0.6}
-          >
-            <View style={styles.titleWithIcon}>
-              <Text style={styles.sectionHeaderInline}>In your area</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
-            </View>
-            {detectedLocation ? (
-              <View style={styles.areaHeaderLeft}>
-                <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
-                <Text style={styles.areaRegionLabel}>
-                  {detectedLocation.city || detectedLocation.region}
-                </Text>
+          {!user ? (
+            <InYourAreaLockCard onSignIn={() => navigation.navigate('AuthScreen')} />
+          ) : (
+            <>
+              <View style={styles.sectionHeaderRow}>
+                <TouchableOpacity
+                  style={styles.titleWithIcon}
+                  onPress={() => navigation.navigate('AllLocalLists', {
+                    lists: allLocalListsUnfiltered,
+                    city: detectedLocation?.city || detectedLocation?.region,
+                  })}
+                  activeOpacity={0.6}
+                >
+                  <Text style={styles.sectionHeaderInline}>In your area</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
+                </TouchableOpacity>
+                {detectedLocation ? (
+                  <TouchableOpacity
+                    style={styles.areaHeaderLeft}
+                    onPress={() => setChangeLocationVisible(true)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
+                    <Text style={styles.areaRegionLabel}>
+                      {detectedLocation.city || detectedLocation.region}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
-            ) : null}
-          </TouchableOpacity>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carousel}
-          >
-            {allLocalLists.map((cl) => (
-              <CommunityCard
-                key={cl.id}
-                list={cl}
-                submitted={userRankings[cl.id]?.submitted ?? false}
-                onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
-                liveCount={participantCounts[cl.id]}
-              />
-            ))}
-          </ScrollView>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.carousel}
+              >
+                {allLocalLists.map((cl) => (
+                  <CommunityCard
+                    key={cl.id}
+                    list={cl}
+                    submitted={userRankings[cl.id]?.submitted ?? false}
+                    onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
+                    liveCount={participantCounts[cl.id]}
+                  />
+                ))}
+              </ScrollView>
+            </>
+          )}
         </>
       )}
 
@@ -323,6 +341,21 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         <Ionicons name="add-circle-outline" size={22} color={colors.activeTab} />
         <Text style={styles.addText}>New List</Text>
       </TouchableOpacity>
+
+      <ChangeLocationModal
+        visible={changeLocationVisible}
+        currentCity={detectedLocation?.city || detectedLocation?.region || ''}
+        onClose={() => setChangeLocationVisible(false)}
+        onLocationChanged={(newLoc) => {
+          setDetectedLocation(newLoc);
+          fetchLocalPlacesLists(newLoc.city).then((lists) => {
+            if (lists.length > 0) {
+              registerDynamicLists(lists);
+              setLocalPlacesLists(lists);
+            }
+          });
+        }}
+      />
     </ScrollView>
   );
 };
