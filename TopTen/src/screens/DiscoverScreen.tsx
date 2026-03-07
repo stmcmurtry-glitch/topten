@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -19,8 +20,10 @@ import { registerDynamicLists } from '../data/dynamicListRegistry';
 import { fetchFeaturedItems, fetchFeaturedImage, fetchCommunityImage, fetchCityImage } from '../services/featuredContentService';
 import { CATEGORY_COLORS } from '../components/FeedRow';
 import { getDetectedLocation, regionMatches, DetectedLocation } from '../services/locationService';
+import { ChangeLocationModal } from '../components/ChangeLocationModal';
 import { EXPLORE_CITIES, ExploreCity } from '../data/exploreCities';
 import { colors, spacing, borderRadius, shadow } from '../theme';
+import { useAuth } from '../context/AuthContext';
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   'Greatest Athletes of All Time': 'The greatest competitors across all sports, ranked by career dominance, legacy, and cultural impact.',
@@ -45,21 +48,35 @@ const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
 
 export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const { lists, addList } = useListContext();
 
   const handlePopularPress = useCallback((item: PopularList) => {
+    // Trending Lists have a featuredId — navigate to the curated Featured List
+    if (item.featuredId) {
+      navigation.navigate('FeaturedList', { featuredId: item.featuredId });
+      return;
+    }
+    // Common Lists (STARTER_LISTS) create personal lists — require auth
+    if (!user) {
+      navigation.navigate('AuthScreen');
+      return;
+    }
     const existing = lists.find(l => l.title === item.title);
     const listId = existing ? existing.id : addList(item.category, item.title, TEMPLATE_DESCRIPTIONS[item.title]);
     navigation.navigate('ListDetail', { listId });
-  }, [lists, addList, navigation]);
+  }, [user, lists, addList, navigation]);
 
   const [query, setQuery] = useState('');
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
   const [localPlacesLists, setLocalPlacesLists] = useState<CommunityList[]>([]);
+  const [changeLocationVisible, setChangeLocationVisible] = useState(false);
 
-  useEffect(() => {
-    getDetectedLocation().then(setDetectedLocation);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getDetectedLocation().then(setDetectedLocation);
+    }, [])
+  );
 
   useEffect(() => {
     if (!detectedLocation?.city) return;
@@ -210,27 +227,31 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           {/* In your area */}
           {allLocalLists.length > 0 && (
             <>
-              <TouchableOpacity
-                style={styles.areaSectionHeader}
-                onPress={() => navigation.navigate('AllLocalLists', {
-                  lists: allLocalLists,
-                  city: detectedLocation?.city || detectedLocation?.region,
-                })}
-                activeOpacity={0.6}
-              >
-                <View style={styles.titleWithIcon}>
+              <View style={styles.areaSectionHeader}>
+                <TouchableOpacity
+                  style={styles.titleWithIcon}
+                  onPress={() => navigation.navigate('AllLocalLists', {
+                    lists: allLocalLists,
+                    city: detectedLocation?.city || detectedLocation?.region,
+                  })}
+                  activeOpacity={0.6}
+                >
                   <Text style={styles.sectionHeaderInline}>In Your Area</Text>
                   <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
-                </View>
+                </TouchableOpacity>
                 {detectedLocation && (
-                  <View style={styles.areaLocationPill}>
+                  <TouchableOpacity
+                    style={styles.areaLocationPill}
+                    onPress={() => setChangeLocationVisible(true)}
+                    activeOpacity={0.7}
+                  >
                     <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
                     <Text style={styles.areaLocationText}>
                       {detectedLocation.city || detectedLocation.region}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 )}
-              </TouchableOpacity>
+              </View>
               <View style={styles.popularCard}>
                 {allLocalLists.slice(0, 10).map((list, index, arr) => (
                   <React.Fragment key={list.id}>
@@ -246,6 +267,21 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           )}
         </ScrollView>
       )}
+
+      <ChangeLocationModal
+        visible={changeLocationVisible}
+        currentCity={detectedLocation?.city || detectedLocation?.region || ''}
+        onClose={() => setChangeLocationVisible(false)}
+        onLocationChanged={(newLoc) => {
+          setDetectedLocation(newLoc);
+          fetchLocalPlacesLists(newLoc.city).then((lists) => {
+            if (lists.length > 0) {
+              registerDynamicLists(lists);
+              setLocalPlacesLists(lists);
+            }
+          });
+        }}
+      />
     </View>
   );
 };

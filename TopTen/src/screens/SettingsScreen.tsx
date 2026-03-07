@@ -273,14 +273,21 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity
-                  style={styles.signInCard}
-                  onPress={() => navigation.navigate('AuthScreen')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.signInLabel}>Sign In / Create Account</Text>
-                  <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
-                </TouchableOpacity>
+                <View style={styles.signInCard}>
+                  <View style={styles.tierRow}>
+                    <View style={styles.tierLeft}>
+                      <View style={styles.tierBadge}>
+                        <Text style={styles.tierBadgeText}>GUEST</Text>
+                      </View>
+                      <Text style={styles.memberTier}>Not signed in</Text>
+                    </View>
+                    <TouchableOpacity style={styles.upgradeCta} onPress={() => navigation.navigate('AuthScreen')} activeOpacity={0.85}>
+                      <Text style={styles.upgradeCtaText}>Sign In</Text>
+                      <Ionicons name="arrow-forward" size={12} color={colors.activeTab} />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.premiumSubLabel}>Sign in to save lists · community voting · local picks</Text>
+                </View>
               )}
 
               {/* Membership section */}
@@ -474,19 +481,13 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
   },
   signInCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginHorizontal: spacing.lg,
     backgroundColor: colors.cardBackground,
     borderRadius: borderRadius.squircle,
+    overflow: 'hidden',
     padding: spacing.md,
     ...shadow,
     shadowOpacity: 0.06,
-  },
-  signInLabel: {
-    fontSize: 16,
-    color: colors.primaryText,
   },
 
   /* ── Membership Card ── */

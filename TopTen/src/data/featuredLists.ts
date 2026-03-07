@@ -26,19 +26,20 @@ export interface PopularList {
   category: string;
   icon: string;
   color: string;
+  featuredId?: string; // links to a FeaturedList for read-only browse
 }
 
 export const POPULAR_LISTS: PopularList[] = [
-  { id: 'p-1',  title: 'Greatest Athletes of All Time',      category: 'Sports',  icon: 'trophy-outline',         color: CATEGORY_COLORS.Sports  },
-  { id: 'p-2',  title: 'Best Restaurants in the World',      category: 'Food',    icon: 'restaurant-outline',     color: CATEGORY_COLORS.Food    },
-  { id: 'p-3',  title: 'Greatest Songs Ever Recorded',       category: 'Music',   icon: 'musical-notes-outline',  color: CATEGORY_COLORS.Music   },
-  { id: 'p-4',  title: 'Most Iconic Movie Villains',         category: 'Movies',  icon: 'film-outline',           color: CATEGORY_COLORS.Movies  },
-  { id: 'p-5',  title: 'Novels That Changed the World',      category: 'Books',   icon: 'book-outline',           color: CATEGORY_COLORS.Books   },
-  { id: 'p-6',  title: 'Classic Cocktails Everyone Should Know', category: 'Drinks', icon: 'wine-outline',        color: CATEGORY_COLORS.Drinks  },
-  { id: 'p-7',  title: 'Most Binge-Worthy TV Series',        category: 'TV',      icon: 'tv-outline',             color: CATEGORY_COLORS.TV      },
-  { id: 'p-8',  title: 'Comfort Foods for Any Occasion',     category: 'Food',    icon: 'restaurant-outline',     color: CATEGORY_COLORS.Food    },
-  { id: 'p-9',  title: 'Albums You Must Hear Before You Die', category: 'Music',  icon: 'musical-notes-outline',  color: CATEGORY_COLORS.Music   },
-  { id: 'p-10', title: 'Most Thrilling Sporting Events Ever', category: 'Sports', icon: 'trophy-outline',         color: CATEGORY_COLORS.Sports  },
+  { id: 'p-1',  title: 'Greatest Athletes of All Time',         category: 'Sports',  icon: 'trophy-outline',         color: CATEGORY_COLORS.Sports,  featuredId: 'f-3'  },
+  { id: 'p-2',  title: 'Best Restaurants in the World',         category: 'Food',    icon: 'restaurant-outline',     color: CATEGORY_COLORS.Food,    featuredId: 'f-5'  },
+  { id: 'p-3',  title: 'Greatest Songs Ever Recorded',          category: 'Music',   icon: 'musical-notes-outline',  color: CATEGORY_COLORS.Music,   featuredId: 'f-4'  },
+  { id: 'p-4',  title: 'Most Iconic Movie Villains',            category: 'Movies',  icon: 'film-outline',           color: CATEGORY_COLORS.Movies,  featuredId: 'f-1'  },
+  { id: 'p-5',  title: 'Novels That Changed the World',         category: 'Books',   icon: 'book-outline',           color: CATEGORY_COLORS.Books,   featuredId: 'f-2'  },
+  { id: 'p-6',  title: 'Classic Cocktails Everyone Should Know',category: 'Drinks',  icon: 'wine-outline',           color: CATEGORY_COLORS.Drinks,  featuredId: 'f-6'  },
+  { id: 'p-7',  title: 'Most Binge-Worthy TV Series',           category: 'TV',      icon: 'tv-outline',             color: CATEGORY_COLORS.TV,      featuredId: 'f-0'  },
+  { id: 'p-8',  title: 'Comfort Foods for Any Occasion',        category: 'Food',    icon: 'restaurant-outline',     color: CATEGORY_COLORS.Food,    featuredId: 'f-5'  },
+  { id: 'p-9',  title: 'Albums You Must Hear Before You Die',   category: 'Music',   icon: 'musical-notes-outline',  color: CATEGORY_COLORS.Music,   featuredId: 'f-4'  },
+  { id: 'p-10', title: 'Most Thrilling Sporting Events Ever',   category: 'Sports',  icon: 'trophy-outline',         color: CATEGORY_COLORS.Sports,  featuredId: 'f-3'  },
 ];
 
 export const STARTER_LISTS: PopularList[] = [
@@ -152,6 +153,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Simone Biles gymnastics Olympics athlete performance podium wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/5rt3751630757415.jpg',
     previewItems: [
       'Serena Williams',
       'Simone Biles',
@@ -197,6 +199,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Music,
     author: 'Top Ten Editors',
     imageQuery: 'Aretha Franklin Beyonce female musician concert performance microphone wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1704253800608-13206c67b420?w=600&fit=crop&crop=center&auto=format&q=80',
     previewItems: [
       'Aretha Franklin',
       'Beyoncé',
@@ -334,6 +337,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.People,
     author: 'Top Ten Editors',
     imageQuery: 'Marie Curie historical portrait scientist laboratory wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1520960858461-ac671067213e?w=600&fit=crop&crop=center&auto=format&q=80',
     previewItems: [
       'Marie Curie',
       'Harriet Tubman',
@@ -496,7 +500,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Jack Nicklaus golf swing Augusta Masters championship fairway wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1605144156546-91acf5e4cffd?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/a9yq801600339077.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.pgatour.com/stats/detail/02671',
     previewItems: [
@@ -521,6 +525,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'female golfer LPGA swing fairway golf course wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1500932334442-8761ee4810a7?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
     statsSource: 'https://www.lpga.com/statistics',
     previewItems: [
@@ -545,7 +550,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Novak Djokovic Wimbledon tennis grand slam champion court wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1731957238251-1472b9992c29?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/wvrxm31709318210.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.atptour.com/en/stats/grand-slam-titles',
     previewItems: [
@@ -570,6 +575,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Serena Williams tennis grand slam trophy Wimbledon US Open wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1661474973381-130596c650c4?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
     statsSource: 'https://en.wikipedia.org/wiki/List_of_Grand_Slam_women%27s_singles_champions',
     previewItems: [
@@ -594,7 +600,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Barry Bonds home run swing baseball stadium Giants wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1756832430925-d1c85f282736?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/6hx1bw1747756351.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.baseball-reference.com/leaders/HR_career.shtml',
     previewItems: [
@@ -669,7 +675,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'New York Yankees World Series championship baseball stadium celebration confetti',
-    staticImageUrl: 'https://images.unsplash.com/photo-1710827758909-d1cc19d4340b?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/team/fanart/tthg5m1731372489.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.baseball-reference.com/postseason/world_series.shtml',
     previewItems: [
@@ -694,7 +700,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'New England Patriots Super Bowl championship football stadium celebration confetti',
-    staticImageUrl: 'https://images.unsplash.com/photo-1567256181256-6a0419cd94e7?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/team/fanart/yvrptr1420813357.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.pro-football-reference.com/super-bowl/',
     previewItems: [
@@ -719,7 +725,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Tom Brady quarterback throw touchdown NFL stadium Patriots wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1675886051964-e54e7d28cece?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/5y8k7f1612773762.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.pro-football-reference.com/leaders/pass_yds_career.htm',
     previewItems: [
@@ -744,7 +750,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'football field goal kick stadium uprights crowd NFL action wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1675886051958-f425417f7480?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/gm7ktp1662402677.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.pro-football-reference.com/leaders/longest_fg_career.htm',
     previewItems: [
@@ -769,7 +775,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'running back football stadium NFL crowd rushing action game wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1702303208608-fc27f8826b9a?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/lx8icm1756681182.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.pro-football-reference.com/leaders/rush_yds_single_season.htm',
     previewItems: [
@@ -794,7 +800,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Brazil soccer World Cup celebration trophy team stadium wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1637203727318-fb31b63e2377?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/team/fanart/wa103u1668434474.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://en.wikipedia.org/wiki/FIFA_World_Cup',
     previewItems: [
@@ -819,7 +825,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'soccer goal net celebration World Cup stadium crowd scoring wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1698786039213-1d3aec21c6ae?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/5itqje1702787651.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://en.wikipedia.org/wiki/FIFA_World_Cup_records_and_statistics',
     previewItems: [
@@ -844,7 +850,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Alex Ovechkin ice hockey NHL Washington Capitals goal celebration rink wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1741954034331-fab787e04de6?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/e3etsk1545567339.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.hockey-reference.com/leaders/goals_career.html',
     previewItems: [
@@ -869,7 +875,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Wayne Gretzky hockey NHL passing puck assist rink Oilers wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1769437881488-be0ce0618eef?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/igidj51762460612.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.hockey-reference.com/leaders/assists_career.html',
     previewItems: [
@@ -894,7 +900,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Montreal Canadiens Stanley Cup hockey championship celebration ice wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1757889692951-4bf80690cc6a?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/team/fanart/m97ca21554478375.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.hockey-reference.com/friv/stanley_cup_champions_list.html',
     previewItems: [
@@ -919,7 +925,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Bill Russell Boston Celtics basketball championship NBA wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1647245953214-82cd23c5af13?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/s22tla1515151500.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.basketball-reference.com/friv/championships.fcgi',
     previewItems: [
@@ -944,7 +950,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Boston Celtics Los Angeles Lakers NBA championship basketball arena wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1518409274682-1cb2fe2955a8?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/team/fanart/3bbiqw1549272990.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.basketball-reference.com/friv/championships.fcgi',
     previewItems: [
@@ -969,7 +975,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'LeBron James scoring basketball NBA court arena action wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1765924705648-9a0731ac5202?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/xqnfa51723398837.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.basketball-reference.com/leaders/pts_career.html',
     previewItems: [
@@ -994,7 +1000,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Sports,
     author: 'Top Ten Editors',
     imageQuery: 'Wilt Chamberlain basketball scoring vintage NBA historic wide',
-    staticImageUrl: 'https://images.unsplash.com/photo-1725714833427-4e71b50ca712?w=600&fit=crop&crop=center&auto=format&q=80',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/rifx1c1515150350.jpg',
     updatedAt: 'March 2026',
     statsSource: 'https://www.basketball-reference.com/leaders/pts_per_g_career.html',
     previewItems: [
@@ -1019,6 +1025,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Travel,
     author: 'Top Ten Editors',
     imageQuery: 'satellite Earth globe continents world map aerial view wide',
+    staticImageUrl: 'https://plus.unsplash.com/premium_photo-1681488098851-e3913f3b1908?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
     statsSource: 'https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_area',
     previewItems: [
@@ -1067,6 +1074,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Travel,
     author: 'Top Ten Editors',
     imageQuery: 'Eiffel Tower Paris France tourism landmark travel wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1476973422084-e0fa66ff9456?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
     statsSource: 'https://www.unwto.org/tourism-statistics/key-tourism-statistics',
     previewItems: [
@@ -1163,6 +1171,7 @@ export const FEATURED_LISTS: FeaturedList[] = [
     color: CATEGORY_COLORS.Travel,
     author: 'Top Ten Editors',
     imageQuery: 'Greenland aerial tundra ice fjord island coastline wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1502085671122-2d218cd434e6?w=600&fit=crop&crop=center&auto=format&q=80',
     updatedAt: 'March 2026',
     statsSource: 'https://en.wikipedia.org/wiki/List_of_islands_by_area',
     previewItems: [

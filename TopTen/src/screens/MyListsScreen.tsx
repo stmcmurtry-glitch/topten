@@ -301,46 +301,58 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
       {/* My Lists */}
       <View style={styles.sectionHeaderRow}>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={() => navigation.navigate('MyLists')} activeOpacity={0.7}>
+        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={() => user ? navigation.navigate('MyLists') : navigation.navigate('AuthScreen')} activeOpacity={0.7}>
           <Text style={styles.sectionHeaderInline}>My Lists</Text>
           <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.feedCard}>
-        {displayLists.map((list, index) => (
-          <React.Fragment key={list.id}>
-            <FeedRow
-              list={list}
-              onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
-              flat
-              rank={index + 1}
-            />
-            {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
-          </React.Fragment>
-        ))}
-      </View>
+      {user ? (
+        <>
+          <View style={styles.feedCard}>
+            {displayLists.map((list, index) => (
+              <React.Fragment key={list.id}>
+                <FeedRow
+                  list={list}
+                  onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
+                  flat
+                  rank={index + 1}
+                />
+                {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
+              </React.Fragment>
+            ))}
+          </View>
 
-      {displayLists.length === 0 && (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No lists in this category yet.</Text>
+          {displayLists.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No lists in this category yet.</Text>
+              <TouchableOpacity
+                style={styles.emptyButton}
+                onPress={() => navigation.navigate('CreateList')}
+              >
+                <Text style={styles.emptyButtonText}>Create one</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <TouchableOpacity
-            style={styles.emptyButton}
+            style={styles.addButton}
             onPress={() => navigation.navigate('CreateList')}
           >
-            <Text style={styles.emptyButtonText}>Create one</Text>
+            <Ionicons name="add-circle-outline" size={22} color={colors.activeTab} />
+            <Text style={styles.addText}>New List</Text>
           </TouchableOpacity>
-        </View>
+        </>
+      ) : (
+        <TouchableOpacity style={styles.myListsLockCard} onPress={() => navigation.navigate('AuthScreen')} activeOpacity={0.85}>
+          <Ionicons name="lock-closed-outline" size={18} color={colors.secondaryText} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.myListsLockTitle}>Sign in to see your lists</Text>
+            <Text style={styles.myListsLockSub}>Create and manage your personal top tens</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+        </TouchableOpacity>
       )}
-
-      {/* Add List Footer */}
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('CreateList')}
-      >
-        <Ionicons name="add-circle-outline" size={22} color={colors.activeTab} />
-        <Text style={styles.addText}>New List</Text>
-      </TouchableOpacity>
 
       <ChangeLocationModal
         visible={changeLocationVisible}
@@ -533,6 +545,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.activeTab,
+  },
+  myListsLockCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.squircle,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow,
+    shadowOpacity: 0.06,
+  },
+  myListsLockTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primaryText,
+    marginBottom: 2,
+  },
+  myListsLockSub: {
+    fontSize: 12,
+    color: colors.secondaryText,
   },
 
   /* ── Community Card — matches PickCard dimensions exactly ── */
