@@ -25,7 +25,7 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://sapixeicileobndfzoiu.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_1DLktn4TKdemIpSUOqudow_NtxKEzx-",
         "EXPO_PUBLIC_SENTRY_DSN": "https://6cb68366300114a8a2675f48bcf5116d@o4510937814728704.ingest.us.sentry.io/4510937820102656",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": ""
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "204648706323-pieq603j6jno2t0ies4quvrri72nip65.apps.googleusercontent.com"
       }
     },
     "production": {
@@ -45,7 +45,7 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://sapixeicileobndfzoiu.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_1DLktn4TKdemIpSUOqudow_NtxKEzx-",
         "EXPO_PUBLIC_SENTRY_DSN": "https://6cb68366300114a8a2675f48bcf5116d@o4510937814728704.ingest.us.sentry.io/4510937820102656",
-        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": ""
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "204648706323-pieq603j6jno2t0ies4quvrri72nip65.apps.googleusercontent.com"
       }
     }
   },
