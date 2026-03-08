@@ -60,32 +60,36 @@ export const ExploreAreasScreen: React.FC<{ navigation: any }> = ({ navigation }
   const isSearching = query.trim().length > 0;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.headerBar, { paddingTop: insets.top + spacing.sm }]}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={22} color={colors.primaryText} />
+          <Ionicons name="chevron-back" size={22} color="#FFF" />
         </TouchableOpacity>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={16} color={colors.secondaryText} />
-          <TextInput
-            ref={inputRef}
-            style={styles.searchInput}
-            value={query}
-            onChangeText={handleQueryChange}
-            placeholder="Search for a city or area…"
-            placeholderTextColor={colors.secondaryText}
-            returnKeyType="search"
-            autoCorrect={false}
-            autoCapitalize="words"
-            clearButtonMode="while-editing"
-          />
-          {loading && <ActivityIndicator size="small" color={colors.secondaryText} />}
-        </View>
+        <Text style={styles.headerTitle}>Popular Areas</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={16} color={colors.secondaryText} />
+        <TextInput
+          ref={inputRef}
+          style={styles.searchInput}
+          value={query}
+          onChangeText={handleQueryChange}
+          placeholder="Search for a city or area…"
+          placeholderTextColor={colors.secondaryText}
+          returnKeyType="search"
+          autoCorrect={false}
+          autoCapitalize="words"
+          clearButtonMode="while-editing"
+        />
+        {loading && <ActivityIndicator size="small" color={colors.secondaryText} />}
       </View>
 
       {isSearching ? (
@@ -93,6 +97,7 @@ export const ExploreAreasScreen: React.FC<{ navigation: any }> = ({ navigation }
         <>
           <Text style={styles.sectionLabel}>RESULTS</Text>
           <FlatList
+            key="search-results"
             data={results}
             keyExtractor={(_, i) => String(i)}
             keyboardShouldPersistTaps="handled"
@@ -131,6 +136,7 @@ export const ExploreAreasScreen: React.FC<{ navigation: any }> = ({ navigation }
         <>
           <Text style={styles.sectionLabel}>POPULAR AREAS</Text>
           <FlatList
+            key="city-grid"
             data={EXPLORE_CITIES}
             keyExtractor={item => item.id}
             numColumns={2}
@@ -179,29 +185,36 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
+  headerBar: {
+    backgroundColor: '#000',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xl,
   },
   backBtn: {
     width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -6,
+    alignItems: 'flex-start',
     flexShrink: 0,
   },
-  searchBar: {
+  headerTitle: {
     flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  headerSpacer: {
+    width: 32,
+  },
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
     borderRadius: borderRadius.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
     ...shadow,

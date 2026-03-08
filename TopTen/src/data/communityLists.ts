@@ -3,6 +3,7 @@ export interface CommunityItem {
   title: string;
   seedScore: number;
   artist?: string;
+  location?: string; // "City, ST" — shown as small secondary text for place-based items
 }
 
 export interface Sponsored {
@@ -21,6 +22,7 @@ export interface CommunityList {
   participantCount: number;
   items: CommunityItem[];
   imageQuery: string;   // Unsplash landscape query for the card/header image
+  staticImageUrl?: string; // pinned image — bypasses all cache/API logic
   region?: string;      // e.g. 'Philadelphia' — present only on local/area lists
   sponsored?: Sponsored;
 }
@@ -98,7 +100,8 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     category: 'Sports',
     color: '#FF9F43',
     icon: 'trophy-outline',
-    imageQuery: 'Michael Jordan Chicago Bulls basketball dunk silhouette court wide',
+    imageQuery: 'Muhammad Ali boxing champion Greatest heavyweight silhouette wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/1di2291674467823.jpg',
     description: 'The GOAT debate, settled by you. Who is the greatest athlete of all time?',
     participantCount: 68,
     items: [
@@ -121,6 +124,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#4ECDC4',
     icon: 'book-outline',
     imageQuery: 'To Kill a Mockingbird novel classic American Southern literature wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'Literature that endures. Which books belong in every library?',
     participantCount: 29,
     items: [
@@ -187,6 +191,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#FD79A8',
     icon: 'people-outline',
     imageQuery: 'Isaac Newton physicist gravity scientist historic portrait apple wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1535515384173-d74166f26820?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'Who changed the world the most? Cast your vote for history\'s greatest influencer.',
     participantCount: 38,
     items: [
@@ -209,6 +214,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#FDCB6E',
     icon: 'shirt-outline',
     imageQuery: 'Audrey Hepburn Breakfast at Tiffany elegant style Hollywood iconic wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1608228088998-57828365d486?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'Whose style defined an era? Vote for the most iconic fashion figures of all time.',
     participantCount: 22,
     items: [
@@ -253,6 +259,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#45AAF2',
     icon: 'laptop-outline',
     imageQuery: 'internet technology global network data connectivity server wide',
+    staticImageUrl: 'https://plus.unsplash.com/premium_photo-1661963874418-df1110ee39c1?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'Which invention changed the world more than any other? Cast your vote.',
     participantCount: 31,
     items: [
@@ -275,6 +282,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#E17055',
     icon: 'color-palette-outline',
     imageQuery: 'Mona Lisa da Vinci Louvre painting portrait art masterpiece wide',
+    staticImageUrl: 'https://images.unsplash.com/flagged/photo-1572392640988-ba48d1a74457?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'The masterpieces that moved the world. Which work of art stands above all others?',
     participantCount: 14,
     items: [
@@ -321,6 +329,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#2D9E60',
     icon: 'golf-outline',
     imageQuery: 'Jack Nicklaus golf swing Augusta Masters championship fairway wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/a9yq801600339077.jpg',
     description: 'Beyond the trophies — who is the greatest golfer to ever play the game?',
     participantCount: 19,
     items: [
@@ -345,6 +354,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#C8A84B',
     icon: 'tennisball-outline',
     imageQuery: 'Novak Djokovic Wimbledon tennis grand slam champion court wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'Across eras and genders — who is the greatest tennis player in history?',
     participantCount: 32,
     items: [
@@ -369,6 +379,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#C8102E',
     icon: 'baseball-outline',
     imageQuery: 'New York Yankees baseball historic stadium crowd vintage 1920s wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/team/fanart/tthg5m1731372489.jpg',
     description: 'The most dominant teams ever assembled for a single season.',
     participantCount: 15,
     items: [
@@ -391,6 +402,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#C8102E',
     icon: 'baseball-outline',
     imageQuery: 'Babe Ruth Yankees baseball swing stadium vintage historic wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/8zkaej1762459665.jpg',
     description: 'From Babe to Barry — who is the greatest to ever play the game?',
     participantCount: 26,
     items: [
@@ -415,6 +427,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#6B3A2A',
     icon: 'american-football-outline',
     imageQuery: 'Jerry Rice San Francisco 49ers wide receiver football touchdown wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/j8cydx1540064020.jpg',
     description: 'The debate that never ends. Who is the greatest football player in NFL history?',
     participantCount: 58,
     items: [
@@ -437,6 +450,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#6B3A2A',
     icon: 'american-football-outline',
     imageQuery: 'Lambeau Field Green Bay Packers stadium aerial snow game day wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/team/fanart/yusz3r1731279655.jpg',
     description: 'The cathedrals of football. Which stadium delivers the best experience on game day?',
     participantCount: 21,
     items: [
@@ -461,6 +475,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#1565C0',
     icon: 'football-outline',
     imageQuery: 'Pelé Brazil soccer football 1970 World Cup celebration iconic wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/dzaqec1545557822.jpg',
     description: 'The beautiful game\'s greatest. Who is the best footballer to ever lace up boots?',
     participantCount: 65,
     items: [
@@ -483,6 +498,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#1565C0',
     icon: 'football-outline',
     imageQuery: 'Brazil 1970 World Cup soccer team celebration Pelé Jairzinho wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1637203727700-9d86c74904d6?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'The most brilliant national squads ever assembled for a single World Cup tournament.',
     participantCount: 17,
     items: [
@@ -507,6 +523,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#4A90D9',
     icon: 'snow-outline',
     imageQuery: 'Wayne Gretzky Oilers ice hockey NHL rink skating wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/igidj51762460612.jpg',
     description: 'On the ice, one name stands alone — but who rounds out the all-time list?',
     participantCount: 20,
     items: [
@@ -529,6 +546,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#4A90D9',
     icon: 'snow-outline',
     imageQuery: 'Montreal Canadiens 1977 ice hockey team NHL championship rink wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1608980125376-d72052af1180?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'The most dominant teams in NHL history during a single regular season and playoffs.',
     participantCount: 11,
     items: [
@@ -553,6 +571,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#E65C00',
     icon: 'basketball-outline',
     imageQuery: 'Chicago Bulls 1996 basketball team Michael Jordan championship wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1533923156502-be31530547c4?w=600&fit=crop&crop=center&auto=format&q=80',
     description: 'The most dominant teams ever assembled for a single NBA season.',
     participantCount: 16,
     items: [
@@ -575,6 +594,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#E65C00',
     icon: 'basketball-outline',
     imageQuery: 'Michael Jordan Chicago Bulls basketball iconic dunk court arena wide',
+    staticImageUrl: 'https://r2.thesportsdb.com/images/media/player/thumb/tug4951694979431.jpg',
     description: 'Jordan or LeBron? Russell or Kareem? Cast your vote in the ultimate GOAT debate.',
     participantCount: 62,
     items: [
@@ -588,6 +608,205 @@ export const COMMUNITY_LISTS: CommunityList[] = [
       { id: 'cbbgoat-8',  title: 'Tim Duncan',            seedScore:  441 },
       { id: 'cbbgoat-9',  title: 'Kobe Bryant',           seedScore:  395 },
       { id: 'cbbgoat-10', title: 'Shaquille O\'Neal',     seedScore:  344 },
+    ],
+  },
+  // ── Food: places & chains ────────────────────────────────────────────────────
+  {
+    id: 'community-sandwich-shops',
+    title: 'Best Sandwich Shop Locations in America',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'deli sandwich pastrami rye bread counter shop New York',
+    description: 'No national franchise chains. Vote for the specific location you\'ve been to — each outpost stands on its own. Which single sandwich shop location is the best in the country?',
+    participantCount: 18,
+    items: [
+      { id: 'csw-1',  title: 'Katz\'s Delicatessen',         location: 'New York, NY',       seedScore: 540 },
+      { id: 'csw-2',  title: 'Turkey and the Wolf',           location: 'New Orleans, LA',    seedScore: 505 },
+      { id: 'csw-3',  title: 'Primanti Bros',                 location: 'Pittsburgh, PA',     seedScore: 472 },
+      { id: 'csw-4',  title: 'Paesano\'s',                   location: 'Philadelphia, PA',   seedScore: 440 },
+      { id: 'csw-5',  title: 'Cochon Butcher',                location: 'New Orleans, LA',    seedScore: 408 },
+      { id: 'csw-6',  title: 'Ike\'s Love & Sandwiches',     location: 'San Francisco, CA',  seedScore: 375 },
+      { id: 'csw-7',  title: 'Mr. Beef on Orleans',           location: 'Chicago, IL',        seedScore: 340 },
+      { id: 'csw-8',  title: 'Publican Quality Meats',        location: 'Chicago, IL',        seedScore: 303 },
+      { id: 'csw-9',  title: 'Brennan & Carr',                location: 'Brooklyn, NY',       seedScore: 265 },
+      { id: 'csw-10', title: 'Mendocino Farms',               location: 'Los Angeles, CA',    seedScore: 225 },
+    ],
+  },
+  {
+    id: 'community-sandwich-chains',
+    title: 'Best Sandwich Chains',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'sandwich shop chain sub roll counter fresh ingredients',
+    description: 'Chains and franchises only. Ranked by bread quality, ingredient freshness, and consistency.',
+    participantCount: 34,
+    items: [
+      { id: 'cswc-1',  title: 'Jersey Mike\'s Subs',       seedScore: 530 },
+      { id: 'cswc-2',  title: 'Firehouse Subs',            seedScore: 497 },
+      { id: 'cswc-3',  title: 'Jimmy John\'s',             seedScore: 463 },
+      { id: 'cswc-4',  title: 'McAlister\'s Deli',         seedScore: 428 },
+      { id: 'cswc-5',  title: 'Jason\'s Deli',             seedScore: 392 },
+      { id: 'cswc-6',  title: 'Potbelly Sandwich Works',   seedScore: 355 },
+      { id: 'cswc-7',  title: 'Which Wich',                seedScore: 316 },
+      { id: 'cswc-8',  title: 'Capriotti\'s Sandwich Shop',seedScore: 275 },
+      { id: 'cswc-9',  title: 'Subway',                    seedScore: 232 },
+      { id: 'cswc-10', title: 'Quiznos',                   seedScore: 187 },
+    ],
+  },
+  {
+    id: 'community-bakeries',
+    title: 'Best Bakery Locations in America',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'artisan bakery bread loaves rustic wooden counter sourdough',
+    description: 'No national franchise chains. Vote for the specific location you\'ve visited — which single bakery location makes the best bread in America?',
+    participantCount: 22,
+    items: [
+      { id: 'cbk-1',  title: 'Tartine Bakery',         location: 'San Francisco, CA', seedScore: 540 },
+      { id: 'cbk-2',  title: 'Levain Bakery',          location: 'New York, NY',      seedScore: 510 },
+      { id: 'cbk-3',  title: 'Ken\'s Artisan Bakery',  location: 'Portland, OR',      seedScore: 475 },
+      { id: 'cbk-4',  title: 'Bien Cuit',              location: 'Brooklyn, NY',      seedScore: 440 },
+      { id: 'cbk-5',  title: 'Sullivan Street Bakery', location: 'New York, NY',      seedScore: 405 },
+      { id: 'cbk-6',  title: 'Zingerman\'s Bakehouse', location: 'Ann Arbor, MI',     seedScore: 368 },
+      { id: 'cbk-7',  title: 'Republique',             location: 'Los Angeles, CA',   seedScore: 330 },
+      { id: 'cbk-8',  title: 'Balthazar Bakery',       location: 'New York, NY',      seedScore: 290 },
+      { id: 'cbk-9',  title: 'Seven Stars Bakery',     location: 'Providence, RI',    seedScore: 248 },
+      { id: 'cbk-10', title: 'La Farm Bakery',         location: 'Cary, NC',          seedScore: 205 },
+    ],
+  },
+  {
+    id: 'community-pastry-shops',
+    title: 'Best Pastry Shop Locations in America',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'pastry shop display case croissants tarts elegant patisserie',
+    description: 'No national franchise chains. Vote for the specific location you\'ve visited — which single pastry shop location is the best in America?',
+    participantCount: 19,
+    items: [
+      { id: 'cps-1',  title: 'Dominique Ansel Bakery',    location: 'New York, NY',      seedScore: 550 },
+      { id: 'cps-2',  title: 'Milk Bar',                  location: 'New York, NY',      seedScore: 515 },
+      { id: 'cps-3',  title: 'Bouchon Bakery',            location: 'Yountville, CA',    seedScore: 478 },
+      { id: 'cps-4',  title: 'Flour Bakery + Cafe',       location: 'Boston, MA',        seedScore: 440 },
+      { id: 'cps-5',  title: 'Porto\'s Bakery',           location: 'Glendale, CA',      seedScore: 403 },
+      { id: 'cps-6',  title: 'Bottega Louie',             location: 'Los Angeles, CA',   seedScore: 365 },
+      { id: 'cps-7',  title: 'Craftsman and Wolves',      location: 'San Francisco, CA', seedScore: 325 },
+      { id: 'cps-8',  title: 'Bang Bang Pie & Biscuits',  location: 'Chicago, IL',       seedScore: 283 },
+      { id: 'cps-9',  title: 'Pâtisserie Chanson',        location: 'New York, NY',      seedScore: 238 },
+      { id: 'cps-10', title: 'Mah-Ze-Dahr Bakery',        location: 'New York, NY',      seedScore: 192 },
+    ],
+  },
+  {
+    id: 'community-diners',
+    title: 'Most Iconic American Diner Locations',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'classic American diner neon sign counter stools chrome retro',
+    description: 'Vote for the specific location you\'ve sat down at. Ranked by historical significance, architectural authenticity, and how well that spot captures the spirit of the all-day American diner.',
+    participantCount: 27,
+    items: [
+      { id: 'cdn-1',  title: 'Lou Mitchell\'s',               location: 'Chicago, IL',         seedScore: 525 },
+      { id: 'cdn-2',  title: 'Mickey\'s Diner',               location: 'St. Paul, MN',        seedScore: 492 },
+      { id: 'cdn-3',  title: 'Mel\'s Drive-In',               location: 'San Francisco, CA',   seedScore: 458 },
+      { id: 'cdn-4',  title: 'Tick Tock Diner',               location: 'Clifton, NJ',         seedScore: 422 },
+      { id: 'cdn-5',  title: 'The Original Pancake House',    location: 'Portland, OR',        seedScore: 385 },
+      { id: 'cdn-6',  title: 'Square Diner',                  location: 'New York, NY',        seedScore: 345 },
+      { id: 'cdn-7',  title: 'Veselka',                       location: 'New York, NY',        seedScore: 302 },
+      { id: 'cdn-8',  title: 'The Blue Benn',                 location: 'Bennington, VT',      seedScore: 258 },
+      { id: 'cdn-9',  title: 'Slim\'s Last Chance',           location: 'Seattle, WA',         seedScore: 213 },
+      { id: 'cdn-10', title: 'Nick\'s Diner',                 location: 'Los Angeles, CA',     seedScore: 168 },
+    ],
+  },
+  {
+    id: 'community-fast-food',
+    title: 'Best Fast Food Chains',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'fast food burger fries drive through restaurant window counter',
+    description: 'Chains only. Ranked by food quality, value, consistency, and cult-level customer devotion — not just sales volume.',
+    participantCount: 89,
+    items: [
+      { id: 'cff-1',  title: 'In-N-Out Burger',    seedScore: 580 },
+      { id: 'cff-2',  title: 'Chick-fil-A',         seedScore: 552 },
+      { id: 'cff-3',  title: 'Whataburger',         seedScore: 521 },
+      { id: 'cff-4',  title: 'Five Guys',           seedScore: 488 },
+      { id: 'cff-5',  title: 'Raising Cane\'s',     seedScore: 453 },
+      { id: 'cff-6',  title: 'Culver\'s',           seedScore: 416 },
+      { id: 'cff-7',  title: 'Popeyes',             seedScore: 377 },
+      { id: 'cff-8',  title: 'Shake Shack',         seedScore: 336 },
+      { id: 'cff-9',  title: 'Sonic Drive-In',      seedScore: 292 },
+      { id: 'cff-10', title: 'McDonald\'s',         seedScore: 244 },
+    ],
+  },
+  {
+    id: 'community-fast-casual',
+    title: 'Best Fast Casual Chains',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'fast casual restaurant modern bright interior bowl grain fresh',
+    description: 'Chains only. Ranked by food quality, ingredient sourcing, and how well they deliver a real meal at counter-service speed.',
+    participantCount: 56,
+    items: [
+      { id: 'cfc-1',  title: 'Chipotle Mexican Grill',    seedScore: 560 },
+      { id: 'cfc-2',  title: 'Shake Shack',               seedScore: 528 },
+      { id: 'cfc-3',  title: 'First Watch',               seedScore: 495 },
+      { id: 'cfc-4',  title: 'Panera Bread',              seedScore: 460 },
+      { id: 'cfc-5',  title: 'Noodles & Company',         seedScore: 423 },
+      { id: 'cfc-6',  title: 'Cafe Rio',                  seedScore: 385 },
+      { id: 'cfc-7',  title: 'Blaze Pizza',               seedScore: 344 },
+      { id: 'cfc-8',  title: 'The Habit Burger Grill',    seedScore: 301 },
+      { id: 'cfc-9',  title: 'Mod Pizza',                 seedScore: 256 },
+      { id: 'cfc-10', title: 'Panda Express',             seedScore: 208 },
+    ],
+  },
+  {
+    id: 'community-bbq',
+    title: 'Best BBQ Joint Locations in America',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'bbq brisket smoke pit barbecue Texas ribs wood fire',
+    description: 'No national franchise chains. Vote for the specific pit you\'ve eaten at — drawn from Texas Monthly\'s BBQ rankings, Eater\'s regional guides, and James Beard recognition.',
+    participantCount: 31,
+    items: [
+      { id: 'cbbq-1',  title: 'Franklin Barbecue',         location: 'Austin, TX',        seedScore: 590 },
+      { id: 'cbbq-2',  title: 'Goldee\'s Barbecue',        location: 'Fort Worth, TX',    seedScore: 558 },
+      { id: 'cbbq-3',  title: 'Snow\'s BBQ',               location: 'Lexington, TX',     seedScore: 523 },
+      { id: 'cbbq-4',  title: 'Pecan Lodge',               location: 'Dallas, TX',        seedScore: 487 },
+      { id: 'cbbq-5',  title: 'Joe\'s Kansas City BBQ',    location: 'Kansas City, KS',   seedScore: 450 },
+      { id: 'cbbq-6',  title: '17th Street BBQ',           location: 'Murphysboro, IL',   seedScore: 411 },
+      { id: 'cbbq-7',  title: 'Hometown Bar-B-Que',        location: 'Brooklyn, NY',      seedScore: 370 },
+      { id: 'cbbq-8',  title: 'Scott\'s Bar-B-Que',        location: 'Hemingway, SC',     seedScore: 327 },
+      { id: 'cbbq-9',  title: 'Central BBQ',               location: 'Memphis, TN',       seedScore: 281 },
+      { id: 'cbbq-10', title: 'Dreamland Bar-B-Que',       location: 'Tuscaloosa, AL',    seedScore: 232 },
+    ],
+  },
+  {
+    id: 'community-salad-chains',
+    title: 'Best Salad Restaurant Chains',
+    category: 'Food',
+    color: '#FFB347',
+    icon: 'restaurant-outline',
+    imageQuery: 'fresh salad bowl greens grain healthy restaurant bright colorful',
+    description: 'Chains and multi-location concepts only. Ranked by ingredient freshness, menu depth, and how consistently they deliver a real meal.',
+    participantCount: 41,
+    items: [
+      { id: 'csc-1',  title: 'Sweetgreen',               seedScore: 540 },
+      { id: 'csc-2',  title: 'Cava',                     seedScore: 508 },
+      { id: 'csc-3',  title: 'Dig',                      seedScore: 473 },
+      { id: 'csc-4',  title: 'Just Salad',               seedScore: 437 },
+      { id: 'csc-5',  title: 'Mixt',                     seedScore: 399 },
+      { id: 'csc-6',  title: 'Chopt Creative Salad Co.', seedScore: 359 },
+      { id: 'csc-7',  title: 'Tender Greens',            seedScore: 317 },
+      { id: 'csc-8',  title: 'Lemonade Restaurant',      seedScore: 272 },
+      { id: 'csc-9',  title: 'Nékter Juice Bar',         seedScore: 225 },
+      { id: 'csc-10', title: 'Salata',                   seedScore: 176 },
     ],
   },
 ];

@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   Image,
   FlatList,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,9 +16,7 @@ import { useCommunity } from '../context/CommunityContext';
 import { fetchCommunityImage } from '../services/featuredContentService';
 import { sortCommunityLists, getCommunityBucket, PriorityBucket } from '../utils/listPriority';
 import { colors, spacing, borderRadius, shadow } from '../theme';
-import { BackButton } from '../components/BackButton';
-
-const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
+import { CategoryFilterSheet } from '../components/CategoryFilterSheet';
 
 const SectionLabel: React.FC<{ text: string }> = ({ text }) => (
   <Text style={styles.sectionLabel}>{text}</Text>
@@ -50,8 +48,8 @@ const CommunityFeedRow: React.FC<{
 }> = ({ list, bucket, onPress, liveCount }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title).then(setImageUrl);
+  React.useEffect(() => {
+    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title, list.staticImageUrl).then(setImageUrl);
   }, [list.id]);
 
   return (
@@ -84,18 +82,20 @@ export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigat
   const insets = useSafeAreaInsets();
   const { userRankings, participantCounts } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [sheetVisible, setSheetVisible] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'vote-now' | 'voted'>('all');
+  const [query, setQuery] = useState('');
 
-  const allCategories = ['All', ...ALL_CATEGORY_LABELS];
   const statusOptions = [
     { key: 'all', label: 'All' },
     { key: 'vote-now', label: 'Vote Now' },
     { key: 'voted', label: 'Voted' },
   ] as const;
 
-  const filtered = activeCategory === 'All'
-    ? COMMUNITY_LISTS
-    : COMMUNITY_LISTS.filter((l) => l.category === activeCategory);
+  const q = query.toLowerCase().trim();
+  const filtered = COMMUNITY_LISTS
+    .filter((l) => activeCategory === 'All' || l.category === activeCategory)
+    .filter((l) => !q || l.title.toLowerCase().includes(q));
 
   const { recent, newLists, done } = sortCommunityLists(filtered, userRankings);
 
@@ -107,35 +107,42 @@ export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigat
   if ((statusFilter === 'all' || statusFilter === 'voted') && done.length > 0)
     sections.push({ key: 'done', data: done, label: 'VOTED' });
 
-  return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-      </View>
-      <Text style={styles.screenTitle}>Community Lists</Text>
+  const categoryLabel = activeCategory === 'All' ? 'All Categories' : activeCategory;
+  const categoryColor = activeCategory === 'All'
+    ? undefined
+    : CATEGORIES.find(c => c.label === activeCategory)?.color;
 
-      {/* Category Pill Bar */}
-      <View style={styles.pillBarWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillBar}
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.headerBar, { paddingTop: insets.top + spacing.sm }]}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          {allCategories.map((cat) => {
-            const active = cat === activeCategory;
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.pill, active && styles.pillActive]}
-                onPress={() => setActiveCategory(cat)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.pillText, active && styles.pillTextActive]}>{cat}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+          <Ionicons name="chevron-back" size={22} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.screenTitle}>Community Lists</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={16} color={colors.secondaryText} />
+        <TextInput
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search community lists…"
+          placeholderTextColor={colors.secondaryText}
+          returnKeyType="search"
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery('')}>
+            <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Status Segmented Control */}
@@ -157,11 +164,27 @@ export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigat
         })}
       </View>
 
+      {/* Category Filter Chip */}
+      <TouchableOpacity
+        style={[styles.categoryChipBtn, categoryColor && { borderColor: categoryColor }]}
+        onPress={() => setSheetVisible(true)}
+        activeOpacity={0.7}
+      >
+        {categoryColor && (
+          <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
+        )}
+        <Text style={[styles.categoryChipBtnText, categoryColor && { color: categoryColor }]}>
+          {categoryLabel}
+        </Text>
+        <Ionicons name="chevron-down" size={14} color={categoryColor ?? colors.secondaryText} />
+      </TouchableOpacity>
+
       {/* Sections */}
       <FlatList
         data={sections}
         keyExtractor={(s) => s.key}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
         contentContainerStyle={styles.listContent}
         renderItem={({ item: section }) => (
           <View style={styles.sectionBlock}>
@@ -183,9 +206,16 @@ export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigat
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No lists in this category.</Text>
+            <Text style={styles.emptyText}>No lists found.</Text>
           </View>
         }
+      />
+
+      <CategoryFilterSheet
+        visible={sheetVisible}
+        selected={activeCategory}
+        onSelect={setActiveCategory}
+        onClose={() => setSheetVisible(false)}
       />
     </View>
   );
@@ -196,24 +226,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: spacing.sm,
-    paddingTop: spacing.xs,
+  headerBar: {
+    backgroundColor: colors.activeTab,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  backBtn: {
+    width: 32,
+  },
+  headerSpacer: {
+    width: 32,
   },
   screenTitle: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: colors.primaryText,
-    letterSpacing: -0.5,
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.xs,
-  },
-  pillBarWrapper: {
-    paddingVertical: spacing.md,
-  },
-  pillBar: {
-    paddingHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
     gap: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.primaryText,
+    paddingVertical: spacing.md,
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -247,26 +296,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primaryText,
   },
-  pill: {
+  categoryChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 9,
+    borderRadius: borderRadius.md,
     backgroundColor: colors.cardBackground,
-    marginRight: spacing.xs,
+    ...shadow,
+    shadowOpacity: 0.06,
   },
-  pillActive: {
-    backgroundColor: '#CC0000',
-    borderColor: '#CC0000',
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  pillText: {
+  categoryChipBtnText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: colors.primaryText,
-  },
-  pillTextActive: {
-    color: '#FFF',
+    fontWeight: '600',
+    color: colors.secondaryText,
   },
   listContent: {
     paddingBottom: spacing.xxl,
@@ -330,9 +381,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  badgeNew: {
-    backgroundColor: '#007AFF',
-  },
   badgeRecent: {
     backgroundColor: '#2ECC71',
   },
@@ -343,9 +391,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.4,
-  },
-  badgeTextNew: {
-    color: '#FFF',
   },
   badgeTextRecent: {
     color: '#FFF',

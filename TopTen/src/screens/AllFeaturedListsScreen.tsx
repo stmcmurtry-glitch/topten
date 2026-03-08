@@ -4,20 +4,18 @@ import {
   Text,
   Image,
   FlatList,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { FEATURED_LISTS, FeaturedList } from '../data/featuredLists';
 import { CATEGORIES } from '../data/categories';
 import { fetchFeaturedImage } from '../services/featuredContentService';
-import { getViewedFeaturedIds, markFeaturedViewed, isViewedSync } from '../services/viewedListsService';
+import { getViewedFeaturedIds, markFeaturedViewed } from '../services/viewedListsService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
-import { BackButton } from '../components/BackButton';
-
-const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
+import { CategoryFilterSheet } from '../components/CategoryFilterSheet';
 
 const SectionLabel: React.FC<{ text: string }> = ({ text }) => (
   <Text style={styles.sectionLabel}>{text}</Text>
@@ -66,23 +64,25 @@ const FeaturedFeedRow: React.FC<{
 export const AllFeaturedListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [sheetVisible, setSheetVisible] = useState(false);
   const [viewedIds, setViewedIds] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'browse-again'>('all');
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     getViewedFeaturedIds().then(setViewedIds);
   }, []);
 
-  const allCategories = ['All', ...ALL_CATEGORY_LABELS];
   const statusOptions = [
     { key: 'all', label: 'All' },
     { key: 'new', label: 'New' },
     { key: 'browse-again', label: 'Browse Again' },
   ] as const;
 
-  const filtered = activeCategory === 'All'
-    ? FEATURED_LISTS
-    : FEATURED_LISTS.filter((l) => l.category === activeCategory);
+  const q = query.toLowerCase().trim();
+  const filtered = FEATURED_LISTS
+    .filter((l) => activeCategory === 'All' || l.category === activeCategory)
+    .filter((l) => !q || l.title.toLowerCase().includes(q));
 
   const unviewed = filtered.filter((l) => !viewedIds.has(l.id));
   const viewed = filtered.filter((l) => viewedIds.has(l.id));
@@ -99,35 +99,42 @@ export const AllFeaturedListsScreen: React.FC<{ navigation: any }> = ({ navigati
   if ((statusFilter === 'all' || statusFilter === 'browse-again') && viewed.length > 0)
     sections.push({ key: 'viewed', data: viewed, label: 'BROWSE AGAIN' });
 
-  return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-      </View>
-      <Text style={styles.screenTitle}>Featured Lists</Text>
+  const categoryLabel = activeCategory === 'All' ? 'All Categories' : activeCategory;
+  const categoryColor = activeCategory === 'All'
+    ? undefined
+    : CATEGORIES.find(c => c.label === activeCategory)?.color;
 
-      {/* Category Pill Bar */}
-      <View style={styles.pillBarWrapper}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.pillBar}
-      >
-        {allCategories.map((cat) => {
-          const active = cat === activeCategory;
-          return (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.pill, active && styles.pillActive]}
-              onPress={() => setActiveCategory(cat)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.pillText, active && styles.pillTextActive]}>{cat}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.headerBar, { paddingTop: insets.top + spacing.sm }]}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="chevron-back" size={22} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.screenTitle}>Featured Lists</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={16} color={colors.secondaryText} />
+        <TextInput
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search featured lists…"
+          placeholderTextColor={colors.secondaryText}
+          returnKeyType="search"
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery('')}>
+            <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Status Segmented Control */}
@@ -149,11 +156,27 @@ export const AllFeaturedListsScreen: React.FC<{ navigation: any }> = ({ navigati
         })}
       </View>
 
+      {/* Category Filter Chip */}
+      <TouchableOpacity
+        style={[styles.categoryChipBtn, categoryColor && { borderColor: categoryColor }]}
+        onPress={() => setSheetVisible(true)}
+        activeOpacity={0.7}
+      >
+        {categoryColor && (
+          <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
+        )}
+        <Text style={[styles.categoryChipBtnText, categoryColor && { color: categoryColor }]}>
+          {categoryLabel}
+        </Text>
+        <Ionicons name="chevron-down" size={14} color={categoryColor ?? colors.secondaryText} />
+      </TouchableOpacity>
+
       {/* Sections */}
       <FlatList
         data={sections}
         keyExtractor={(s) => s.key}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
         contentContainerStyle={styles.listContent}
         renderItem={({ item: section }) => (
           <View style={styles.sectionBlock}>
@@ -174,9 +197,16 @@ export const AllFeaturedListsScreen: React.FC<{ navigation: any }> = ({ navigati
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No lists in this category.</Text>
+            <Text style={styles.emptyText}>No lists found.</Text>
           </View>
         }
+      />
+
+      <CategoryFilterSheet
+        visible={sheetVisible}
+        selected={activeCategory}
+        onSelect={setActiveCategory}
+        onClose={() => setSheetVisible(false)}
       />
     </View>
   );
@@ -187,45 +217,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: spacing.sm,
-    paddingTop: spacing.xs,
+  headerBar: {
+    backgroundColor: colors.activeTab,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  backBtn: {
+    width: 32,
+  },
+  headerSpacer: {
+    width: 32,
   },
   screenTitle: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: colors.primaryText,
-    letterSpacing: -0.5,
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.xs,
-  },
-  pillBarWrapper: {
-    paddingVertical: spacing.md,
-  },
-  pillBar: {
-    paddingHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
-  pill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.cardBackground,
-    marginRight: spacing.xs,
-  },
-  pillActive: {
-    backgroundColor: '#CC0000',
-    borderColor: '#CC0000',
-  },
-  pillText: {
-    fontSize: 14,
-    fontWeight: '500',
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
     color: colors.primaryText,
-  },
-  pillTextActive: {
-    color: '#FFF',
+    paddingVertical: spacing.md,
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -258,6 +286,29 @@ const styles = StyleSheet.create({
   segmentTextActive: {
     fontWeight: '600',
     color: colors.primaryText,
+  },
+  categoryChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 9,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.cardBackground,
+    ...shadow,
+    shadowOpacity: 0.06,
+  },
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  categoryChipBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.secondaryText,
   },
   listContent: {
     paddingBottom: spacing.xxl,
@@ -315,18 +366,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.6,
-  },
-  newBadge: {
-    backgroundColor: '#007AFF',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  newBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFF',
-    letterSpacing: 0.4,
   },
   rowTitle: {
     fontSize: 15,

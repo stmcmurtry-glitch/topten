@@ -1,5 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CommunityList, CommunityItem } from '../data/communityLists';
+import { supabase } from './supabase';
+
+// ── In-memory search cache ────────────────────────────────────────────────────
+// Keyed by query string. Prevents redundant API calls for repeated searches
+// within the same session (e.g. backspace + retype, returning to a screen).
+const SEARCH_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+type SearchCacheEntry = { results: Array<{ title: string; location?: string }>; ts: number };
+const searchCache = new Map<string, SearchCacheEntry>();
+
+function getCachedSearch(key: string): Array<{ title: string; location?: string }> | null {
+  const entry = searchCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > SEARCH_CACHE_TTL_MS) { searchCache.delete(key); return null; }
+  return entry.results;
+}
+function setCachedSearch(key: string, results: Array<{ title: string; location?: string }>) {
+  searchCache.set(key, { results, ts: Date.now() });
+}
 
 // Keywords that suggest a list is about physical venues (→ use Google Places)
 const VENUE_KEYWORDS = [
@@ -113,12 +131,80 @@ export async function searchCities(
   }
 }
 
+/** Parses "900 E 11th St, Austin, TX 78702, USA" → "Austin, TX" */
+function parseLocation(formattedAddress: string): string {
+  const parts = formattedAddress.split(', ');
+  if (parts.length >= 3) {
+    const city = parts[parts.length - 3];
+    const stateZip = parts[parts.length - 2];
+    const state = stateZip.split(' ')[0];
+    if (city && state && state.length <= 3) return `${city}, ${state}`;
+  }
+  return '';
+}
+
+/**
+ * Parses "279 E Houston St, New York, NY 10002, USA" → "E Houston St, New York, NY"
+ * Used for national search results where multiple locations of the same brand
+ * may appear in the same city and need street-level disambiguation.
+ */
+function parseLocationWithStreet(formattedAddress: string): string {
+  const parts = formattedAddress.split(', ');
+  if (parts.length >= 4) {
+    const street = parts[0];
+    const city = parts[parts.length - 3];
+    const stateZip = parts[parts.length - 2];
+    const state = stateZip.split(' ')[0];
+    if (city && state && state.length <= 3) return `${street}, ${city}, ${state}`;
+  }
+  // Fall back to city, state if address doesn't have a street component
+  return parseLocation(formattedAddress);
+}
+
+/** Search Google Places with no location bias — for national community lists.
+ *  Pure text relevance lets Google rank by global prominence, so specific
+ *  business names (e.g. "Franklin BBQ") surface the right result regardless
+ *  of the user's device location, while small local businesses can still be
+ *  found when the user types their exact name.
+ */
+export async function searchPlacesGlobal(
+  query: string,
+  placeType?: string
+): Promise<Array<{ title: string; location?: string }>> {
+  if (!GOOGLE_PLACES_KEY || !query.trim()) return [];
+  const cacheKey = `global:${query.trim().toLowerCase()}:${placeType ?? ''}`;
+  const cached = getCachedSearch(cacheKey);
+  if (cached) return cached;
+
+  const q = encodeURIComponent(query);
+  const typeParam = placeType ? `&type=${placeType}` : '';
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${q}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const json = await response.json();
+    const results: Array<{ name: string; formatted_address?: string }> = json.results ?? [];
+    const mapped = results.slice(0, 10).map((r) => ({
+      title: r.name,
+      location: r.formatted_address ? parseLocationWithStreet(r.formatted_address) : undefined,
+    }));
+    setCachedSearch(cacheKey, mapped);
+    return mapped;
+  } catch {
+    return [];
+  }
+}
+
 export async function searchLocalPlaces(
   city: string,
   query: string,
   placeType?: string
-): Promise<Array<{ title: string }>> {
+): Promise<Array<{ title: string; location?: string }>> {
   if (!GOOGLE_PLACES_KEY || !city || !query.trim()) return [];
+  const cacheKey = `local:${city.toLowerCase()}:${query.trim().toLowerCase()}:${placeType ?? ''}`;
+  const cached = getCachedSearch(cacheKey);
+  if (cached) return cached;
+
   const q = encodeURIComponent(`${query} in ${city}`);
   const typeParam = placeType ? `&type=${placeType}` : '';
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${q}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
@@ -126,8 +212,13 @@ export async function searchLocalPlaces(
     const response = await fetch(url);
     if (!response.ok) return [];
     const json = await response.json();
-    const results: Array<{ name: string }> = json.results ?? [];
-    return results.slice(0, 20).map((r) => ({ title: r.name }));
+    const results: Array<{ name: string; formatted_address?: string }> = json.results ?? [];
+    const mapped = results.slice(0, 20).map((r) => ({
+      title: r.name,
+      location: r.formatted_address ? parseLocation(r.formatted_address) : undefined,
+    }));
+    setCachedSearch(cacheKey, mapped);
+    return mapped;
   } catch {
     return [];
   }
@@ -146,179 +237,197 @@ interface PlaceConfig {
   appCategory: string;
   description: (city: string) => string;
   imageQuery: (city: string) => string;
+  staticImageUrl?: string;
 }
 
 const PLACE_CONFIGS: PlaceConfig[] = [
   {
     slug: 'restaurants',
     queryTerm: 'restaurants',
-    title: (city) => `Best Restaurants in ${city}`,
+    title: (city) => `Best Restaurants near ${city}`,
     icon: 'restaurant-outline',
     color: '#FF7043',
     appCategory: 'Food',
-    description: (city) => `The top-rated restaurants in ${city}, ranked by you.`,
+    description: (city) => `The top-rated restaurants near ${city}, ranked by you.`,
     imageQuery: (city) => `${city} restaurant dining interior food atmosphere wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1727932204039-2127385a9cb0?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'pizza',
     queryTerm: 'pizza',
-    title: (city) => `Best Pizza in ${city}`,
+    title: (city) => `Best Pizza near ${city}`,
     icon: 'pizza-outline',
     color: '#E17055',
     appCategory: 'Food',
-    description: (city) => `Which pizza spot reigns supreme in ${city}?`,
+    description: (city) => `Which pizza spot reigns supreme near ${city}?`,
     imageQuery: () => 'pizza slice cheese wood fired oven Italian restaurant wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1566843971939-1fe9e277a0c0?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'wings',
     queryTerm: 'wings',
-    title: (city) => `Best Wings in ${city}`,
+    title: (city) => `Best Wings near ${city}`,
     icon: 'flame-outline',
     color: '#FF9F43',
     appCategory: 'Food',
-    description: (city) => `The best buffalo wings and chicken wing spots in ${city}.`,
+    description: (city) => `The best buffalo wings and chicken wing spots near ${city}.`,
     imageQuery: () => 'chicken wings buffalo sauce crispy restaurant food wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1553625024-acdb028b1f9b?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'bars',
     queryTerm: 'bars',
-    title: (city) => `Best Bars in ${city}`,
+    title: (city) => `Best Bars near ${city}`,
     icon: 'wine-outline',
     color: '#6C5CE7',
     appCategory: 'Food',
-    description: (city) => `The top bars and nightlife spots in ${city}.`,
+    description: (city) => `The top bars and nightlife spots near ${city}.`,
     imageQuery: () => 'bar cocktails drinks nightlife interior moody wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1763771757330-3212b518e31c?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'coffee',
     queryTerm: 'coffee shops',
-    title: (city) => `Best Coffee Shops in ${city}`,
+    title: (city) => `Best Coffee Shops near ${city}`,
     icon: 'cafe-outline',
     color: '#4ECDC4',
     appCategory: 'Food',
-    description: (city) => `The best cafes and coffee shops in ${city}.`,
+    description: (city) => `The best cafes and coffee shops near ${city}.`,
     imageQuery: () => 'coffee espresso latte art cafe interior cozy wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1729018711788-4e61ec14d53d?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'brunch',
     queryTerm: 'brunch restaurants',
-    title: (city) => `Best Brunch in ${city}`,
+    title: (city) => `Best Brunch near ${city}`,
     icon: 'sunny-outline',
     color: '#FDCB6E',
     appCategory: 'Food',
-    description: (city) => `Eggs benny or avocado toast? The top brunch spots in ${city}, ranked.`,
+    description: (city) => `Eggs benny or avocado toast? The top brunch spots near ${city}, ranked.`,
     imageQuery: () => 'brunch eggs benedict avocado toast restaurant food wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1633763470545-a7efc3fbb773?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'burgers',
     queryTerm: 'burger restaurants',
-    title: (city) => `Best Burgers in ${city}`,
+    title: (city) => `Best Burgers near ${city}`,
     icon: 'fast-food-outline',
     color: '#E17055',
     appCategory: 'Food',
-    description: (city) => `The best burgers in ${city} — smash, classic, and everything in between.`,
+    description: (city) => `The best burgers near ${city} — smash, classic, and everything in between.`,
     imageQuery: () => 'smash burger patty beef restaurant food wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1626256223708-291b849a54c2?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'sushi',
     queryTerm: 'sushi restaurants',
-    title: (city) => `Best Sushi in ${city}`,
+    title: (city) => `Best Sushi near ${city}`,
     icon: 'fish-outline',
     color: '#00B894',
     appCategory: 'Food',
-    description: (city) => `Omakase to AYCE — the top sushi spots in ${city}.`,
+    description: (city) => `Omakase to AYCE — the top sushi spots near ${city}.`,
     imageQuery: () => 'sushi omakase fresh fish japanese food plating wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1763647756796-af9230245bf8?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'steakhouses',
     queryTerm: 'steakhouses',
-    title: (city) => `Best Steakhouses in ${city}`,
+    title: (city) => `Best Steakhouses near ${city}`,
     icon: 'flame-outline',
     color: '#D63031',
     appCategory: 'Food',
-    description: (city) => `Where to get the best cut in ${city}.`,
+    description: (city) => `Where to get the best cut near ${city}.`,
     imageQuery: () => 'steak ribeye filet mignon sizzling restaurant food wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1619719015339-133a130520f6?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'breweries',
     queryTerm: 'breweries',
-    title: (city) => `Best Breweries in ${city}`,
+    title: (city) => `Best Breweries near ${city}`,
     icon: 'beer-outline',
     color: '#F9A825',
     appCategory: 'Drinks',
-    description: (city) => `The craft beer scene in ${city}, ranked by locals.`,
+    description: (city) => `The craft beer scene near ${city}, ranked by locals.`,
     imageQuery: () => 'craft beer brewery tap room pints wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1769476908356-241149feff22?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'rooftop-bars',
     queryTerm: 'rooftop bars',
-    title: (city) => `Best Rooftop Bars in ${city}`,
+    title: (city) => `Best Rooftop Bars near ${city}`,
     icon: 'partly-sunny-outline',
     color: '#6C5CE7',
     appCategory: 'Food',
-    description: (city) => `Best views and best drinks — the top rooftop bars in ${city}.`,
+    description: (city) => `Best views and best drinks — the top rooftop bars near ${city}.`,
     imageQuery: (city) => `${city} rooftop bar skyline cocktails city view wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1568101671082-dbd18c6a9b31?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'ice-cream',
     queryTerm: 'ice cream and dessert shops',
-    title: (city) => `Best Ice Cream & Desserts in ${city}`,
+    title: (city) => `Best Ice Cream & Desserts near ${city}`,
     icon: 'ice-cream-outline',
     color: '#FD79A8',
     appCategory: 'Food',
-    description: (city) => `The sweetest spots in ${city}.`,
+    description: (city) => `The sweetest spots near ${city}.`,
     imageQuery: () => 'ice cream dessert colorful scoop cone sweet wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1741026078998-490c4e36afd1?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'live-music',
     queryTerm: 'live music venues',
-    title: (city) => `Best Live Music Venues in ${city}`,
+    title: (city) => `Best Live Music Venues near ${city}`,
     icon: 'musical-notes-outline',
     color: '#A29BFE',
     appCategory: 'Food',
-    description: (city) => `From intimate clubs to concert halls — the best live music in ${city}.`,
+    description: (city) => `From intimate clubs to concert halls — the best live music near ${city}.`,
     imageQuery: () => 'live music concert venue stage lights performers wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1619973226698-b77a5b5dd14b?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'sports-bars',
     queryTerm: 'sports bars',
-    title: (city) => `Best Sports Bars in ${city}`,
+    title: (city) => `Best Sports Bars near ${city}`,
     icon: 'tv-outline',
     color: '#00B894',
     appCategory: 'Food',
-    description: (city) => `The best places to catch the game in ${city}.`,
+    description: (city) => `The best places to catch the game near ${city}.`,
     imageQuery: () => 'sports bar big screen tv fans game day wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1671368913134-c211bc02487f?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'hotels',
     queryTerm: 'hotels',
     placeType: 'lodging',
-    title: (city) => `Best Hotels in ${city}`,
+    title: (city) => `Best Hotels near ${city}`,
     icon: 'bed-outline',
     color: '#2980B9',
     appCategory: 'Travel',
-    description: (city) => `The top-rated places to stay in ${city}, ranked by locals and visitors.`,
+    description: (city) => `The top-rated places to stay near ${city}, ranked by locals and visitors.`,
     imageQuery: (city) => `${city} hotel lobby luxury interior elegant wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1723465302725-ff46b3e165f9?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'parks',
     queryTerm: 'parks and outdoor spaces',
-    title: (city) => `Best Parks & Outdoor Spaces in ${city}`,
+    title: (city) => `Best Parks & Outdoor Spaces near ${city}`,
     icon: 'leaf-outline',
     color: '#27AE60',
     appCategory: 'Travel',
-    description: (city) => `The best green spaces, trails, and outdoor spots in ${city}.`,
+    description: (city) => `The best green spaces, trails, and outdoor spots near ${city}.`,
     imageQuery: (city) => `${city} park nature green outdoor trail landscape wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1762538052428-1517ac5b53b8?w=600&fit=crop&crop=center&auto=format&q=80',
   },
   {
     slug: 'places',
     queryTerm: 'top places to visit',
-    title: (city) => `Best Places to Visit in ${city}`,
+    title: (city) => `Best Places to Visit near ${city}`,
     icon: 'map-outline',
     color: '#0984E3',
     appCategory: 'Travel',
     description: (city) => `The landmarks, neighborhoods, and hidden gems that make ${city} worth the trip.`,
     imageQuery: (city) => `${city} landmark attraction cityscape tourism wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1606783090940-db193c2ef514?w=600&fit=crop&crop=center&auto=format&q=80',
   },
 ];
 
@@ -338,21 +447,39 @@ async function fetchPlacesForConfig(
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const cacheKey = `@topten_places_v7_${citySlug}_${config.slug}`;
+  const localCacheKey = `@topten_places_v11_${citySlug}_${config.slug}`;
 
-  // Check 24h cache
+  // L1: Device AsyncStorage — fastest, no network
   try {
-    const cached = await AsyncStorage.getItem(cacheKey);
+    const cached = await AsyncStorage.getItem(localCacheKey);
     if (cached) {
       const { timestamp, data } = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_TTL_MS) {
-        return data as CommunityList;
-      }
+      if (Date.now() - timestamp < CACHE_TTL_MS) return data as CommunityList;
     }
-  } catch {
-    // ignore cache read errors
+  } catch { /* ignore */ }
+
+  // L2: Supabase shared cache — one fetch per city across all users
+  if (supabase) {
+    try {
+      const { data: row } = await supabase
+        .from('places_cache')
+        .select('data, updated_at')
+        .eq('city_slug', citySlug)
+        .eq('config_slug', config.slug)
+        .single();
+      if (row) {
+        const age = Date.now() - new Date(row.updated_at).getTime();
+        if (age < CACHE_TTL_MS) {
+          const list = row.data as CommunityList;
+          // Backfill L1 so next open is instant
+          AsyncStorage.setItem(localCacheKey, JSON.stringify({ timestamp: Date.now(), data: list })).catch(() => {});
+          return list;
+        }
+      }
+    } catch { /* supabase unavailable — fall through to API */ }
   }
 
+  // L3: Google Places API
   const query = encodeURIComponent(`best ${config.queryTerm} in ${city}`);
   const typeParam = config.placeType ? `&type=${config.placeType}` : '';
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
@@ -361,12 +488,13 @@ async function fetchPlacesForConfig(
   if (!response.ok) return null;
 
   const json = await response.json();
-  const results: Array<{ name: string }> = json.results ?? [];
+  const results: Array<{ name: string; formatted_address?: string }> = json.results ?? [];
   if (results.length === 0) return null;
 
   const items: CommunityItem[] = results.slice(0, 10).map((result, rank) => ({
     id: `${config.slug}-${citySlug}-${rank}`,
     title: result.name,
+    location: result.formatted_address ? parseLocation(result.formatted_address) : undefined,
     seedScore: 100 - rank * 5,
   }));
 
@@ -378,16 +506,19 @@ async function fetchPlacesForConfig(
     icon: config.icon,
     description: config.description(city),
     imageQuery: config.imageQuery(city),
+    staticImageUrl: config.staticImageUrl,
     participantCount: seedParticipantCount(`${config.slug}-${citySlug}`),
     items,
     region: city,
   };
 
-  // Persist to cache
-  try {
-    await AsyncStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: list }));
-  } catch {
-    // ignore cache write errors
+  // Write to L1 and L2 in parallel, don't block return
+  AsyncStorage.setItem(localCacheKey, JSON.stringify({ timestamp: Date.now(), data: list })).catch(() => {});
+  if (supabase) {
+    supabase.from('places_cache').upsert(
+      { city_slug: citySlug, config_slug: config.slug, data: list, updated_at: new Date().toISOString() },
+      { onConflict: 'city_slug,config_slug' }
+    ).catch(() => {});
   }
 
   return list;

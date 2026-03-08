@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
+import { ChangeLocationModal } from '../components/ChangeLocationModal';
 import {
   View,
   Text,
   Image,
   FlatList,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,9 +17,7 @@ import { useCommunity } from '../context/CommunityContext';
 import { fetchCommunityImage } from '../services/featuredContentService';
 import { sortCommunityLists, getCommunityBucket, PriorityBucket } from '../utils/listPriority';
 import { colors, spacing, borderRadius, shadow } from '../theme';
-import { BackButton } from '../components/BackButton';
-
-const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
+import { CategoryFilterSheet } from '../components/CategoryFilterSheet';
 
 const SectionLabel: React.FC<{ text: string }> = ({ text }) => (
   <Text style={styles.sectionLabel}>{text}</Text>
@@ -51,7 +50,7 @@ const LocalFeedRow: React.FC<{
   const [imageUrl, setImageUrl] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title).then(setImageUrl);
+    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title, list.staticImageUrl).then(setImageUrl);
   }, [list.id]);
 
   return (
@@ -93,18 +92,21 @@ export const AllLocalListsScreen: React.FC<{ route: any; navigation: any }> = ({
   const insets = useSafeAreaInsets();
   const { userRankings, participantCounts } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [sheetVisible, setSheetVisible] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'vote-now' | 'voted'>('all');
+  const [changeLocationVisible, setChangeLocationVisible] = useState(false);
+  const [query, setQuery] = useState('');
 
-  const allCategories = ['All', ...ALL_CATEGORY_LABELS];
   const statusOptions = [
     { key: 'all', label: 'All' },
     { key: 'vote-now', label: 'Vote Now' },
     { key: 'voted', label: 'Voted' },
   ] as const;
 
-  const filtered = activeCategory === 'All'
-    ? lists
-    : lists.filter((l) => l.category === activeCategory);
+  const q = query.toLowerCase().trim();
+  const filtered = lists
+    .filter((l) => activeCategory === 'All' || l.category === activeCategory)
+    .filter((l) => !q || l.title.toLowerCase().includes(q));
 
   const { recent, newLists, done } = sortCommunityLists(filtered, userRankings);
 
@@ -116,43 +118,54 @@ export const AllLocalListsScreen: React.FC<{ route: any; navigation: any }> = ({
   if ((statusFilter === 'all' || statusFilter === 'voted') && done.length > 0)
     sections.push({ key: 'done', data: done, label: 'VOTED' });
 
+  const categoryLabel = activeCategory === 'All' ? 'All Categories' : activeCategory;
+  const categoryColor = activeCategory === 'All'
+    ? undefined
+    : CATEGORIES.find(c => c.label === activeCategory)?.color;
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-      </View>
-      <View style={styles.titleRow}>
-        <Text style={styles.screenTitle}>In Your Area</Text>
-        {city ? (
-          <View style={styles.cityPill}>
-            <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
-            <Text style={styles.cityText}>{city}</Text>
-          </View>
-        ) : null}
+      <View style={[styles.headerBar, { paddingTop: insets.top }]}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="chevron-back" size={22} color="#FFF" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.screenTitle}>In Your Area</Text>
+          {city ? (
+            <TouchableOpacity
+              style={styles.cityPill}
+              onPress={() => setChangeLocationVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="location-sharp" size={10} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.cityText}>{city}</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
-      {/* Category Pill Bar */}
-      <View style={styles.pillBarWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillBar}
-        >
-          {allCategories.map((cat) => {
-            const active = cat === activeCategory;
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.pill, active && styles.pillActive]}
-                onPress={() => setActiveCategory(cat)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.pillText, active && styles.pillTextActive]}>{cat}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+      {/* Search */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={16} color={colors.secondaryText} />
+        <TextInput
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search local lists…"
+          placeholderTextColor={colors.secondaryText}
+          returnKeyType="search"
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery('')}>
+            <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Status Segmented Control */}
@@ -174,11 +187,34 @@ export const AllLocalListsScreen: React.FC<{ route: any; navigation: any }> = ({
         })}
       </View>
 
+      {/* Category Filter Chip */}
+      <TouchableOpacity
+        style={[styles.categoryChipBtn, categoryColor && { borderColor: categoryColor }]}
+        onPress={() => setSheetVisible(true)}
+        activeOpacity={0.7}
+      >
+        {categoryColor && (
+          <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
+        )}
+        <Text style={[styles.categoryChipBtnText, categoryColor && { color: categoryColor }]}>
+          {categoryLabel}
+        </Text>
+        <Ionicons name="chevron-down" size={14} color={categoryColor ?? colors.secondaryText} />
+      </TouchableOpacity>
+
+      <ChangeLocationModal
+        visible={changeLocationVisible}
+        currentCity={city || ''}
+        onClose={() => setChangeLocationVisible(false)}
+        onLocationChanged={() => navigation.goBack()}
+      />
+
       {/* Sections */}
       <FlatList
         data={sections}
         keyExtractor={(s) => s.key}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
         contentContainerStyle={styles.listContent}
         renderItem={({ item: section }) => (
           <View style={styles.sectionBlock}>
@@ -200,9 +236,16 @@ export const AllLocalListsScreen: React.FC<{ route: any; navigation: any }> = ({
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No local lists in this category.</Text>
+            <Text style={styles.emptyText}>No local lists found.</Text>
           </View>
         }
+      />
+
+      <CategoryFilterSheet
+        visible={sheetVisible}
+        selected={activeCategory}
+        onSelect={setActiveCategory}
+        onClose={() => setSheetVisible(false)}
       />
     </View>
   );
@@ -213,44 +256,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: spacing.sm,
-    paddingTop: spacing.xs,
-  },
-  titleRow: {
+  headerBar: {
+    backgroundColor: colors.activeTab,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xs,
-    flexWrap: 'wrap',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  backBtn: {
+    width: 32,
+  },
+  headerSpacer: {
+    width: 32,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
   },
   screenTitle: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: colors.primaryText,
-    letterSpacing: -0.5,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFF',
+    textAlign: 'center',
+    letterSpacing: -0.3,
   },
   cityPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(204,0,0,0.08)',
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
   },
   cityText: {
     fontSize: 11,
-    fontWeight: '600',
-    color: colors.activeTab,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.8)',
   },
-  pillBarWrapper: {
-    paddingVertical: spacing.md,
-  },
-  pillBar: {
-    paddingHorizontal: spacing.lg,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
     gap: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.primaryText,
+    paddingVertical: spacing.md,
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -284,26 +340,28 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primaryText,
   },
-  pill: {
+  categoryChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 9,
+    borderRadius: borderRadius.md,
     backgroundColor: colors.cardBackground,
-    marginRight: spacing.xs,
+    ...shadow,
+    shadowOpacity: 0.06,
   },
-  pillActive: {
-    backgroundColor: '#CC0000',
-    borderColor: '#CC0000',
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  pillText: {
+  categoryChipBtnText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: colors.primaryText,
-  },
-  pillTextActive: {
-    color: '#FFF',
+    fontWeight: '600',
+    color: colors.secondaryText,
   },
   listContent: {
     paddingBottom: spacing.xxl,
@@ -367,9 +425,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  badgeNew: {
-    backgroundColor: '#007AFF',
-  },
   badgeRecent: {
     backgroundColor: '#2ECC71',
   },
@@ -380,9 +435,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.4,
-  },
-  badgeTextNew: {
-    color: '#FFF',
   },
   badgeTextRecent: {
     color: '#FFF',

@@ -7,36 +7,38 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { FeedRow } from '../components/FeedRow';
 import { PhotoPickerModal } from '../components/PhotoPickerModal';
-import { CATEGORIES, CATEGORY_COLORS } from '../data/categories';
+import { CATEGORIES } from '../data/categories';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { SignInPrompt } from '../components/SignInPrompt';
-
-const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
-const ALL_PILLS = ['All', ...ALL_CATEGORY_LABELS];
+import { CategoryFilterSheet } from '../components/CategoryFilterSheet';
 
 export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user, loading: authLoading } = useAuth();
   const { lists, updateListMeta, reorderLists } = useListContext();
   const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [sheetVisible, setSheetVisible] = useState(false);
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [query, setQuery] = useState('');
   const editingList = lists.find((l) => l.id === editingListId);
 
   useEffect(() => {
     setShowAll(false);
   }, [activeCategory]);
 
-  const filteredLists = activeCategory === 'All'
-    ? lists
-    : lists.filter((l) => l.category === activeCategory);
+  const q = query.toLowerCase().trim();
+  const filteredLists = lists
+    .filter((l) => activeCategory === 'All' || l.category === activeCategory)
+    .filter((l) => !q || l.title.toLowerCase().includes(q));
 
   const displayLists = showAll ? filteredLists : filteredLists.slice(0, 10);
 
@@ -75,11 +77,17 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
     );
   }
 
+  const categoryLabel = activeCategory === 'All' ? 'All Categories' : activeCategory;
+  const categoryColor = activeCategory === 'All'
+    ? undefined
+    : CATEGORIES.find(c => c.label === activeCategory)?.color;
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
       showsVerticalScrollIndicator={false}
+      keyboardDismissMode="on-drag"
     >
       {/* Header */}
       <View style={styles.headerRow}>
@@ -97,27 +105,38 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
         </TouchableOpacity>
       </View>
 
-      {/* Category pills */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.pillBar}
+      {/* Search */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={16} color={colors.secondaryText} />
+        <TextInput
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search my lists…"
+          placeholderTextColor={colors.secondaryText}
+          returnKeyType="search"
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery('')}>
+            <Ionicons name="close-circle" size={16} color={colors.secondaryText} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Category filter chip */}
+      <TouchableOpacity
+        style={[styles.categoryChipBtn, categoryColor && { borderColor: categoryColor }]}
+        onPress={() => setSheetVisible(true)}
+        activeOpacity={0.7}
       >
-        {ALL_PILLS.map((cat) => {
-            const active = cat === activeCategory;
-            const accent = cat === 'All' ? colors.activeTab : (CATEGORY_COLORS[cat] ?? colors.activeTab);
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.pill, active && { backgroundColor: accent, borderColor: accent }]}
-                onPress={() => setActiveCategory(cat)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.pillText, active && styles.pillTextActive]}>{cat}</Text>
-              </TouchableOpacity>
-            );
-          })}
-      </ScrollView>
+        {categoryColor && (
+          <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
+        )}
+        <Text style={[styles.categoryChipBtnText, categoryColor && { color: categoryColor }]}>
+          {categoryLabel}
+        </Text>
+        <Ionicons name="chevron-down" size={14} color={categoryColor ?? colors.secondaryText} />
+      </TouchableOpacity>
 
       {/* Section row */}
       <View style={styles.sectionHeaderRow}>
@@ -170,15 +189,17 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
-            {activeCategory === 'All' ? 'No lists yet.' : `No ${activeCategory} lists yet.`}
+            {q ? 'No lists match your search.' : activeCategory === 'All' ? 'No lists yet.' : `No ${activeCategory} lists yet.`}
           </Text>
-          <TouchableOpacity
-            style={styles.emptyButton}
-            onPress={() => navigation.navigate('CreateList')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.emptyButtonText}>Create one</Text>
-          </TouchableOpacity>
+          {!q && (
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => navigation.navigate('CreateList')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.emptyButtonText}>Create one</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -197,6 +218,13 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
         onSelectUri={(uri) => {
           if (editingListId) updateListMeta(editingListId, { profileImageUri: uri });
         }}
+      />
+
+      <CategoryFilterSheet
+        visible={sheetVisible}
+        selected={activeCategory}
+        onSelect={setActiveCategory}
+        onClose={() => setSheetVisible(false)}
       />
     </ScrollView>
   );
@@ -248,28 +276,44 @@ const styles = StyleSheet.create({
     ...shadow,
     shadowOpacity: 0.06,
   },
-  pillBar: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
-  pill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.cardBackground,
-    marginRight: spacing.xs,
-  },
-  pillText: {
-    fontSize: 14,
-    fontWeight: '500',
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
     color: colors.primaryText,
+    paddingVertical: spacing.md,
   },
-  pillTextActive: {
-    color: '#FFFFFF',
+  categoryChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 9,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.cardBackground,
+    ...shadow,
+    shadowOpacity: 0.06,
+  },
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  categoryChipBtnText: {
+    fontSize: 14,
     fontWeight: '600',
+    color: colors.secondaryText,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
