@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 import * as Crypto from 'expo-crypto';
@@ -37,12 +37,13 @@ const buildDefaultRanking = (_listId: string): UserCommunityRanking => {
 };
 
 export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [userRankings, setUserRankings] = useState<Record<string, UserCommunityRanking>>({});
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [liveScoreCache, setLiveScoreCache] = useState<Record<string, Record<string, number>>>({});
   const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
   const posthog = usePostHog();
+  const loadedForRef = useRef<string | null | undefined>(undefined);
 
   // Bulk-fetch participant counts for all lists at startup
   useEffect(() => {
@@ -62,10 +63,51 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }).catch(() => {/* silent fallback to seed counts */});
   }, []);
 
-  // Load persisted rankings
+  // Load/reload rankings whenever the signed-in user changes
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
-      if (raw) {
+    if (authLoading) return;
+
+    const currentUserId = user?.id ?? null;
+    if (loadedForRef.current === currentUserId) return;
+
+    const wasSignedIn = typeof loadedForRef.current === 'string';
+    loadedForRef.current = currentUserId;
+
+    if (currentUserId) {
+      // Signed in — restore this user's submitted votes from Supabase
+      if (supabase) {
+        supabase
+          .from('community_votes')
+          .select('list_id, slots, submitted_at')
+          .eq('device_id', currentUserId)
+          .then(({ data }) => {
+            if (!data || data.length === 0) {
+              setUserRankings({});
+              return;
+            }
+            const restored: Record<string, UserCommunityRanking> = {};
+            data.forEach((row: any) => {
+              restored[row.list_id] = {
+                slots: row.slots ?? Array(10).fill(''),
+                submitted: true,
+                submittedAt: row.submitted_at ? new Date(row.submitted_at).getTime() : undefined,
+              };
+            });
+            setUserRankings(restored);
+            AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(restored));
+          })
+          .catch(() => setUserRankings({}));
+      } else {
+        setUserRankings({});
+      }
+    } else if (wasSignedIn) {
+      // Signed out — clear so the next account starts clean
+      setUserRankings({});
+      AsyncStorage.removeItem(STORAGE_KEY);
+    } else {
+      // Guest session — load from device storage
+      AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
+        if (!raw) return;
         try {
           const parsed = JSON.parse(raw);
           const migrated: Record<string, UserCommunityRanking> = {};
@@ -77,12 +119,10 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             };
           }
           setUserRankings(migrated);
-        } catch {
-          // ignore parse errors
-        }
-      }
-    });
-  }, []);
+        } catch { /* ignore */ }
+      });
+    }
+  }, [user?.id, authLoading]);
 
   // Load or generate stable device ID
   useEffect(() => {
