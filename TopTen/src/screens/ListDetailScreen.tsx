@@ -28,6 +28,8 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
 import { CATEGORIES } from '../data/categories';
+import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces } from '../services/googlePlacesService';
+import { getDetectedLocation } from '../services/locationService';
 
 const DESCRIPTION_LIMIT = 120;
 
@@ -96,8 +98,12 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [isPremium, setIsPremium] = useState(false);
   const [typedArtist, setTypedArtist] = useState('');
   const [typedAlbum, setTypedAlbum] = useState('');
+  const [typedSuggestions, setTypedSuggestions] = useState<Array<{ title: string; location?: string }>>([]);
+  const [suggestionsCity, setSuggestionsCity] = useState<string | null>(null);
+  const placesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isMusicList = list?.category === 'Music';
+  const isCurrentVenueList = list ? isVenueList(list.title, list.category) : false;
 
   useEffect(() => {
     Purchases.getCustomerInfo()
@@ -118,6 +124,22 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
       }
     });
   }, [navigation, listId, list, updateListMeta]);
+
+  // Fetch nearby place suggestions when the type modal opens for a venue list
+  useEffect(() => {
+    if (!showTypeModal || !isCurrentVenueList || !list) {
+      setTypedSuggestions([]);
+      return;
+    }
+    getDetectedLocation().then((loc) => {
+      const city = loc?.city || null;
+      setSuggestionsCity(city);
+      if (!city) return;
+      const q = derivePlacesQuery(list.title, list.category);
+      const t = derivePlacesType(list.title, list.category);
+      searchLocalPlaces(city, q, t).then((r) => setTypedSuggestions(r.slice(0, 5)));
+    });
+  }, [showTypeModal, isCurrentVenueList]);
 
   const persistSlots = (updated: string[]) => {
     setSlots(updated);
@@ -141,7 +163,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
     const wasEmpty = !slots[index]?.trim();
     const isNowFilled = !!text.trim();
     if (wasEmpty && isNowFilled) {
-      posthog?.capture('list_item_added', { category: list?.category, rank: index + 1 });
+      posthog?.capture('list_item_added', { category: list?.category ?? null, rank: index + 1 });
     }
     const updated = [...slots];
     updated[index] = text;
@@ -410,8 +432,17 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
               <TextInput
                 style={styles.typeInput}
                 value={typedValue}
-                onChangeText={setTypedValue}
-                placeholder={isMusicList ? 'Song title…' : 'Type a name…'}
+                onChangeText={(text) => {
+                  setTypedValue(text);
+                  if (!isCurrentVenueList || !suggestionsCity) return;
+                  if (placesDebounceRef.current) clearTimeout(placesDebounceRef.current);
+                  placesDebounceRef.current = setTimeout(() => {
+                    const q = text.trim() || derivePlacesQuery(list.title, list.category);
+                    const t = text.trim() ? undefined : derivePlacesType(list.title, list.category);
+                    searchLocalPlaces(suggestionsCity, q, t).then((r) => setTypedSuggestions(r.slice(0, 5)));
+                  }, 350);
+                }}
+                placeholder={isMusicList ? 'Song title…' : isCurrentVenueList ? 'Type or pick from suggestions…' : 'Type a name…'}
                 placeholderTextColor={colors.secondaryText}
                 autoFocus
                 returnKeyType={isMusicList ? 'next' : 'done'}
@@ -423,6 +454,37 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                   }
                 }}
               />
+              {isCurrentVenueList && typedSuggestions.length > 0 && (
+                <View style={styles.suggestionsContainer}>
+                  {suggestionsCity && (
+                    <View style={styles.suggestionsHeader}>
+                      <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
+                      <Text style={styles.suggestionsHeaderText}>Near {suggestionsCity}</Text>
+                    </View>
+                  )}
+                  {typedSuggestions.slice(0, 3).map((s, i) => (
+                    <TouchableOpacity
+                      key={i}
+                      style={styles.suggestionRow}
+                      onPress={() => {
+                        if (typeSlotIndex !== null) {
+                          setSlotValue(typeSlotIndex, s.title);
+                          setShowTypeModal(false);
+                          setTypedValue('');
+                          setTypedSuggestions([]);
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.suggestionBody}>
+                        <Text style={styles.suggestionTitle} numberOfLines={1}>{s.title}</Text>
+                        {s.location && <Text style={styles.suggestionLocation}>{s.location}</Text>}
+                      </View>
+                      <Ionicons name="add-circle-outline" size={18} color={colors.activeTab} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
               {isMusicList && (
                 <>
                   <TextInput
@@ -930,5 +992,49 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: colors.secondaryText,
+  },
+
+  /* ── Inline Places suggestions ── */
+  suggestionsContainer: {
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.background,
+    overflow: 'hidden',
+  },
+  suggestionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: 4,
+  },
+  suggestionsHeaderText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.activeTab,
+    letterSpacing: 0.2,
+  },
+  suggestionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    gap: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  suggestionBody: {
+    flex: 1,
+  },
+  suggestionTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.primaryText,
+  },
+  suggestionLocation: {
+    fontSize: 11,
+    color: colors.secondaryText,
+    marginTop: 1,
   },
 });

@@ -201,10 +201,51 @@ export async function searchLocalPlaces(
   placeType?: string
 ): Promise<Array<{ title: string; location?: string }>> {
   if (!GOOGLE_PLACES_KEY || !city || !query.trim()) return [];
-  const cacheKey = `local:${city.toLowerCase()}:${query.trim().toLowerCase()}:${placeType ?? ''}`;
-  const cached = getCachedSearch(cacheKey);
+
+  const citySlug = slugify(city);
+  const querySlug = slugify(query.trim()).slice(0, 80);
+  const configSlug = `search:${querySlug}:${placeType ?? ''}`;
+  const memKey = `local:${city.toLowerCase()}:${query.trim().toLowerCase()}:${placeType ?? ''}`;
+
+  // L0: in-memory session cache (1h)
+  const cached = getCachedSearch(memKey);
   if (cached) return cached;
 
+  // L1: AsyncStorage device cache (24h)
+  const asyncKey = `@topten_search_${citySlug}_${querySlug}_${placeType ?? ''}`;
+  try {
+    const stored = await AsyncStorage.getItem(asyncKey);
+    if (stored) {
+      const { timestamp, data } = JSON.parse(stored);
+      if (Date.now() - timestamp < CACHE_TTL_MS) {
+        setCachedSearch(memKey, data);
+        return data;
+      }
+    }
+  } catch { /* ignore */ }
+
+  // L2: Supabase shared cache (24h) — one API call per city+query across all users
+  if (supabase) {
+    try {
+      const { data: row } = await supabase
+        .from('places_cache')
+        .select('data, updated_at')
+        .eq('city_slug', citySlug)
+        .eq('config_slug', configSlug)
+        .single();
+      if (row) {
+        const age = Date.now() - new Date(row.updated_at).getTime();
+        if (age < CACHE_TTL_MS) {
+          const results = row.data as Array<{ title: string; location?: string }>;
+          setCachedSearch(memKey, results);
+          AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: results })).catch(() => {});
+          return results;
+        }
+      }
+    } catch { /* supabase unavailable — fall through */ }
+  }
+
+  // L3: Google Places API
   const q = encodeURIComponent(`${query} in ${city}`);
   const typeParam = placeType ? `&type=${placeType}` : '';
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${q}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
@@ -217,7 +258,15 @@ export async function searchLocalPlaces(
       title: r.name,
       location: r.formatted_address ? parseLocation(r.formatted_address) : undefined,
     }));
-    setCachedSearch(cacheKey, mapped);
+    setCachedSearch(memKey, mapped);
+    // Write L1 + L2 without blocking return
+    AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: mapped })).catch(() => {});
+    if (supabase) {
+      supabase.from('places_cache').upsert(
+        { city_slug: citySlug, config_slug: configSlug, data: mapped, updated_at: new Date().toISOString() },
+        { onConflict: 'city_slug,config_slug' }
+      ).catch(() => {});
+    }
     return mapped;
   } catch {
     return [];
