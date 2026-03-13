@@ -7,12 +7,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Share,
+  Clipboard,
 } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
-import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { ShareCard, CARD_WIDTH } from './ShareCard';
 import { colors, spacing, borderRadius } from '../theme';
+
+const APP_STORE_URL = 'https://apps.apple.com/us/app/topten-your-ranked-lists/id6759584244';
 
 interface Props {
   visible: boolean;
@@ -25,26 +28,35 @@ interface Props {
 export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category, items }) => {
   const cardRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const handleShare = async () => {
     if (!cardRef.current) return;
     setSharing(true);
+    // Copy App Store link to clipboard so user can paste it as an Instagram link sticker
+    Clipboard.setString(APP_STORE_URL);
     try {
       const uri = await captureRef(cardRef, {
         format: 'png',
         quality: 1,
         result: 'tmpfile',
         pixelRatio: 2,
-      });
-      await Sharing.shareAsync(uri, {
-        mimeType: 'image/png',
-        dialogTitle: 'Share your Top Ten list',
+      } as any);
+      await Share.share({
+        message: `Check out my Top 10 ${title}!\n\nDownload TopTen on the App Store: ${APP_STORE_URL}`,
+        url: uri,
       });
     } catch {
       Alert.alert('Could not share', 'Please try again.');
     } finally {
       setSharing(false);
     }
+  };
+
+  const handleCopyLink = () => {
+    Clipboard.setString(APP_STORE_URL);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2500);
   };
 
   return (
@@ -67,6 +79,13 @@ export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category,
                 <Text style={styles.shareButtonText}>Share</Text>
               </>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.copyLinkButton} onPress={handleCopyLink} activeOpacity={0.7}>
+            <Ionicons name={linkCopied ? 'checkmark' : 'link-outline'} size={15} color="rgba(255,255,255,0.7)" />
+            <Text style={styles.copyLinkText}>
+              {linkCopied ? 'App Store link copied!' : 'Copy App Store link for Instagram'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cancel} onPress={onClose}>
@@ -105,6 +124,16 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 17,
     fontWeight: '700',
+  },
+  copyLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+  copyLinkText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
   },
   cancel: {
     paddingVertical: spacing.sm,

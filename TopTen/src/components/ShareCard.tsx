@@ -54,7 +54,7 @@ export const ShareCard = React.forwardRef<View, Props>(({ title, category, items
       {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.divider} />
-        <Text style={styles.footerText}>topten.app</Text>
+        <Text style={styles.footerText}>TopTen - Your Ranked Lists</Text>
       </View>
     </View>
   );
