@@ -1,0 +1,77 @@
+name: Generate Local Lists
+
+on:
+  schedule:
+    - cron: '0 2 1 * *'   # 2am UTC, 1st of every month
+  workflow_dispatch:
+    inputs:
+      cities:
+        description: 'Comma-separated city slugs (blank = all cities)'
+        required: false
+        default: ''
+      stale_days:
+        description: 'Skip cities refreshed within N days (blank = regenerate all)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run — log expected output without writing to Supabase'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      skip_seed:
+        description: 'Skip seeding community votes after generation'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate local lists
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.cities }}" ]; then
+            ARGS="$ARGS --cities=${{ inputs.cities }}"
+          fi
+          if [ -n "${{ inputs.stale_days }}" ]; then
+            ARGS="$ARGS --stale-days=${{ inputs.stale_days }}"
+          fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          npx tsx scripts/generateLocalLists.ts $ARGS
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GOOGLE_PLACES_KEY: ${{ secrets.GOOGLE_PLACES_KEY }}
+
+      - name: Seed community votes
+        if: ${{ inputs.skip_seed != 'true' && inputs.dry_run != 'true' }}
+        run: |
+          ARGS=""
+          if [ -n "${{ inputs.cities }}" ]; then
+            ARGS="$ARGS --cities=${{ inputs.cities }}"
+          fi
+          npx tsx scripts/seedCommunityVotes.ts $ARGS
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
