@@ -56,7 +56,7 @@ const FAQ_SECTIONS: { title: string; items: FAQItem[] }[] = [
       {
         question: 'How does location detection work?',
         answer:
-          'Top Ten uses your device\'s IP address to estimate your city. This powers the "In Your Area" lists — things like the best restaurants or bars near you. We never access GPS or request precise location permissions.',
+          'TopX uses your device\'s IP address to estimate your city. This powers the "In Your Area" lists — things like the best restaurants or bars near you. We never access GPS or request precise location permissions.',
       },
       {
         question: 'Is my location stored or shared?',

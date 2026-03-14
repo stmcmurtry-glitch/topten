@@ -8,7 +8,7 @@ const SECTIONS = [
   {
     icon: 'phone-portrait-outline' as const,
     title: 'Your lists stay on your device',
-    body: "Everything you create in Top Ten — your lists, rankings, and edits — is stored locally on your device. We don't upload it, we can't read it, and we don't back it up to any server. It's yours.",
+    body: "Everything you create in TopX — your lists, rankings, and edits — is stored locally on your device. We don't upload it, we can't read it, and we don't back it up to any server. It's yours.",
   },
   {
     icon: 'people-outline' as const,
@@ -37,7 +37,7 @@ export const YourDataScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.intro}>
-        Here's a plain-English summary of how Top Ten handles your data.
+        Here's a plain-English summary of how TopX handles your data.
       </Text>
 
       <View style={styles.card}>

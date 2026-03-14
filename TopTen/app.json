@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "TopTen",
+    "name": "TopX",
     "slug": "TopTen",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scheme": "topten",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -38,7 +38,8 @@
       "@sentry/react-native",
       "expo-localization",
       "expo-web-browser",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
@@ -55,10 +56,15 @@ const CommunityFeedRow: React.FC<{
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
       <View style={[styles.thumb, { backgroundColor: list.color }]}>
-        {imageUrl ? (
+        <LinearGradient
+          colors={['#000000', list.color]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <Ionicons name={list.icon as any} size={28} color="#FFF" />
+        {imageUrl && (
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : (
-          <Ionicons name={list.icon as any} size={28} color="#FFF" />
         )}
       </View>
       <View style={styles.rowBody}>

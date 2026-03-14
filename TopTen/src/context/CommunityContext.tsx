@@ -214,16 +214,35 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const voterId = user?.id ?? deviceId;
 
       // Upsert to Supabase if we have a voter ID and client is configured
-      if (voterId && supabase) {
+      if (!supabase) {
+        posthog?.capture('community_vote_supabase_null', { list_id: listId });
+      } else if (!voterId) {
+        posthog?.capture('community_vote_no_voter_id', { list_id: listId });
+      } else {
         try {
-          await supabase.from('community_votes').upsert(
-            { device_id: voterId, list_id: listId, slots: current.slots, submitted_at: new Date().toISOString() },
+          // Normalize slots before storing: trim whitespace and lowercase so
+          // "Beef Wellington" / "beef wellington" aggregate to the same row in Supabase.
+          const normalizedSlots = current.slots.map((s) => s.trim().toLowerCase());
+          const { error: upsertError } = await supabase.from('community_votes').upsert(
+            { device_id: voterId, list_id: listId, slots: normalizedSlots, submitted_at: new Date().toISOString() },
             { onConflict: 'device_id,list_id' }
           );
-          // Refresh aggregated scores after vote is saved
-          await supabase.rpc('refresh_community_scores');
-        } catch {
-          // Non-fatal — local state already saved
+          if (upsertError) {
+            posthog?.capture('community_vote_upsert_error', {
+              list_id: listId,
+              error_message: upsertError.message,
+              error_code: upsertError.code,
+            });
+          } else {
+            posthog?.capture('community_vote_saved_to_supabase', { list_id: listId });
+            // Refresh aggregated scores after vote is saved
+            await supabase.rpc('refresh_community_scores');
+          }
+        } catch (err: unknown) {
+          posthog?.capture('community_vote_exception', {
+            list_id: listId,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
 

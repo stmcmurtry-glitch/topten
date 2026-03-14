@@ -66,7 +66,11 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, onClose }) => {
     }).catch(() => {}).finally(() => setLoading(false));
   }, [visible]);
 
-  const handlePurchase = async (pkg: PurchasesPackage) => {
+  const handlePurchase = async (pkg: PurchasesPackage | null) => {
+    if (!pkg) {
+      Alert.alert('Not available', 'Could not load subscription options. Please close and try again.');
+      return;
+    }
     setPurchasing(true);
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
@@ -130,10 +134,10 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, onClose }) => {
             <View style={styles.heroIconWrap}>
               <Ionicons name="star" size={32} color={colors.activeTab} />
             </View>
-            <Text style={styles.heroTitle}>TopTen Premium</Text>
+            <Text style={styles.heroTitle}>TopX Premium</Text>
             <Text style={styles.heroSub}>
               {isPremium
-                ? 'You\'re all set. Thanks for supporting TopTen.'
+                ? 'You\'re all set. Thanks for supporting TopX.'
                 : 'Unlock everything. No limits, no ads.'}
             </Text>
           </View>
@@ -217,9 +221,9 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, onClose }) => {
           ) : (
             <TouchableOpacity
               style={styles.ctaButton}
-              onPress={() => selectedPkg && handlePurchase(selectedPkg)}
+              onPress={() => handlePurchase(selectedPkg)}
               activeOpacity={0.88}
-              disabled={purchasing || !selectedPkg}
+              disabled={purchasing}
             >
               {purchasing
                 ? <ActivityIndicator color="#FFF" />

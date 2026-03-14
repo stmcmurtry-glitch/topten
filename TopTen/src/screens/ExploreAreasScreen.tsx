@@ -52,9 +52,8 @@ export const ExploreAreasScreen: React.FC<{ navigation: any }> = ({ navigation }
     }, 350);
   }, []);
 
-  const handleSelectAutocomplete = (name: string, secondary: string) => {
-    const cityLabel = secondary ? `${name}, ${secondary}` : name;
-    navigation.navigate('CityLists', { city: cityLabel });
+  const handleSelectAutocomplete = (name: string) => {
+    navigation.navigate('CityLists', { city: name });
   };
 
   const isSearching = query.trim().length > 0;
@@ -114,7 +113,7 @@ export const ExploreAreasScreen: React.FC<{ navigation: any }> = ({ navigation }
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.row}
-                onPress={() => handleSelectAutocomplete(item.name, item.secondary)}
+                onPress={() => handleSelectAutocomplete(item.name)}
                 activeOpacity={0.7}
               >
                 <View style={styles.iconWrap}>

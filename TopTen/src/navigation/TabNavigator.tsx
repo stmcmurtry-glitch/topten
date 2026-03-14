@@ -22,6 +22,9 @@ import { AllLocalListsScreen } from '../screens/AllLocalListsScreen';
 import { ExploreAreasScreen } from '../screens/ExploreAreasScreen';
 import { CityListsScreen } from '../screens/CityListsScreen';
 import { AuthScreen } from '../screens/AuthScreen';
+import { CreateAccountScreen } from '../screens/CreateAccountScreen';
+import { ProfileSetupScreen } from '../screens/ProfileSetupScreen';
+import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -64,7 +67,7 @@ const HomeStack = () => (
     <Stack.Screen
       name="CommunityList"
       component={CommunityListScreen}
-      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="AllFeaturedLists"
@@ -94,6 +97,16 @@ const HomeStack = () => (
     <Stack.Screen
       name="AuthScreen"
       component={AuthScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
+    <Stack.Screen
+      name="CreateAccount"
+      component={CreateAccountScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
+    <Stack.Screen
+      name="ProfileSetup"
+      component={ProfileSetupScreen}
       options={{ presentation: 'modal', headerShown: false }}
     />
   </Stack.Navigator>
@@ -126,7 +139,7 @@ const MyListsStack = () => (
     <Stack.Screen
       name="CommunityList"
       component={CommunityListScreen}
-      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="AllFeaturedLists"
@@ -158,6 +171,16 @@ const MyListsStack = () => (
       component={AuthScreen}
       options={{ presentation: 'modal', headerShown: false }}
     />
+    <Stack.Screen
+      name="CreateAccount"
+      component={CreateAccountScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
+    <Stack.Screen
+      name="ProfileSetup"
+      component={ProfileSetupScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -186,7 +209,7 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="CommunityList"
       component={CommunityListScreen}
-      options={{ title: '', headerLargeTitle: false, headerTransparent: true, headerTintColor: '#FFF' }}
+      options={{ headerShown: false }}
     />
     <Stack.Screen
       name="AllFeaturedLists"
@@ -249,8 +272,23 @@ const SettingsStack = () => (
       options={{ title: 'FAQ', headerLargeTitle: false }}
     />
     <Stack.Screen
+      name="EditProfile"
+      component={EditProfileScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
       name="AuthScreen"
       component={AuthScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
+    <Stack.Screen
+      name="CreateAccount"
+      component={CreateAccountScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
+    <Stack.Screen
+      name="ProfileSetup"
+      component={ProfileSetupScreen}
       options={{ presentation: 'modal', headerShown: false }}
     />
   </Stack.Navigator>

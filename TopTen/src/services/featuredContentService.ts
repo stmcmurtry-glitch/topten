@@ -2,19 +2,87 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTopRatedMovies, getTopRatedTVShows, searchMovies, searchTVShows } from './tmdb';
 import { FeaturedList } from '../data/featuredLists';
 
-const CACHE_V = 'v5';
+const CACHE_V = 'v8';
 const ITEMS_PREFIX = `@topten_fitems_${CACHE_V}_`;
-const IMAGE_PREFIX = `@topten_fimg_${CACHE_V}_`;
+const IMAGE_PREFIX = `@topten_fimg_v8_`;
 
 const UNSPLASH_KEY =
   process.env.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY ||
   'unqrIzAOMjppLYzOuOau81W5fKHuaUpyo8QPy8jesZI';
 
+const SPORTSDB_KEY = process.env.EXPO_PUBLIC_SPORTSDB_KEY ?? '';
+const SPORTSDB_BASE = 'https://www.thesportsdb.com/api/v1/json';
+
 const itemsMemCache = new Map<string, string[]>();
 const imageMemCache = new Map<string, string | null>();
 
-// Curated static items for non-API categories
+/** Strips stats suffix and year prefix from a list item title to get a clean search name.
+ *  "Jack Nicklaus — 18 Majors" → "Jack Nicklaus"
+ *  "1976-77 Montreal Canadiens (60-8-12)" → "Montreal Canadiens"
+ */
+function extractSportsName(raw: string): string {
+  return raw
+    .replace(/^\d{4}[-–]\d{2,4}\s+/, '')  // "1976-77 " prefix
+    .replace(/^\d{4}\s+/, '')              // "1927 " prefix
+    .replace(/\s*[-—]\s*.*$/, '')          // " — 18 Majors" suffix
+    .replace(/\s*\(.*\)$/, '')             // " (60-8-12)" suffix
+    .replace(/\s*\*$/, '')                 // trailing asterisk
+    .trim();
+}
+
+/** Looks up a sports image via SportsDB. Tries player fanart first, then team fanart. */
+async function fetchSportsDBImage(name: string): Promise<string | null> {
+  if (!SPORTSDB_KEY || !name) return null;
+
+  // Try player search
+  try {
+    const res = await fetch(
+      `${SPORTSDB_BASE}/${SPORTSDB_KEY}/searchplayers.php?p=${encodeURIComponent(name)}`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const player = data.player?.[0];
+      if (player) {
+        const img = player.strFanart1 ?? player.strThumb ?? null;
+        if (img) return img;
+      }
+    }
+  } catch {}
+
+  // Try team search
+  try {
+    const res = await fetch(
+      `${SPORTSDB_BASE}/${SPORTSDB_KEY}/searchteams.php?t=${encodeURIComponent(name)}`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const team = data.teams?.[0];
+      if (team) {
+        const img = team.strFanart1 ?? team.strBadge ?? null;
+        if (img) return img;
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
+// Curated static items — checked first regardless of category.
+// Use this for any Movies/TV list that is editorial (villains, characters, etc.)
+// rather than "best films/shows overall", so it isn't overridden by the TMDB fetch.
 const STATIC_ITEMS: Record<string, string[]> = {
+  'f-58': [
+    'Hannibal Lecter — The Silence of the Lambs',
+    'Darth Vader — Star Wars',
+    'The Joker — The Dark Knight',
+    'Anton Chigurh — No Country for Old Men',
+    'Nurse Ratched — One Flew Over the Cuckoo\'s Nest',
+    'Thanos — Avengers: Infinity War',
+    'Hans Landa — Inglourious Basterds',
+    'Alex DeLarge — A Clockwork Orange',
+    'Norman Bates — Psycho',
+    'Patrick Bateman — American Psycho',
+  ],
   'f-2': [
     'To Kill a Mockingbird', '1984', 'The Great Gatsby',
     'Crime and Punishment', 'One Hundred Years of Solitude',
@@ -60,14 +128,14 @@ const STATIC_ITEMS: Record<string, string[]> = {
     'Jimmy Connors — 8', 'Ivan Lendl — 8',
   ],
   'f-18': [
-    'Barry Bonds — 762', 'Hank Aaron — 755', 'Babe Ruth — 714', 'Albert Pujols — 700',
+    'Barry Bonds — 762', 'Hank Aaron — 755', 'Babe Ruth — 714', 'Albert Pujols — 703',
     'Alex Rodriguez — 696', 'Willie Mays — 660', 'Ken Griffey Jr. — 630', 'Jim Thome — 612',
     'Sammy Sosa — 609', 'Frank Robinson — 586',
   ],
   'f-19': [
     'Ed Walsh — 1.82', 'Addie Joss — 1.89', 'Three Finger Brown — 2.06', 'Christy Mathewson — 2.13',
-    'Rube Waddell — 2.16', 'Walter Johnson — 2.17', 'Grover Cleveland Alexander — 2.56',
-    'Clayton Kershaw — 2.48', 'Cy Young — 2.63', 'Tom Seaver — 2.86',
+    'Rube Waddell — 2.16', 'Walter Johnson — 2.17', 'Orval Overall — 2.24',
+    'Tommy Bond — 2.25', 'Will White — 2.28', 'Ed Reulbach — 2.28',
   ],
   'f-20': [
     'Cy Young — 511', 'Walter Johnson — 417', 'Grover Cleveland Alexander — 373', 'Christy Mathewson — 373',
@@ -93,15 +161,15 @@ const STATIC_ITEMS: Record<string, string[]> = {
     'Justin Tucker — 66 yds (Ravens, 2021)', 'Matt Prater — 64 yds (Broncos, 2013)',
     'Tom Dempsey — 63 yds (Saints, 1970)', 'Jason Elam — 63 yds (Broncos, 1998)',
     'Sebastian Janikowski — 63 yds (Raiders, 2011)', 'David Akers — 63 yds (49ers, 2012)',
-    'Graham Gano — 63 yds (Panthers, 2018)', 'Jake Elliott — 61 yds (Eagles, 2017)',
-    'Robbie Gould — 61 yds (49ers, 2020)', 'Ryan Succop — 61 yds (Buccaneers, 2020)',
+    'Graham Gano — 63 yds (Panthers, 2018)', 'Greg Zuerlein — 63 yds (Rams, 2017)',
+    'Blair Walsh — 62 yds (Vikings, 2013)', 'Jake Elliott — 61 yds (Eagles, 2017)',
   ],
   'f-25': [
     'Eric Dickerson — 2,105 yds (Rams, 1984)', 'Adrian Peterson — 2,097 yds (Vikings, 2012)',
     'Jamal Lewis — 2,066 yds (Ravens, 2003)', 'Barry Sanders — 2,053 yds (Lions, 1997)',
-    'Derrick Henry — 2,027 yds (Titans, 2020)', 'Saquon Barkley — 2,005 yds (Eagles, 2024)',
+    'Derrick Henry — 2,027 yds (Titans, 2020)', 'Terrell Davis — 2,008 yds (Broncos, 1998)',
+    'Chris Johnson — 2,006 yds (Titans, 2009)', 'Saquon Barkley — 2,005 yds (Eagles, 2024)',
     'O.J. Simpson — 2,003 yds (Bills, 1973)', 'Earl Campbell — 1,934 yds (Oilers, 1980)',
-    'Jim Brown — 1,863 yds (Browns, 1963)', 'Tiki Barber — 1,860 yds (Giants, 2005)',
   ],
   'f-26': [
     'Brazil — 5 titles (1958, 62, 70, 94, 02)', 'Germany — 4 titles (1954, 74, 90, 2014)',
@@ -116,14 +184,14 @@ const STATIC_ITEMS: Record<string, string[]> = {
     'Helmut Rahn — 10', 'Gary Lineker — 10',
   ],
   'f-28': [
-    'Wayne Gretzky — 894', 'Gordie Howe — 801', 'Jaromír Jagr — 766', 'Brett Hull — 741',
-    'Marcel Dionne — 731', 'Phil Esposito — 717', 'Mike Gartner — 708', 'Mark Messier — 694',
-    'Steve Yzerman — 692', 'Mario Lemieux — 690',
+    'Alex Ovechkin — 921*', 'Wayne Gretzky — 894', 'Gordie Howe — 801', 'Jaromír Jagr — 766',
+    'Brett Hull — 741', 'Marcel Dionne — 731', 'Phil Esposito — 717', 'Mike Gartner — 708',
+    'Mark Messier — 694', 'Steve Yzerman — 692',
   ],
   'f-29': [
     'Wayne Gretzky — 1,963', 'Ron Francis — 1,249', 'Mark Messier — 1,193', 'Ray Bourque — 1,169',
-    'Jaromír Jagr — 1,155', 'Paul Coffey — 1,135', 'Adam Oates — 1,079', 'Gordie Howe — 1,049',
-    'Marcel Dionne — 1,040', 'Joe Sakic — 1,016',
+    'Jaromír Jagr — 1,155', 'Paul Coffey — 1,135', 'Joe Thornton — 1,109', 'Sidney Crosby — 1,094*',
+    'Adam Oates — 1,079', 'Steve Yzerman — 1,063',
   ],
   'f-30': [
     'Montreal Canadiens — 24', 'Toronto Maple Leafs — 13', 'Detroit Red Wings — 11', 'Boston Bruins — 6',
@@ -132,24 +200,24 @@ const STATIC_ITEMS: Record<string, string[]> = {
   ],
   'f-31': [
     'Bill Russell — 11 rings', 'Sam Jones — 10 rings', 'K.C. Jones — 8 rings', 'Satch Sanders — 8 rings',
-    'John Havlicek — 8 rings', 'Michael Jordan — 6 rings', 'Scottie Pippen — 6 rings',
-    'Kareem Abdul-Jabbar — 6', 'Magic Johnson — 5 rings', 'Kobe Bryant — 5 rings',
+    'John Havlicek — 8 rings', 'Tom Heinsohn — 8 rings', 'Frank Ramsey — 7 rings',
+    'Robert Horry — 7 rings', 'Michael Jordan — 6 rings', 'Scottie Pippen — 6 rings',
   ],
   'f-32': [
-    'Boston Celtics — 17', 'Los Angeles Lakers — 17', 'Golden State Warriors — 7', 'Chicago Bulls — 6',
+    'Boston Celtics — 18', 'Los Angeles Lakers — 17', 'Golden State Warriors — 7', 'Chicago Bulls — 6',
     'San Antonio Spurs — 5', 'Miami Heat — 3', 'Philadelphia 76ers — 3', 'Detroit Pistons — 3',
     'Houston Rockets — 2', 'New York Knicks — 2',
   ],
   'f-33': [
-    'LeBron James — 40,000+', 'Kareem Abdul-Jabbar — 38,387', 'Karl Malone — 36,928', 'Kobe Bryant — 33,643',
-    'Michael Jordan — 32,292', 'Dirk Nowitzki — 31,560', 'Wilt Chamberlain — 31,419',
-    "Shaquille O'Neal — 28,596", 'Carmelo Anthony — 28,289', 'Moses Malone — 27,409',
+    'LeBron James — 43,127*', 'Kareem Abdul-Jabbar — 38,387', 'Karl Malone — 36,928', 'Kobe Bryant — 33,643',
+    'Michael Jordan — 32,292', 'Kevin Durant — 32,163*', 'Dirk Nowitzki — 31,560',
+    'Wilt Chamberlain — 31,419', 'Julius Erving — 30,026', 'Moses Malone — 29,580',
   ],
   'f-34': [
-    'Wilt Chamberlain — 30.1 ppg', 'Michael Jordan — 30.1 ppg', 'Elgin Baylor — 27.4 ppg',
-    'LeBron James — 27.1 ppg', 'Jerry West — 27.0 ppg', 'Kevin Durant — 27.0 ppg',
-    'Allen Iverson — 26.7 ppg', 'George Gervin — 26.2 ppg', 'Oscar Robertson — 25.7 ppg',
-    'Kobe Bryant — 25.0 ppg',
+    'Michael Jordan — 30.12 ppg', 'Wilt Chamberlain — 30.07 ppg', 'Luka Dončić — 29.03 ppg*',
+    'Joel Embiid — 27.63 ppg*', 'Elgin Baylor — 27.36 ppg', 'Kevin Durant — 27.16 ppg*',
+    'Jerry West — 27.03 ppg', 'LeBron James — 26.85 ppg*', 'Allen Iverson — 26.66 ppg',
+    'Bob Pettit — 26.36 ppg',
   ],
 };
 
@@ -202,7 +270,10 @@ export async function fetchCommunityImage(
   imageQuery: string | undefined,
   category?: string,
   firstItemTitle?: string,
+  staticImageUrl?: string,
 ): Promise<string | null> {
+  if (staticImageUrl) return staticImageUrl;
+
   if (communityImageMemCache.has(listId)) return communityImageMemCache.get(listId)!;
 
   try {
@@ -262,14 +333,16 @@ export async function fetchFeaturedItems(list: FeaturedList): Promise<string[]> 
 
   let items: string[] = [];
   try {
-    if (list.category === 'Movies') {
+    if (STATIC_ITEMS[list.id]) {
+      items = STATIC_ITEMS[list.id];
+    } else if (list.category === 'Movies') {
       const movies = await getTopRatedMovies();
       items = movies.slice(0, 10).map((m) => m.title);
     } else if (list.category === 'TV') {
       const shows = await getTopRatedTVShows();
       items = shows.slice(0, 10).map((s) => s.title);
     } else {
-      items = STATIC_ITEMS[list.id] ?? list.previewItems;
+      items = list.previewItems;
     }
   } catch {
     items = STATIC_ITEMS[list.id] ?? list.previewItems;

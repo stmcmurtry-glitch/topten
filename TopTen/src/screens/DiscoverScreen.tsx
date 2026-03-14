@@ -10,20 +10,23 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { FEATURED_LISTS, POPULAR_LISTS, STARTER_LISTS, FeaturedList, PopularList } from '../data/featuredLists';
-import { LOCAL_COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
+import { useViewedLists } from '../context/ViewedListsContext';
+import { LOCAL_COMMUNITY_LISTS, COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
 import { fetchLocalPlacesLists } from '../services/googlePlacesService';
 import { registerDynamicLists } from '../data/dynamicListRegistry';
 import { fetchFeaturedItems, fetchFeaturedImage, fetchCommunityImage, fetchCityImage } from '../services/featuredContentService';
 import { CATEGORY_COLORS } from '../components/FeedRow';
-import { getDetectedLocation, regionMatches, DetectedLocation } from '../services/locationService';
+import { getDetectedLocation, regionMatches, DetectedLocation, formatLocationLabel } from '../services/locationService';
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
 import { EXPLORE_CITIES, ExploreCity } from '../data/exploreCities';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { InYourAreaLockCard } from '../components/InYourAreaLockCard';
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   'Greatest Athletes of All Time': 'The greatest competitors across all sports, ranked by career dominance, legacy, and cultural impact.',
@@ -68,18 +71,21 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   }, [user, lists, addList, navigation]);
 
   const [query, setQuery] = useState('');
+  const { viewedIds } = useViewedLists();
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
   const [localPlacesLists, setLocalPlacesLists] = useState<CommunityList[]>([]);
   const [changeLocationVisible, setChangeLocationVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
+      if (!user) return;
       getDetectedLocation().then(setDetectedLocation);
-    }, [])
+    }, [user])
   );
 
+
   useEffect(() => {
-    if (!detectedLocation?.city) return;
+    if (!user || !detectedLocation?.city) return;
     fetchLocalPlacesLists(detectedLocation.city).then((lists) => {
       if (lists.length > 0) {
         registerDynamicLists(lists);
@@ -100,12 +106,31 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
   const q = query.toLowerCase().trim();
 
-  const filteredFeatured = useMemo(() =>
-    q ? FEATURED_LISTS.filter(l =>
+  const filteredFeatured = useMemo(() => {
+    const base = q
+      ? FEATURED_LISTS.filter(l => l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q))
+      : FEATURED_LISTS;
+    if (q) return base; // don't reorder search results
+    const unreviewed = base.filter(l => !viewedIds.has(l.id));
+    const reviewed = base.filter(l => viewedIds.has(l.id));
+    return [...unreviewed, ...reviewed];
+  }, [q, viewedIds]);
+
+  const filteredCommunity = useMemo(() =>
+    q ? COMMUNITY_LISTS.filter(l =>
       l.title.toLowerCase().includes(q) || l.category.toLowerCase().includes(q)
-    ) : FEATURED_LISTS,
+    ) : [],
     [q]
   );
+
+  type SearchItem =
+    | { kind: 'featured'; data: FeaturedList }
+    | { kind: 'community'; data: CommunityList };
+
+  const searchResults = useMemo((): SearchItem[] => [
+    ...filteredFeatured.map(d => ({ kind: 'featured' as const, data: d })),
+    ...filteredCommunity.map(d => ({ kind: 'community' as const, data: d })),
+  ], [filteredFeatured, filteredCommunity]);
 
   const isSearching = q.length > 0;
 
@@ -126,7 +151,6 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             placeholder="Search lists…"
             placeholderTextColor={colors.secondaryText}
             returnKeyType="search"
-            clearButtonMode="while-editing"
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery('')}>
@@ -137,25 +161,36 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       </View>
 
       {isSearching ? (
-        /* ── Search results: flat combined list ── */
+        /* ── Search results: featured + community combined ── */
         <FlatList
-          data={filteredFeatured}
-          keyExtractor={(item) => item.id}
+          data={searchResults}
+          keyExtractor={(item) => `${item.kind}-${item.data.id}`}
           contentContainerStyle={styles.searchResults}
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="search-outline" size={40} color={colors.secondaryText} />
               <Text style={styles.emptyText}>No lists matching "{query}"</Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <FeaturedRow list={item} onPress={() => navigation.navigate('FeaturedList', { featuredId: item.id })} />
-          )}
+          renderItem={({ item }) =>
+            item.kind === 'featured' ? (
+              <FeaturedRow
+                list={item.data}
+                onPress={() => navigation.navigate('FeaturedList', { featuredId: item.data.id })}
+              />
+            ) : (
+              <CommunitySearchRow
+                list={item.data}
+                onPress={() => navigation.navigate('CommunityList', { communityListId: item.data.id })}
+              />
+            )
+          }
         />
       ) : (
         /* ── Default browse view ── */
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.browse}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" contentContainerStyle={styles.browse}>
           {/* Explore Other Areas */}
           <TouchableOpacity
             style={styles.sectionHeaderLink}
@@ -225,7 +260,9 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           </View>
 
           {/* In your area */}
-          {allLocalLists.length > 0 && (
+          {!user ? (
+            <InYourAreaLockCard onSignIn={() => navigation.navigate('AuthScreen')} />
+          ) : allLocalLists.length > 0 ? (
             <>
               <View style={styles.areaSectionHeader}>
                 <TouchableOpacity
@@ -247,7 +284,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                   >
                     <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
                     <Text style={styles.areaLocationText}>
-                      {detectedLocation.city || detectedLocation.region}
+                      {formatLocationLabel(detectedLocation)}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -264,7 +301,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                 ))}
               </View>
             </>
-          )}
+          ) : null}
         </ScrollView>
       )}
 
@@ -305,6 +342,12 @@ const FeaturedCard: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ l
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <View style={[styles.cardHeader, { backgroundColor: list.color }]}>
+        <LinearGradient
+          colors={['#000000', list.color]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
         {imageUrl && (
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         )}
@@ -314,7 +357,6 @@ const FeaturedCard: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ l
       </View>
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={2}>{list.title}</Text>
-        <Text style={styles.cardAuthor}>{list.author}</Text>
         {items.slice(0, 3).map((item, i) => (
           <Text key={i} style={styles.cardItem} numberOfLines={1}>
             {i + 1}. {item}
@@ -356,9 +398,15 @@ const CityCarouselCard: React.FC<{ city: ExploreCity; onPress: () => void }> = (
   return (
     <TouchableOpacity style={styles.cityCard} onPress={onPress} activeOpacity={0.85}>
       <View style={[styles.cityCardInner, { backgroundColor: '#2C2C2E' }]}>
-        {imageUrl ? (
+        <LinearGradient
+          colors={['#000000', '#2C2C2E']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
+        {imageUrl && (
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : null}
+        )}
         <View style={styles.cityCardOverlay} />
         <View style={styles.cityCardLabel}>
           <Text style={styles.cityCardName} numberOfLines={1}>{city.name}</Text>
@@ -377,6 +425,26 @@ const FeaturedRow: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ li
     <View style={styles.featuredInfo}>
       <Text style={styles.featuredTitle} numberOfLines={1}>{list.title}</Text>
       <Text style={styles.featuredMeta}>{list.category} · {list.author}</Text>
+    </View>
+    <View style={styles.featuredBadge}>
+      <Text style={styles.featuredBadgeText}>Featured</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={14} color={colors.border} />
+  </TouchableOpacity>
+);
+
+/* ── Community Row (search results) ── */
+const CommunitySearchRow: React.FC<{ list: CommunityList; onPress: () => void }> = ({ list, onPress }) => (
+  <TouchableOpacity style={styles.featuredRow} onPress={onPress} activeOpacity={0.8}>
+    <View style={[styles.featuredThumb, { backgroundColor: list.color }]}>
+      <Ionicons name={list.icon as any} size={26} color="#FFF" />
+    </View>
+    <View style={styles.featuredInfo}>
+      <Text style={styles.featuredTitle} numberOfLines={1}>{list.title}</Text>
+      <Text style={styles.featuredMeta}>{list.category} · {list.participantCount} votes</Text>
+    </View>
+    <View style={[styles.featuredBadge, styles.communityBadge]}>
+      <Text style={[styles.featuredBadgeText, styles.communityBadgeText]}>Community</Text>
     </View>
     <Ionicons name="chevron-forward" size={14} color={colors.border} />
   </TouchableOpacity>
@@ -647,6 +715,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.secondaryText,
     marginTop: 2,
+  },
+  featuredBadge: {
+    backgroundColor: 'rgba(204,0,0,0.1)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    flexShrink: 0,
+  },
+  featuredBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.activeTab,
+    letterSpacing: 0.3,
+  },
+  communityBadge: {
+    backgroundColor: 'rgba(108,92,231,0.1)',
+  },
+  communityBadgeText: {
+    color: '#6C5CE7',
   },
   empty: {
     alignItems: 'center',

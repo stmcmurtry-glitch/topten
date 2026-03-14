@@ -11,6 +11,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -18,33 +19,33 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 
 interface Props {
   navigation: any;
-  route?: { params?: { onSuccess?: () => void } };
 }
 
 export const AuthScreen: React.FC<Props> = ({ navigation }) => {
-  const { signInWithEmail, signUpWithEmail, signInWithApple, signInWithGoogle, error, clearError, user, loading } = useAuth();
+  const { signInWithEmail, signInWithApple, signInWithGoogle, error, clearError, user, loading, needsOnboarding, profileChecked } = useAuth();
+  const googleEnabled = !!(process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ?? '').trim();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
 
-  // Close when user signs in
+  // Only navigate when this screen is focused (not when CreateAccount is on top)
   useEffect(() => {
-    if (!loading && user) {
-      navigation.goBack();
+    if (!loading && profileChecked && user && isFocused) {
+      if (needsOnboarding) {
+        navigation.navigate('ProfileSetup');
+      } else {
+        navigation.goBack();
+      }
     }
-  }, [user, loading]);
+  }, [user, loading, needsOnboarding, profileChecked, isFocused]);
 
-  const handleEmailAuth = async () => {
+  const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) return;
     setSubmitting(true);
     clearError();
-    if (isSignUp) {
-      await signUpWithEmail(email.trim(), password);
-    } else {
-      await signInWithEmail(email.trim(), password);
-    }
+    await signInWithEmail(email.trim(), password);
     setSubmitting(false);
   };
 
@@ -63,12 +64,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xxl }]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={{ flex: 1 }}>
         {/* Close button */}
         <TouchableOpacity
           style={styles.closeButton}
@@ -78,99 +74,98 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
           <Ionicons name="close" size={24} color={colors.secondaryText} />
         </TouchableOpacity>
 
-        {/* Logo + headline */}
-        <View style={styles.hero}>
-          <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
-          <View style={styles.wordmark}>
-            <Text style={styles.wordmarkLight}>Top</Text>
-            <Text style={styles.wordmarkBold}>Ten</Text>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.content, { paddingTop: spacing.xxl + 24, paddingBottom: insets.bottom + spacing.xxl }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Logo + headline */}
+          <View style={styles.hero}>
+            <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
+            <View style={styles.wordmark}>
+              <Text style={styles.wordmarkLight}>Top</Text>
+              <Text style={styles.wordmarkBold}>Ten</Text>
+            </View>
+            <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
-          <Text style={styles.subtitle}>Sign in to save your lists</Text>
-        </View>
 
-        {/* Apple Sign In */}
-        <TouchableOpacity style={styles.appleButton} onPress={handleApple} activeOpacity={0.85}>
-          <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
-          <Text style={styles.appleButtonText}>Continue with Apple</Text>
-        </TouchableOpacity>
+          {/* Apple Sign In */}
+          <TouchableOpacity style={styles.appleButton} onPress={handleApple} activeOpacity={0.85}>
+            <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+            <Text style={styles.appleButtonText}>Continue with Apple</Text>
+          </TouchableOpacity>
 
-        {/* Google Sign In */}
-        <TouchableOpacity style={styles.googleButton} onPress={handleGoogle} activeOpacity={0.85}>
-          <Text style={styles.googleG}>G</Text>
-          <Text style={styles.googleButtonText}>Continue with Google</Text>
-        </TouchableOpacity>
+          {/* Google Sign In */}
+          {googleEnabled && (
+            <TouchableOpacity style={styles.googleButton} onPress={handleGoogle} activeOpacity={0.85}>
+              <Text style={styles.googleG}>G</Text>
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
+          )}
 
-        {/* Divider */}
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.dividerLine} />
-        </View>
+          {/* Divider */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or sign in with email</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
-        {/* Email + Password */}
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={colors.secondaryText}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoCorrect={false}
-            returnKeyType="next"
-          />
-          <View style={styles.inputDivider} />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.secondaryText}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            returnKeyType="done"
-            onSubmitEditing={handleEmailAuth}
-          />
-        </View>
+          {/* Email + Password */}
+          <View style={styles.inputGroup}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email or Username"
+              placeholderTextColor={colors.secondaryText}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoCorrect={false}
+              returnKeyType="next"
+            />
+            <View style={styles.inputDivider} />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={colors.secondaryText}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              returnKeyType="done"
+              onSubmitEditing={handleSignIn}
+            />
+          </View>
 
-        {/* Error message */}
-        {!!error && (
-          <Text style={styles.errorText}>{error}</Text>
-        )}
+          {!!error && <Text style={styles.errorText}>{error}</Text>}
 
-        {/* Auth action buttons */}
-        <View style={styles.authRow}>
           <TouchableOpacity
-            style={[styles.authButton, !isSignUp && styles.authButtonActive, (submitting || !email || !password) && styles.authButtonDisabled]}
-            onPress={() => { setIsSignUp(false); handleEmailAuth(); }}
-            activeOpacity={0.8}
+            style={[styles.signInButton, (submitting || !email || !password) && styles.buttonDisabled]}
+            onPress={handleSignIn}
+            activeOpacity={0.85}
             disabled={submitting || !email || !password}
           >
-            {submitting && !isSignUp
+            {submitting
               ? <ActivityIndicator color="#FFF" size="small" />
-              : <Text style={[styles.authButtonText, !isSignUp && styles.authButtonTextActive]}>Sign In</Text>
+              : <Text style={styles.signInButtonText}>Sign In</Text>
             }
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.authButton, isSignUp && styles.authButtonActive, (submitting || !email || !password) && styles.authButtonDisabled]}
-            onPress={() => { setIsSignUp(true); handleEmailAuth(); }}
-            activeOpacity={0.8}
-            disabled={submitting || !email || !password}
-          >
-            {submitting && isSignUp
-              ? <ActivityIndicator color="#FFF" size="small" />
-              : <Text style={[styles.authButtonText, isSignUp && styles.authButtonTextActive]}>Create Account</Text>
-            }
-          </TouchableOpacity>
-        </View>
+          {/* Create Account link */}
+          <View style={styles.createRow}>
+            <Text style={styles.createLabel}>New here?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('CreateAccount')} activeOpacity={0.7}>
+              <Text style={styles.createLink}>Create Account</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Skip */}
-        <TouchableOpacity style={styles.skipButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Text style={styles.skipText}>Continue without account</Text>
-          <Ionicons name="arrow-forward" size={14} color={colors.secondaryText} />
-        </TouchableOpacity>
-      </ScrollView>
+          {/* Skip */}
+          <TouchableOpacity style={styles.skipButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+            <Text style={styles.skipText}>Continue without account</Text>
+            <Ionicons name="arrow-forward" size={14} color={colors.secondaryText} />
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 };
@@ -184,9 +179,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   closeButton: {
-    alignSelf: 'flex-end',
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    zIndex: 10,
     padding: spacing.xs,
-    marginBottom: spacing.md,
   },
   hero: {
     alignItems: 'center',
@@ -247,7 +244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
     ...shadow,
     shadowOpacity: 0.06,
   },
@@ -265,8 +262,8 @@ const styles = StyleSheet.create({
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
+    gap: spacing.sm,
+    marginVertical: spacing.xl,
   },
   dividerLine: {
     flex: 1,
@@ -274,7 +271,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   dividerText: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.secondaryText,
     fontWeight: '500',
   },
@@ -306,34 +303,39 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     fontWeight: '500',
   },
-  authRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  authButton: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  authButtonActive: {
+  signInButton: {
     backgroundColor: '#CC0000',
-    borderColor: '#CC0000',
+    borderRadius: borderRadius.lg,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    ...shadow,
+    shadowOpacity: 0.1,
   },
-  authButtonDisabled: {
+  buttonDisabled: {
     opacity: 0.45,
   },
-  authButtonText: {
+  signInButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.1,
+  },
+  createRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xl,
+  },
+  createLabel: {
     fontSize: 15,
-    fontWeight: '600',
     color: colors.secondaryText,
   },
-  authButtonTextActive: {
-    color: '#FFFFFF',
+  createLink: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#CC0000',
   },
   skipButton: {
     flexDirection: 'row',

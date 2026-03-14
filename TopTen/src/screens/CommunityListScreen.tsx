@@ -5,6 +5,7 @@ import {
   Text,
   Image,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -16,11 +17,14 @@ import {
   Animated,
   Linking,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { resolveCommunityList } from '../data/dynamicListRegistry';
+import { TOP_500_CITY_SLUG_SET } from '../data/topCities';
 import { useCommunity } from '../context/CommunityContext';
 import { fetchCommunityImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
@@ -51,6 +55,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const [showVoteOrderModal, setShowVoteOrderModal] = useState(false);
   const [loadingScores, setLoadingScores] = useState(true);
   const [submitConfirmed, setSubmitConfirmed] = useState(false);
+  const [showVoteHint, setShowVoteHint] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
@@ -72,6 +77,13 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     return Array(10).fill('');
   }, [ranking]);
 
+  // Show vote hint for first 10 submitted votes
+  useEffect(() => {
+    AsyncStorage.getItem('@topten_vote_submit_count').then((val) => {
+      setShowVoteHint((parseInt(val ?? '0', 10) < 10));
+    });
+  }, []);
+
   // Set navigator title so the Search screen back button reads the list name
   useEffect(() => {
     if (list) navigation.setOptions({ title: list.title });
@@ -89,23 +101,26 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     });
   }, [communityListId]);
 
-  // Fetch scores on mount
+  // Fetch scores on mount — 6 second timeout fallback to seed scores
   useEffect(() => {
     let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!cancelled) setLoadingScores(false);
+    }, 6000);
     fetchLiveScores(communityListId).finally(() => {
+      clearTimeout(timeout);
       if (!cancelled) {
         hasFetched.current = true;
         setLoadingScores(false);
       }
     });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, [communityListId, fetchLiveScores]);
 
   // Vote-order preference: show once, then remember choice
   // Skip entirely if user has already voted on this list
   useEffect(() => {
     if (submitted) return; // already voted — go straight to community tab
-    AsyncStorage.removeItem('@topten_vote_order_pref'); // TEMP: force modal for testing
     AsyncStorage.getItem('@topten_vote_order_pref').then(pref => {
       if (pref === 'vote_first') {
         setActiveTab('yours');
@@ -132,27 +147,59 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   // Fetch hero image
   useEffect(() => {
     if (!list) return;
-    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title)
+    fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title, list.staticImageUrl)
       .then(setHeroImageUrl);
   }, [communityListId]);
 
   if (!list) return null;
 
-  // Score lookup: liveScoreCache keyed by lower(trim(title)), fallback to seedScore
+  // A "seeded" list is an In Your Area list for one of the top-500 cities.
+  // Only these show pre-populated vote counts and scores.
+  // Any other city or any national community list starts from zero.
+  const citySlug = (list.region ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const isSeededList = communityListId.startsWith('local-') && TOP_500_CITY_SLUG_SET.has(citySlug);
+
+  // Score lookup: live Supabase scores take priority.
+  // Non-seeded lists ignore seedScore entirely — they start from scratch.
   const cachedScores = liveScoreCache[communityListId];
   const getScore = (itemTitle: string): number => {
     const key = itemTitle.toLowerCase().trim();
     if (cachedScores && cachedScores[key] !== undefined) return cachedScores[key];
+    if (!isSeededList) return 0;
     const item = list.items.find((i) => i.title.toLowerCase().trim() === key);
     return item?.seedScore ?? 0;
   };
 
-  const communityRanked = [...list.items].sort((a, b) => getScore(b.title) - getScore(a.title));
-  const maxScore = communityRanked.length > 0 ? (getScore(communityRanked[0].title) || 1) : 1;
+  // Merge seed items with any live-voted items not already in the list (e.g. user-added golf courses)
+  const allItems = useMemo(() => {
+    const base = [...list.items];
+    if (cachedScores) {
+      Object.keys(cachedScores).forEach((key) => {
+        if (!base.find((i) => i.title.toLowerCase().trim() === key)) {
+          base.push({ id: `live-${key}`, title: key, seedScore: 0 });
+        }
+      });
+    }
+    return base;
+  }, [list.items, cachedScores]);
 
-  const participantDisplay = (
-    participantCounts[communityListId] ?? list.participantCount
-  ).toLocaleString();
+  const filledCount = userSlots.filter((s) => s.trim()).length;
+
+  const communityRanked = [...allItems].sort((a, b) => getScore(b.title) - getScore(a.title));
+  const maxScore = communityRanked.length > 0 ? (getScore(communityRanked[0].title) || 1) : 1;
+  // Seeded lists (top-500 In Your Area): use seed count as fallback.
+  // Everything else: only real Supabase votes count.
+  const rawParticipantCount = isSeededList
+    ? (participantCounts[communityListId] ?? list.participantCount)
+    : (participantCounts[communityListId] ?? 0);
+  // Force to 0 when no items exist — catches stale cached data with a non-zero seed count
+  const participantCount = communityRanked.length === 0 ? 0 : rawParticipantCount;
+  // Normalize to leader then scale by votes × 8 — gives ~40–70 pts for 5–8 voters,
+  // works regardless of whether seed data is old (100-based) or new (28-based).
+  const displayScore = (raw: number) =>
+    participantCount > 0 ? Math.round((raw / maxScore) * participantCount * 8) : 0;
+
+  const participantDisplay = participantCount.toLocaleString();
 
   // ── Yours tab helpers ────────────────────────────────────────────────────
 
@@ -197,6 +244,13 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const handleSubmit = async () => {
     await submitRanking(communityListId);
 
+    // Track vote count for hint visibility
+    AsyncStorage.getItem('@topten_vote_submit_count').then((val) => {
+      const next = parseInt(val ?? '0', 10) + 1;
+      AsyncStorage.setItem('@topten_vote_submit_count', String(next));
+      if (next >= 10) setShowVoteHint(false);
+    });
+
     // Haptic + quick visual confirm, then flip to Community tab
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Animated.sequence([
@@ -214,15 +268,32 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const Hero = (
     <View style={[styles.hero, { paddingTop: insets.top + 70 }]}>
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: list.color }]} />
+      <LinearGradient
+        colors={['#000000', list.color]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={StyleSheet.absoluteFill}
+      />
       {heroImageUrl && (
         <Image source={{ uri: heroImageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       )}
       <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
 
       <View style={[styles.heroNav, { top: insets.top + 6 }]}>
-        <View style={{ width: 44 }} />
-        <Text style={styles.heroNavCategory} numberOfLines={1}>{list.category.toUpperCase()}</Text>
+        <TouchableOpacity
+          style={styles.heroNavBtnWrap}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <BlurView intensity={40} tint="dark" style={styles.heroNavBtn}>
+            <View style={styles.heroNavBtnInner}>
+              <Ionicons name="chevron-back" size={22} color="#FFF" />
+            </View>
+          </BlurView>
+        </TouchableOpacity>
+        <Text style={styles.heroNavCategory} numberOfLines={1} pointerEvents="none">
+          {list.category.toUpperCase()}
+        </Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -267,7 +338,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}
+        contentContainerStyle={{ paddingBottom: activeTab === 'yours' ? insets.bottom + 140 : insets.bottom + spacing.xxl }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -306,7 +377,23 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                   </View>
                 </TouchableOpacity>
               )}
-              {communityRanked.map((item, idx) => {
+              {participantCount === 0 && (
+                <View style={styles.emptyVoteState}>
+                  <Ionicons name="trophy-outline" size={44} color={colors.border} />
+                  <Text style={styles.emptyVoteTitle}>No votes yet</Text>
+                  <Text style={styles.emptyVoteBody}>
+                    Be the first to rank this list and set the standard for your city.
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.emptyVoteButton, { backgroundColor: list.color }]}
+                    onPress={() => setActiveTab('yours')}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.emptyVoteButtonText}>Cast Your Vote</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {participantCount > 0 && communityRanked.map((item, idx) => {
                 const score = getScore(item.title);
                 const barWidth = (score / maxScore) * SCORE_BAR_MAX_WIDTH;
                 return (
@@ -314,20 +401,22 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                     <Text style={styles.rankNum}>{idx + 1}</Text>
                     <View style={styles.communityItemInfo}>
                       <Text style={styles.communityItemTitle} numberOfLines={1}>{item.title}</Text>
-                      {item.artist && (
-                        <Text style={styles.communityItemArtist} numberOfLines={1}>{item.artist}</Text>
+                      {(item.location || item.artist) && (
+                        <Text style={styles.communityItemArtist} numberOfLines={1}>
+                          {item.location ?? item.artist}
+                        </Text>
                       )}
                     </View>
                     <View style={styles.scoreCol}>
                       <View style={[styles.scoreBar, { width: barWidth, backgroundColor: list.color }]} />
-                      <Text style={styles.scorePts}>{score.toLocaleString()} pts</Text>
+                      <Text style={styles.scorePts}>{displayScore(score)} pts</Text>
                     </View>
                   </View>
                 );
               })}
               </>
             )}
-            {!loadingScores && (
+            {!loadingScores && participantCount > 0 && communityRanked.length > 0 && (
               <>
                 <TouchableOpacity
                   style={[styles.shareButton, { backgroundColor: list.color }]}
@@ -355,77 +444,117 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           <View style={styles.section}>
             {userSlots.map((slotTitle, idx) => {
               const isEmpty = !slotTitle.trim();
+
+              if (isEmpty) {
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    activeOpacity={0.7}
+                    onPress={() => openChoiceSheet(idx)}
+                    style={[styles.yoursRow, styles.yoursRowEmpty]}
+                  >
+                    <Text style={[styles.rankNum, styles.rankNumEmpty]}>{idx + 1}</Text>
+                    <Text style={styles.emptyText}>Add an item</Text>
+                    <Ionicons name="add" size={16} color={colors.border} />
+                  </TouchableOpacity>
+                );
+              }
+
               return (
-                <TouchableOpacity
+                <Swipeable
                   key={idx}
-                  activeOpacity={0.7}
-                  onPress={() => openChoiceSheet(idx)}
-                  style={[styles.yoursRow, isEmpty && styles.yoursRowEmpty]}
-                >
-                  <Text style={[styles.rankNum, isEmpty && styles.rankNumEmpty]}>{idx + 1}</Text>
-                  {isEmpty ? (
-                    <>
-                      <Text style={styles.emptyText}>Add an item</Text>
-                      <Ionicons name="add" size={16} color={colors.border} />
-                    </>
-                  ) : (
-                    <>
-                      <View style={styles.yoursItemInfo}>
-                        <Text style={styles.yoursItemTitle} numberOfLines={1}>{slotTitle}</Text>
-                        {(() => {
-                          const artist = list.items.find(
-                            i => i.title.toLowerCase() === slotTitle.toLowerCase()
-                          )?.artist;
-                          return artist ? (
-                            <Text style={styles.communityItemArtist} numberOfLines={1}>{artist}</Text>
-                          ) : null;
-                        })()}
-                      </View>
-                      <View style={styles.moveButtons}>
-                        <TouchableOpacity
-                          onPress={() => moveSlot(idx, idx - 1)}
-                          disabled={idx === 0}
-                          hitSlop={8}
-                        >
-                          <Ionicons
-                            name="chevron-up"
-                            size={20}
-                            color={idx === 0 ? colors.border : colors.secondaryText}
-                          />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => moveSlot(idx, idx + 1)}
-                          disabled={idx === 9}
-                          hitSlop={8}
-                        >
-                          <Ionicons
-                            name="chevron-down"
-                            size={20}
-                            color={idx === 9 ? colors.border : colors.secondaryText}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </>
+                  friction={2}
+                  rightThreshold={40}
+                  renderRightActions={() => (
+                    <TouchableOpacity
+                      style={styles.swipeDeleteAction}
+                      onPress={() => {
+                        const updated = [...userSlots];
+                        updated[idx] = '';
+                        setUserSlots(communityListId, updated);
+                      }}
+                      activeOpacity={0.9}
+                    >
+                      <Ionicons name="trash-outline" size={20} color="#FFF" />
+                    </TouchableOpacity>
                   )}
-                </TouchableOpacity>
+                >
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => openChoiceSheet(idx)}
+                    style={styles.yoursRow}
+                  >
+                    <Text style={styles.rankNum}>{idx + 1}</Text>
+                    <View style={styles.yoursItemInfo}>
+                      <Text style={styles.yoursItemTitle} numberOfLines={1}>{slotTitle}</Text>
+                      {(() => {
+                        const match = list.items.find(
+                          i => i.title.toLowerCase() === slotTitle.toLowerCase()
+                        );
+                        const sub = match?.location ?? match?.artist;
+                        return sub ? (
+                          <Text style={styles.communityItemArtist} numberOfLines={1}>{sub}</Text>
+                        ) : null;
+                      })()}
+                    </View>
+                    <View style={styles.moveButtons}>
+                      <TouchableOpacity
+                        onPress={() => moveSlot(idx, idx - 1)}
+                        disabled={idx === 0}
+                        hitSlop={8}
+                      >
+                        <Ionicons
+                          name="chevron-up"
+                          size={20}
+                          color={idx === 0 ? colors.border : colors.secondaryText}
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => moveSlot(idx, idx + 1)}
+                        disabled={idx === 9}
+                        hitSlop={8}
+                      >
+                        <Ionicons
+                          name="chevron-down"
+                          size={20}
+                          color={idx === 9 ? colors.border : colors.secondaryText}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                </Swipeable>
               );
             })}
-
-            <TouchableOpacity onPress={handleSubmit} activeOpacity={0.9} disabled={submitConfirmed}>
-              <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: submitConfirmed ? '#2ECC71' : list.color }]}>
-                <Text style={styles.submitButtonText}>
-                  {submitConfirmed ? '✓ Submitted!' : submitted ? 'Update My Vote' : 'Submit My Vote'}
-                </Text>
-              </Animated.View>
-            </TouchableOpacity>
-            {submitConfirmed && (
-              <Text style={styles.batchNotice}>
-                Community scores update overnight — check back tomorrow!
-              </Text>
-            )}
           </View>
         )}
       </ScrollView>
+
+      {/* ── Sticky submit footer (Yours tab only) ── */}
+      {activeTab === 'yours' && (
+        <View style={[styles.stickyFooter, { paddingBottom: 8 }]}>
+          <TouchableOpacity onPress={handleSubmit} activeOpacity={0.9} disabled={submitConfirmed}>
+            <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: submitConfirmed ? '#2ECC71' : list.color }]}>
+              <Text style={styles.submitButtonText}>
+                {submitConfirmed ? '✓ Submitted!' : submitted ? 'Update My Vote' : 'Submit My Vote'}
+              </Text>
+            </Animated.View>
+          </TouchableOpacity>
+          {submitConfirmed ? (
+            <Text style={styles.batchNotice}>
+              Community scores update overnight — check back tomorrow!
+            </Text>
+          ) : showVoteHint && filledCount < 10 ? (
+            <View style={styles.voteHintRow}>
+              <Ionicons name="bulb-outline" size={13} color={colors.secondaryText} />
+              <Text style={styles.voteHint}>
+                {filledCount === 0
+                  ? "No need to fill all 10 — submit with as few as 1 pick."
+                  : `${filledCount} pick${filledCount === 1 ? '' : 's'} · submit now or keep adding`}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      )}
 
       <ShareModal
         visible={showShareModal}
@@ -506,30 +635,70 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <Pressable style={styles.overlay} onPress={() => setShowTypeModal(false)}>
-            <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <Pressable style={[styles.sheet, list.suggestedOptions && styles.sheetTall]} onPress={(e) => e.stopPropagation()}>
               <Text style={styles.sheetTitle}>
-                Enter item for #{typeSlotIndex !== null ? typeSlotIndex + 1 : ''}
-              </Text>
-              <Text style={styles.sheetHint}>
-                We try our best to match submissions, but type verbatim for the best chance of landing on the community list.
+                {list.suggestedOptions ? 'Pick or type' : `Enter item for #${typeSlotIndex !== null ? typeSlotIndex + 1 : ''}`}
               </Text>
               <TextInput
                 style={styles.typeInput}
                 value={typedValue}
                 onChangeText={setTypedValue}
-                placeholder="Type a name…"
+                placeholder={list.suggestedOptions ? 'Search chains…' : 'Type a name…'}
                 placeholderTextColor={colors.secondaryText}
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={() => { if (typedValue.trim()) saveSlot(); }}
               />
-              <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: list.color }, !typedValue.trim() && styles.saveDisabled]}
-                disabled={!typedValue.trim()}
-                onPress={saveSlot}
-              >
-                <Text style={styles.saveText}>Save</Text>
-              </TouchableOpacity>
+              {list.suggestedOptions ? (
+                <>
+                  <FlatList
+                    data={list.suggestedOptions.filter((opt, idx, arr) =>
+                      arr.indexOf(opt) === idx && // dedupe
+                      (!typedValue.trim() || opt.toLowerCase().includes(typedValue.toLowerCase()))
+                    )}
+                    keyExtractor={(item) => item}
+                    style={styles.suggestionList}
+                    keyboardShouldPersistTaps="handled"
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.suggestionRow}
+                        onPress={() => {
+                          if (typeSlotIndex === null) return;
+                          const updated = [...userSlots];
+                          updated[typeSlotIndex] = item;
+                          setUserSlots(communityListId, updated);
+                          setShowTypeModal(false);
+                          setTypedValue('');
+                        }}
+                      >
+                        <Text style={styles.suggestionText}>{item}</Text>
+                      </TouchableOpacity>
+                    )}
+                    ItemSeparatorComponent={() => <View style={styles.suggestionSep} />}
+                  />
+                  {typedValue.trim() && (
+                    <TouchableOpacity
+                      style={[styles.saveButton, { backgroundColor: list.color }]}
+                      onPress={saveSlot}
+                    >
+                      <Text style={styles.saveText}>Use "{typedValue.trim()}"</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Text style={styles.sheetHint}>
+                    We try our best to match submissions, but type verbatim for the best chance of landing on the community list.
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.saveButton, { backgroundColor: list.color }, !typedValue.trim() && styles.saveDisabled]}
+                    disabled={!typedValue.trim()}
+                    onPress={saveSlot}
+                  >
+                    <Text style={styles.saveText}>Save</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </Pressable>
           </Pressable>
         </KeyboardAvoidingView>
@@ -710,18 +879,57 @@ const styles = StyleSheet.create({
   scoreBar: { height: 4, borderRadius: 2, minWidth: 4 }, // backgroundColor applied inline via list.color
   scorePts: { fontSize: 11, color: colors.secondaryText, fontWeight: '500' },
 
+  /* ── Empty vote state ── */
+  emptyVoteState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  emptyVoteTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  emptyVoteBody: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyVoteButton: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  emptyVoteButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
   /* ── Yours tab ── */
   yoursRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.cardBackground,
     borderRadius: borderRadius.sm,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     gap: spacing.md,
     ...shadow,
     shadowOpacity: 0.05,
+  },
+  swipeDeleteAction: {
+    backgroundColor: '#FF3B30',
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
+    borderTopRightRadius: borderRadius.sm,
+    borderBottomRightRadius: borderRadius.sm,
   },
   yoursRowEmpty: {
     backgroundColor: 'transparent',
@@ -732,16 +940,37 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   yoursItemInfo: { flex: 1, gap: 1 },
-  yoursItemTitle: { fontSize: 16, color: colors.primaryText },
-  emptyText: { flex: 1, fontSize: 16, color: colors.secondaryText },
+  yoursItemTitle: { fontSize: 14, color: colors.primaryText },
+  emptyText: { flex: 1, fontSize: 14, color: colors.secondaryText },
   moveButtons: { alignItems: 'center', gap: 2 },
+  stickyFooter: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    backgroundColor: colors.cardBackground,
+    ...shadow,
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: -3 },
+    elevation: 8,
+  },
+  voteHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: 6,
+  },
   submitButton: {
     borderRadius: borderRadius.sm,
     padding: spacing.lg,
     alignItems: 'center',
-    marginTop: spacing.lg,
   }, // backgroundColor applied inline via list.color
   submitButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  voteHint: {
+    fontSize: 12,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
   batchNotice: {
     textAlign: 'center',
     fontSize: 13,
@@ -887,4 +1116,9 @@ const styles = StyleSheet.create({
   }, // backgroundColor applied inline via list.color
   saveDisabled: { opacity: 0.4 },
   saveText: { color: '#FFF', fontSize: 17, fontWeight: '600' },
+  sheetTall: { maxHeight: '75%' },
+  suggestionList: { flexGrow: 0, maxHeight: 300, marginBottom: spacing.sm },
+  suggestionRow: { paddingVertical: 11, paddingHorizontal: spacing.sm },
+  suggestionText: { fontSize: 15, color: colors.primaryText },
+  suggestionSep: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
 });

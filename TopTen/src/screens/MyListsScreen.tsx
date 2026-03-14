@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
@@ -7,7 +7,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  ActivityIndicator,
+  RefreshControl,
+  Animated,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
@@ -15,6 +20,7 @@ import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
 import { PickCard } from '../components/PickCard';
 import { FEATURED_LISTS } from '../data/featuredLists';
 import { COMMUNITY_LISTS, LOCAL_COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
+import { TOP_500_CITY_SLUG_SET } from '../data/topCities';
 import { fetchLocalPlacesLists } from '../services/googlePlacesService';
 import { registerDynamicLists } from '../data/dynamicListRegistry';
 import { useCommunity } from '../context/CommunityContext';
@@ -24,6 +30,7 @@ import { CATEGORIES } from '../data/categories';
 import {
   getDetectedLocation,
   regionMatches,
+  formatLocationLabel,
   DetectedLocation,
 } from '../services/locationService';
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
@@ -33,14 +40,39 @@ import { useAuth } from '../context/AuthContext';
 const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 
 
+const SkeletonCard: React.FC = () => {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.85, duration: 750, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 750, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return (
+    <Animated.View style={[styles.skeletonCard, { opacity }]}>
+      <View style={styles.skeletonHeader} />
+      <View style={styles.skeletonBody}>
+        <View style={styles.skeletonLine} />
+        <View style={[styles.skeletonLine, { width: '55%' }]} />
+        <View style={[styles.skeletonLine, { width: '85%', marginTop: 6 }]} />
+        <View style={[styles.skeletonLine, { width: '75%' }]} />
+        <View style={[styles.skeletonLine, { width: '80%' }]} />
+      </View>
+    </Animated.View>
+  );
+};
+
 interface CommunityCardProps {
   list: CommunityList;
   submitted: boolean;
   onPress: () => void;
   liveCount?: number;
+  hideItems?: boolean;
 }
 
-const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress, liveCount }) => {
+const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress, liveCount, hideItems }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const top3 = list.items.slice(0, 3);
 
@@ -48,10 +80,20 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress,
     fetchCommunityImage(list.id, list.imageQuery, list.category, list.items[0]?.title, list.staticImageUrl).then(setImageUrl);
   }, [list.id]);
 
+  const citySlug = (list.region ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const isSeeded = list.id.startsWith('local-') && TOP_500_CITY_SLUG_SET.has(citySlug);
+  const voteCount = list.items.length === 0 ? 0 : (liveCount ?? (isSeeded ? list.participantCount : 0));
+
   return (
     <TouchableOpacity style={styles.communityCard} onPress={onPress} activeOpacity={0.85}>
       {/* Header — mirrors PickCard exactly */}
       <View style={[styles.communityCardHeader, { backgroundColor: list.color }]}>
+        <LinearGradient
+          colors={['#000000', list.color]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
         {imageUrl && (
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         )}
@@ -67,10 +109,8 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress,
       {/* Body */}
       <View style={styles.communityCardBody}>
         <Text style={styles.communityCardTitle} numberOfLines={2}>{list.title}</Text>
-        <Text style={styles.communityCardCount}>
-          {(liveCount ?? list.participantCount).toLocaleString()} voted
-        </Text>
-        {top3.map((item, idx) => (
+        <Text style={styles.communityCardCount}>{voteCount.toLocaleString()} voted</Text>
+        {!hideItems && voteCount > 0 && top3.map((item, idx) => (
           <Text key={item.id} style={styles.communityCardItem} numberOfLines={1}>
             {idx + 1}. {item.title}
           </Text>
@@ -82,7 +122,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress,
 
 export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user } = useAuth();
-  const { lists } = useListContext();
+  const { lists, listsLoading } = useListContext();
   const { userRankings, participantCounts } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
   // undefined = still detecting, null = failed / no match
@@ -90,22 +130,91 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
   const [localPlacesLists, setLocalPlacesLists] = useState<CommunityList[]>([]);
   const [changeLocationVisible, setChangeLocationVisible] = useState(false);
   const insets = useSafeAreaInsets();
+  // Generation counter incremented synchronously in the event handler — always
+  // before any in-flight fetch can complete. Each fetch captures its generation;
+  // if the counter has moved on by the time it resolves, the result is discarded.
+  const fetchGenRef = useRef(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [localListsReady, setLocalListsReady] = useState(false);
+  const [viewedIds, setViewedIds] = useState<Set<string>>(new Set());
+  const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
+  const votedInitialized = useRef(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Read early (fast) so it's ready when we need it
+    const raw = await AsyncStorage.getItem('@topten_viewed_featured').catch(() => null);
+    const storedIds = raw ? (JSON.parse(raw) as string[]) : [];
+    if (detectedLocation?.city) {
+      fetchGenRef.current += 1;
+      const gen = fetchGenRef.current;
+      setLocalListsReady(false);
+      setLocalPlacesLists([]);
+      const [lists] = await Promise.all([
+        fetchLocalPlacesLists(detectedLocation.city),
+        new Promise<void>(r => setTimeout(r, 600)),
+      ]);
+      if (fetchGenRef.current === gen && lists.length > 0) {
+        registerDynamicLists(lists);
+        setLocalPlacesLists(lists);
+      }
+      setLocalListsReady(true);
+    }
+    // Apply card reordering right as spinner disappears
+    setViewedIds(new Set(storedIds));
+    setVotedIds(new Set(Object.keys(userRankings).filter(id => userRankings[id]?.submitted)));
+    setRefreshing(false);
+  }, [detectedLocation?.city, userRankings]);
 
   useFocusEffect(
     useCallback(() => {
+      if (!user) return;
       getDetectedLocation().then(setDetectedLocation);
-    }, [])
+    }, [user])
   );
 
+
   useEffect(() => {
-    if (!detectedLocation?.city) return;
+    if (!user || !detectedLocation?.city) return;
+    const gen = fetchGenRef.current;
+    setLocalListsReady(false);
     fetchLocalPlacesLists(detectedLocation.city).then((lists) => {
+      if (fetchGenRef.current !== gen) return; // location changed while fetching — discard
       if (lists.length > 0) {
         registerDynamicLists(lists);
         setLocalPlacesLists(lists);
       }
+      setLocalListsReady(true);
     });
   }, [detectedLocation?.city]);
+
+  // Load persisted viewed featured IDs on mount — filter to valid list IDs only
+  useEffect(() => {
+    const validIds = new Set(FEATURED_LISTS.map(l => l.id));
+    AsyncStorage.getItem('@topten_viewed_featured').then(raw => {
+      if (!raw) return;
+      const ids: string[] = JSON.parse(raw);
+      const filtered = ids.filter(id => validIds.has(id));
+      // If ALL lists are marked viewed it's stale dev data — clear it
+      if (filtered.length >= FEATURED_LISTS.length) {
+        AsyncStorage.removeItem('@topten_viewed_featured').catch(() => {});
+        return;
+      }
+      if (filtered.length !== ids.length) {
+        AsyncStorage.setItem('@topten_viewed_featured', JSON.stringify(filtered)).catch(() => {});
+      }
+      if (filtered.length > 0) setViewedIds(new Set(filtered));
+    }).catch(() => {});
+  }, []);
+
+  // Initialize votedIds from userRankings on first load (persists via Supabase)
+  useEffect(() => {
+    if (votedInitialized.current) return;
+    const submittedKeys = Object.keys(userRankings).filter(id => userRankings[id]?.submitted);
+    if (submittedKeys.length === 0) return;
+    votedInitialized.current = true;
+    setVotedIds(new Set(submittedKeys));
+  }, [userRankings]);
 
   const allCategories = ['All', ...ALL_CATEGORY_LABELS];
 
@@ -116,13 +225,23 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
   const displayLists = filteredLists.slice(0, 10);
 
-  const filteredFeatured = activeCategory === 'All'
-    ? FEATURED_LISTS
-    : FEATURED_LISTS.filter((l) => l.category === activeCategory);
+  const filteredFeatured = useMemo(() => {
+    const base = activeCategory === 'All'
+      ? FEATURED_LISTS
+      : FEATURED_LISTS.filter((l) => l.category === activeCategory);
+    const unreviewed = base.filter(l => !viewedIds.has(l.id));
+    const reviewed = base.filter(l => viewedIds.has(l.id));
+    return [...unreviewed, ...reviewed];
+  }, [activeCategory, viewedIds]);
 
-  const filteredCommunity = activeCategory === 'All'
-    ? COMMUNITY_LISTS
-    : COMMUNITY_LISTS.filter((l) => l.category === activeCategory);
+  const filteredCommunity = useMemo(() => {
+    const base = activeCategory === 'All'
+      ? COMMUNITY_LISTS
+      : COMMUNITY_LISTS.filter((l) => l.category === activeCategory);
+    const unvoted = base.filter(l => !votedIds.has(l.id));
+    const voted = base.filter(l => votedIds.has(l.id));
+    return [...unvoted, ...voted];
+  }, [activeCategory, votedIds]);
 
   // Only show local lists whose region matches the detected location.
   // While still detecting (undefined) or on failure (null), show nothing.
@@ -137,54 +256,71 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     ? localPlacesLists
     : localPlacesLists.filter((cl) => cl.category === activeCategory);
 
-  const allLocalLists = [...filteredLocal, ...filteredPlaces];
+  const allLocalLists = useMemo(() => {
+    const base = [...filteredLocal, ...filteredPlaces];
+    const unvoted = base.filter(l => !votedIds.has(l.id));
+    const voted = base.filter(l => votedIds.has(l.id));
+    return [...unvoted, ...voted];
+  }, [filteredLocal, filteredPlaces, votedIds]);
   // Full location-filtered list (no category filter) for the See All screen
   const allLocalListsUnfiltered = [...locationFiltered, ...localPlacesLists];
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* App Logo */}
-      <View style={styles.headerRow}>
-        <View style={styles.logoRow}>
-          <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
-          <Text style={styles.logoTop}>Top</Text>
-          <Text style={styles.logoTen}>Ten</Text>
+    <View style={styles.container}>
+      {/* Fixed header — logo + refresh indicator + pill bar */}
+      <View style={[styles.fixedHeader, { paddingTop: insets.top }]}>
+        <View style={styles.headerRow}>
+          <View style={styles.logoRow}>
+            <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
+            <Text style={styles.logoTop}>Top</Text>
+            <Text style={styles.logoTen}>X</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => navigation.navigate('CreateList')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={26} color={colors.activeTab} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate('CreateList')}
-          activeOpacity={0.7}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.pillBar}
         >
-          <Ionicons name="add" size={26} color={colors.activeTab} />
-        </TouchableOpacity>
+          {allCategories.map((cat) => {
+            const active = cat === activeCategory;
+            return (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.pill, active && styles.pillActive]}
+                onPress={() => setActiveCategory(cat)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.pillText, active && styles.pillTextActive]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
       </View>
 
-      {/* Category Pill Bar */}
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.pillBar}
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.activeTab}
+            colors={[colors.activeTab]}
+          />
+        }
+        showsVerticalScrollIndicator={false}
       >
-        {allCategories.map((cat) => {
-          const active = cat === activeCategory;
-          return (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.pill, active && styles.pillActive]}
-              onPress={() => setActiveCategory(cat)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.pillText, active && styles.pillTextActive]}>
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
 
       {/* Featured Lists */}
       {filteredFeatured.length > 0 && (
@@ -206,7 +342,13 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
               <PickCard
                 key={list.id}
                 pick={list}
-                onPress={() => navigation.navigate('FeaturedList', { featuredId: list.id })}
+                onPress={() => {
+                  // Write to AsyncStorage — picked up by handleRefresh on next pull-to-refresh
+                  const next = new Set(viewedIds);
+                  next.add(list.id);
+                  AsyncStorage.setItem('@topten_viewed_featured', JSON.stringify([...next])).catch(() => {});
+                  navigation.navigate('FeaturedList', { featuredId: list.id });
+                }}
               />
             ))}
           </ScrollView>
@@ -244,7 +386,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       )}
 
       {/* In your area */}
-      {(!user || allLocalLists.length > 0) && (
+      {(!user || allLocalLists.length > 0 || refreshing || (user && !localListsReady && detectedLocation?.city)) && (
         <>
           <View style={styles.divider} />
           {!user ? (
@@ -271,26 +413,38 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                   >
                     <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
                     <Text style={styles.areaRegionLabel}>
-                      {detectedLocation.city || detectedLocation.region}
+                      {formatLocationLabel(detectedLocation)}
                     </Text>
                   </TouchableOpacity>
                 ) : null}
               </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.carousel}
-              >
-                {allLocalLists.map((cl) => (
-                  <CommunityCard
-                    key={cl.id}
-                    list={cl}
-                    submitted={userRankings[cl.id]?.submitted ?? false}
-                    onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
-                    liveCount={participantCounts[cl.id]}
-                  />
-                ))}
-              </ScrollView>
+              {(refreshing || !localListsReady) ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.carousel}
+                  scrollEnabled={false}
+                >
+                  {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+                </ScrollView>
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.carousel}
+                >
+                  {allLocalLists.map((cl) => (
+                    <CommunityCard
+                      key={cl.id}
+                      list={cl}
+                      submitted={userRankings[cl.id]?.submitted ?? false}
+                      onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
+                      liveCount={participantCounts[cl.id]}
+                      hideItems
+                    />
+                  ))}
+                </ScrollView>
+              )}
             </>
           )}
         </>
@@ -309,39 +463,45 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
       {user ? (
         <>
-          <View style={styles.feedCard}>
-            {displayLists.map((list, index) => (
-              <React.Fragment key={list.id}>
-                <FeedRow
-                  list={list}
-                  onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
-                  flat
-                  rank={index + 1}
-                />
-                {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
-              </React.Fragment>
-            ))}
-          </View>
+          {listsLoading ? (
+            <ActivityIndicator size="small" color={colors.activeTab} style={{ marginVertical: 24 }} />
+          ) : (
+            <>
+              <View style={styles.feedCard}>
+                {displayLists.map((list, index) => (
+                  <React.Fragment key={list.id}>
+                    <FeedRow
+                      list={list}
+                      onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
+                      flat
+                      rank={index + 1}
+                    />
+                    {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
+                  </React.Fragment>
+                ))}
+              </View>
 
-          {displayLists.length === 0 && (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No lists in this category yet.</Text>
+              {displayLists.length === 0 && (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No lists in this category yet.</Text>
+                  <TouchableOpacity
+                    style={styles.emptyButton}
+                    onPress={() => navigation.navigate('CreateList')}
+                  >
+                    <Text style={styles.emptyButtonText}>Create one</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
               <TouchableOpacity
-                style={styles.emptyButton}
+                style={styles.addButton}
                 onPress={() => navigation.navigate('CreateList')}
               >
-                <Text style={styles.emptyButtonText}>Create one</Text>
+                <Ionicons name="add-circle-outline" size={22} color={colors.activeTab} />
+                <Text style={styles.addText}>New List</Text>
               </TouchableOpacity>
-            </View>
+            </>
           )}
-
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => navigation.navigate('CreateList')}
-          >
-            <Ionicons name="add-circle-outline" size={22} color={colors.activeTab} />
-            <Text style={styles.addText}>New List</Text>
-          </TouchableOpacity>
         </>
       ) : (
         <TouchableOpacity style={styles.myListsLockCard} onPress={() => navigation.navigate('AuthScreen')} activeOpacity={0.85}>
@@ -359,22 +519,22 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         currentCity={detectedLocation?.city || detectedLocation?.region || ''}
         onClose={() => setChangeLocationVisible(false)}
         onLocationChanged={(newLoc) => {
+          fetchGenRef.current += 1;  // invalidate any in-flight fetch immediately
+          setLocalPlacesLists([]);
           setDetectedLocation(newLoc);
-          fetchLocalPlacesLists(newLoc.city).then((lists) => {
-            if (lists.length > 0) {
-              registerDynamicLists(lists);
-              setLocalPlacesLists(lists);
-            }
-          });
         }}
       />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  fixedHeader: {
     backgroundColor: colors.background,
   },
   content: {
@@ -390,7 +550,7 @@ const styles = StyleSheet.create({
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 3,
   },
   logoIcon: {
     width: 45,
@@ -410,7 +570,8 @@ const styles = StyleSheet.create({
   },
   pillBar: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
     gap: spacing.sm,
   },
   pill: {
@@ -631,5 +792,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.secondaryText,
     lineHeight: 16,
+  },
+
+  /* ── Skeleton loader ── */
+  skeletonCard: {
+    width: 155,
+    borderRadius: borderRadius.squircle,
+    backgroundColor: colors.cardBackground,
+    overflow: 'hidden',
+    marginRight: spacing.md,
+  },
+  skeletonHeader: {
+    height: 75,
+    backgroundColor: '#D1D1D6',
+  },
+  skeletonBody: {
+    padding: spacing.sm + 2,
+    gap: 6,
+  },
+  skeletonLine: {
+    height: 9,
+    borderRadius: 4,
+    backgroundColor: '#D1D1D6',
+    width: '90%',
   },
 });

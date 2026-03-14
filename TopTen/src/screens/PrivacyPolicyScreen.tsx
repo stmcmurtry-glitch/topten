@@ -15,7 +15,7 @@ const SECTIONS = [
   {
     icon: 'person-outline' as const,
     title: 'Your Content & Identity',
-    body: 'You retain full ownership of everything you create in Top Ten. Your personal identifiers — such as your name or email — are never sold, rented, or traded to third parties under any circumstances.',
+    body: 'You retain full ownership of everything you create in TopX. Your personal identifiers — such as your name or email — are never sold, rented, or traded to third parties under any circumstances.',
   },
   {
     icon: 'bar-chart-outline' as const,
@@ -25,7 +25,7 @@ const SECTIONS = [
   {
     icon: 'cloud-outline' as const,
     title: 'Third-Party APIs',
-    body: 'Top Ten communicates with third-party services such as TMDb and MusicBrainz to fetch content data. These services receive only specific search queries and never have access to your personal information.',
+    body: 'TopX communicates with third-party services such as TMDb and MusicBrainz to fetch content data. These services receive only specific search queries and never have access to your personal information.',
   },
   {
     icon: 'shield-checkmark-outline' as const,

@@ -70,11 +70,11 @@ export const ChangeLocationModal: React.FC<ChangeLocationModalProps> = ({
     }, 350);
   }, []);
 
-  const handleSelect = async (name: string) => {
+  const handleSelect = async (name: string, region?: string) => {
     if (confirming) return;
     setConfirming(true);
     try {
-      const newLoc = await setManualCity(name);
+      const newLoc = await setManualCity(name, region);
       onLocationChanged(newLoc);
       onClose();
     } finally {
@@ -159,7 +159,7 @@ export const ChangeLocationModal: React.FC<ChangeLocationModalProps> = ({
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.resultRow}
-                  onPress={() => handleSelect(item.name)}
+                  onPress={() => handleSelect(item.name, item.secondary.split(',')[0].trim())}
                   activeOpacity={0.7}
                   disabled={confirming}
                 >

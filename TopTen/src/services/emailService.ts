@@ -28,6 +28,7 @@ export async function sendContactEmail(opts: {
   message: string;
 }): Promise<void> {
   await sendTemplate(CONTACT_TEMPLATE_ID, {
+    emailyou:   'stmcmurtry@gmail.com',
     from_name:  opts.name || 'Anonymous',
     from_email: opts.email,
     message:    opts.message,
@@ -40,6 +41,7 @@ export async function sendFeedbackEmail(opts: {
   message: string;
 }): Promise<void> {
   await sendTemplate(FEEDBACK_TEMPLATE_ID, {
+    emailyou:     'stmcmurtry@gmail.com',
     rating:       String(opts.rating),
     rating_label: opts.ratingLabel,
     message:      opts.message || '(no comment)',
@@ -52,6 +54,7 @@ export async function sendReportEmail(opts: {
   message: string;
 }): Promise<void> {
   await sendTemplate(CONTACT_TEMPLATE_ID, {
+    emailyou:   'stmcmurtry@gmail.com',
     from_name:  `Issue Report — ${opts.listType} List`,
     from_email: 'report@toptenapp.com',
     message:    `List: ${opts.listTitle}\nType: ${opts.listType}\n\n${opts.message}`,

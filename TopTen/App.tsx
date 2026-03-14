@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ListProvider } from './src/data/ListContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { CommunityProvider } from './src/context/CommunityContext';
+import { ViewedListsProvider } from './src/context/ViewedListsContext';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 
@@ -85,22 +86,24 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ListProvider>
+        <AuthProvider>
           <NavigationContainer>
             <PostHogProvider
               apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ''}
               options={{ host: 'https://us.i.posthog.com' }}
             >
               <PostHogIdentifier />
-              <AuthProvider>
+              <ListProvider>
                 <CommunityProvider>
-                  <TabNavigator />
-                  <StatusBar style="auto" />
+                  <ViewedListsProvider>
+                    <TabNavigator />
+                    <StatusBar style="auto" />
+                  </ViewedListsProvider>
                 </CommunityProvider>
-              </AuthProvider>
+              </ListProvider>
             </PostHogProvider>
           </NavigationContainer>
-        </ListProvider>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

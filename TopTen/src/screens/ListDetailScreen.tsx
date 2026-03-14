@@ -14,6 +14,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { PhotoPickerModal } from '../components/PhotoPickerModal';
 import { PlansModal } from '../components/PlansModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -308,20 +309,42 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           const isEmpty = !item;
           const itemData = list.items.find(i => i.rank === index + 1);
           const thumbUrl = itemData?.imageUrl ?? null;
+
+          if (isEmpty) {
+            return (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => openChoiceSheet(index)}
+                style={[styles.row, styles.emptyRow]}
+              >
+                <Text style={[styles.rankNumber, styles.emptyRankNumber]}>{index + 1}</Text>
+                <Text style={styles.emptyText}>Add an item</Text>
+                <Ionicons name="add" size={16} color={colors.border} />
+              </TouchableOpacity>
+            );
+          }
+
           return (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => openChoiceSheet(index)}
-              style={[styles.row, isEmpty && styles.emptyRow]}
-            >
-              <Text style={[styles.rankNumber, isEmpty && styles.emptyRankNumber]}>{index + 1}</Text>
-              {isEmpty ? (
-                <>
-                  <Text style={styles.emptyText}>Add an item</Text>
-                  <Ionicons name="add" size={16} color={colors.border} />
-                </>
-              ) : (
-                <>
+            <View style={styles.swipeRowOuter}>
+              <Swipeable
+                friction={2}
+                rightThreshold={40}
+                renderRightActions={() => (
+                  <TouchableOpacity
+                    style={styles.swipeDeleteAction}
+                    onPress={() => setSlotValue(index, '')}
+                    activeOpacity={0.9}
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#FFF" />
+                  </TouchableOpacity>
+                )}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => openChoiceSheet(index)}
+                  style={styles.rowCard}
+                >
+                  <Text style={styles.rankNumber}>{index + 1}</Text>
                   {thumbUrl && <FlexThumb uri={thumbUrl} />}
                   <View style={styles.itemInfo}>
                     <Text style={styles.itemTitle} numberOfLines={1}>{item}</Text>
@@ -339,9 +362,9 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                       <Ionicons name="chevron-down" size={20} color={index === slots.length - 1 ? colors.border : colors.secondaryText} />
                     </TouchableOpacity>
                   </View>
-                </>
-              )}
-            </TouchableOpacity>
+                </TouchableOpacity>
+              </Swipeable>
+            </View>
           );
         }}
         ListFooterComponent={
@@ -600,7 +623,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
             </View>
             <Text style={styles.sheetTitle}>Premium Feature</Text>
             <Text style={styles.premiumPromptBody}>
-              Extend any list beyond 10 items with TopTen Premium.
+              Extend any list beyond 10 items with TopX Premium.
             </Text>
             <TouchableOpacity
               style={[styles.saveButton, { backgroundColor: colors.activeTab }]}
@@ -749,6 +772,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: spacing.md,
   },
+  // Used for empty (dashed) rows — keeps margins on the row itself
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -768,6 +792,31 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     shadowOpacity: 0,
     elevation: 0,
+  },
+  // Outer wrapper for swipeable filled rows — holds margins & shadow
+  swipeRowOuter: {
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    ...shadow,
+    shadowOpacity: 0.05,
+  },
+  // Inner card for filled rows (no margins — those are on swipeRowOuter)
+  rowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.sm,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  swipeDeleteAction: {
+    backgroundColor: '#FF3B30',
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopRightRadius: borderRadius.sm,
+    borderBottomRightRadius: borderRadius.sm,
   },
   rankNumber: {
     width: 20,

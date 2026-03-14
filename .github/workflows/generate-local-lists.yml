@@ -1,8 +1,8 @@
 name: Generate Local Lists
 
 on:
-  schedule:
-    - cron: '0 2 1 * *'   # 2am UTC, 1st of every month
+  # schedule:
+  #   - cron: '0 2 1 * *'   # 2am UTC, 1st of every month — disabled, run manually
   workflow_dispatch:
     inputs:
       cities:

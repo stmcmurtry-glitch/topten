@@ -43,7 +43,7 @@ export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category,
         pixelRatio: 2,
       } as any);
       await Share.share({
-        message: `Check out my Top 10 ${title}!\n\nDownload TopTen on the App Store: ${APP_STORE_URL}`,
+        message: `Check out my Top X ${title}!\n\nDownload TopX on the App Store: ${APP_STORE_URL}`,
         url: uri,
       });
     } catch {

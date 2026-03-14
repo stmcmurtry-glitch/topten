@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Constants from 'expo-constants';
 import { colors, spacing, borderRadius } from '../theme';
 
+const appVersion = Constants.expoConfig?.version ?? '—';
+
 const ROWS = [
-  { label: 'Version',     value: '1.0.0' },
+  { label: 'Version',     value: appVersion },
   { label: 'Theme',       value: 'System' },
-  { label: 'Developer',   value: 'Top Ten Team' },
+  { label: 'Developer',   value: 'TopX Team' },
   { label: 'Built with',  value: 'Expo + React Native' },
 ];
 

@@ -13,7 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { useCommunity } from '../context/CommunityContext';
 import { searchSuggestions, isApiCategory, SearchResult } from '../data/suggestions';
-import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces } from '../services/googlePlacesService';
+import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces, searchPlacesGlobal } from '../services/googlePlacesService';
+import { resolveCommunityList } from '../data/dynamicListRegistry';
 import { getDetectedLocation } from '../services/locationService';
 import { TopTenItem } from '../data/schema';
 import { colors, spacing, borderRadius } from '../theme';
@@ -38,17 +39,35 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     });
   }, [navigation]);
   const isCommunity = !!communityListId;
+  // National community lists (no region) always show pre-seeded items — never Google Places
+  const isNationalCommunity = isCommunity && !region;
+  // Resolve community list early so we can read findItemMode
+  const resolvedCommunityList = isCommunity ? resolveCommunityList(communityListId) : null;
+  // findItemMode declared on the list takes precedence over all heuristics.
+  // For local community lists (have a region) without an explicit mode, default to
+  // google-places-local — this covers old Supabase data where the registry resolved
+  // null or a list generated before findItemMode was added.
+  const findItemMode = resolvedCommunityList?.findItemMode
+    ?? (resolvedCommunityList?.useGlobalPlaces ? 'google-places-global' as const : null)
+    ?? (isCommunity && region ? 'google-places-local' as const : null);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [allCommunityItems, setAllCommunityItems] = useState<SearchResult[]>([]);
+  const [allPlacesItems, setAllPlacesItems] = useState<SearchResult[]>([]);
+  const [useGlobalPlaces, setUseGlobalPlaces] = useState(false);
+  const [hasSuggestedOptions, setHasSuggestedOptions] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [apiError, setApiError] = useState(false);
   // undefined = still detecting, null = unavailable, string = city name
   const [placesCity, setPlacesCity] = useState<string | null | undefined>(
-    isVenueList(listTitle, category) ? undefined : null
+    findItemMode === 'google-places-local' ? (region ?? undefined) :
+    !isNationalCommunity && isVenueList(listTitle, category) ? undefined : null
   );
   const { updateListItems, lists } = useListContext();
   const { userRankings, setUserSlots } = useCommunity();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const placesReqRef = useRef(0); // incremented on each Places API call; stale responses are discarded
 
   const doSearch = (q: string) => {
     setLoading(true);
@@ -61,31 +80,61 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const doPlacesSearch = useCallback((q: string, city: string) => {
     setLoading(true);
+    placesReqRef.current += 1;
+    const reqId = placesReqRef.current;
+    const isInitialLoad = !q.trim();
     const effectiveQuery = q.trim() || derivePlacesQuery(listTitle, category);
     // Only apply type filter on initial browse (no user query) — typed searches skip it
     // so specific venues like stadiums, arenas, etc. aren't filtered out
-    const placeType = q.trim() ? undefined : derivePlacesType(listTitle, category);
+    const placeType = isInitialLoad ? derivePlacesType(listTitle, category) : undefined;
     searchLocalPlaces(city, effectiveQuery, placeType)
-      .then((r) => setResults(r as SearchResult[]))
-      .catch(() => setResults([]))
-      .finally(() => setLoading(false));
+      .then((r) => {
+        if (placesReqRef.current !== reqId) return; // stale — a newer request is in flight
+        const items = r as SearchResult[];
+        if (isInitialLoad) setAllPlacesItems(items); // cache for instant client-side filtering
+        setResults(items);
+      })
+      .catch(() => { if (placesReqRef.current === reqId) setResults([]); })
+      .finally(() => { if (placesReqRef.current === reqId) setLoading(false); });
   }, [listTitle, category]);
 
   useEffect(() => {
-    if (isVenueList(listTitle, category)) {
+    if (isNationalCommunity) {
+      // Store pre-seeded items for filtering/browsing, but start with empty results
+      const items: SearchResult[] = resolvedCommunityList?.suggestedOptions?.length
+        ? resolvedCommunityList.suggestedOptions.map((title) => ({ title }))
+        : resolvedCommunityList
+          ? resolvedCommunityList.items.map((i) => ({ title: i.title, location: i.location, artist: i.artist }))
+          : [];
+      setAllCommunityItems(items);
+      setUseGlobalPlaces(findItemMode === 'google-places-global');
+      setHasSuggestedOptions(!!(resolvedCommunityList?.suggestedOptions?.length));
+      setResults([]); // intentionally empty — user types first
+      setLoading(false);
+    } else if (findItemMode === 'google-places-local') {
+      // Explicit local Places mode — city comes from region param or device location
       if (region) {
-        // Community list with a known city — use it directly, no location detection needed
         setPlacesCity(region);
         doPlacesSearch('', region);
       } else {
         getDetectedLocation().then((loc) => {
           const city = loc?.city || null;
           setPlacesCity(city);
-          if (city) {
-            doPlacesSearch('', city);
-          } else {
-            doSearch('');
-          }
+          if (city) doPlacesSearch('', city);
+          else doSearch('');
+        });
+      }
+    } else if (!findItemMode && isVenueList(listTitle, category)) {
+      // Legacy fallback for personal venue lists without findItemMode
+      if (region) {
+        setPlacesCity(region);
+        doPlacesSearch('', region);
+      } else {
+        getDetectedLocation().then((loc) => {
+          const city = loc?.city || null;
+          setPlacesCity(city);
+          if (city) doPlacesSearch('', city);
+          else doSearch('');
         });
       }
     } else {
@@ -95,14 +144,56 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (placesCity) {
-        doPlacesSearch(text, placesCity);
-      } else {
-        doSearch(text);
+    if (isNationalCommunity) {
+      setBrowsing(false);
+      if (!text.trim()) {
+        setResults([]);
+        return;
       }
-    }, 400);
+      // Show pre-seeded matches immediately (instant)
+      const seededMatches = allCommunityItems.filter((i) =>
+        i.title.toLowerCase().includes(text.toLowerCase())
+      );
+      setResults(seededMatches);
+      // Debounced augmentation — source depends on list type:
+      //  • useGlobalPlaces  → Google Places (BBQ joints, sandwich shops, bakeries, etc.)
+      //  • hasSuggestedOptions → no API needed; suggestedOptions already in allCommunityItems
+      //  • everything else  → searchSuggestions (MusicBrainz for songs, TMDB for movies, etc.)
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(async () => {
+        let extra: SearchResult[] = [];
+        const seededTitles = new Set(seededMatches.map((i) => i.title.toLowerCase()));
+        if (useGlobalPlaces) {
+          const placesResults = await searchPlacesGlobal(text);
+          extra = (placesResults as SearchResult[]).filter(
+            (r) => !seededTitles.has(r.title.toLowerCase())
+          );
+        } else if (!hasSuggestedOptions) {
+          const apiResults = await searchSuggestions(category, text, listTitle);
+          extra = apiResults.filter((r) => !seededTitles.has(r.title.toLowerCase()));
+        }
+        if (extra.length > 0) setResults([...seededMatches, ...extra]);
+      }, 400);
+      return;
+    }
+    if (placesCity) {
+      // Filter the pre-loaded Places list client-side first
+      const q = text.toLowerCase();
+      const filtered = allPlacesItems.filter((r) => r.title.toLowerCase().includes(q));
+      setResults(filtered);
+      // Only call Google Places if nothing matched locally
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (filtered.length === 0 && text.trim().length > 0) {
+        debounceRef.current = setTimeout(() => {
+          doPlacesSearch(text, placesCity);
+        }, 500);
+      }
+    } else {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        doSearch(text);
+      }, 400);
+    }
   };
 
   const handleSelect = (result: SearchResult) => {
@@ -129,8 +220,8 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     navigation.goBack();
   };
 
-  // Still detecting location for a venue-based list
-  if (isVenueList(listTitle, category) && placesCity === undefined) {
+  // Still detecting location (only personal venue lists without a known region hit this)
+  if (!isNationalCommunity && findItemMode !== 'google-places-local' && isVenueList(listTitle, category) && placesCity === undefined) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color={colors.activeTab} />
@@ -139,7 +230,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     );
   }
 
-  if (!isApiCategory(category)) {
+  if (!isNationalCommunity && findItemMode !== 'google-places-local' && !isVenueList(listTitle, category) && !isApiCategory(category)) {
     return (
       <View style={styles.container}>
         <View style={styles.comingSoon}>
@@ -181,16 +272,53 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
         {query.length > 0 && (
           <TouchableOpacity onPress={() => {
             setQuery('');
-            if (placesCity) doPlacesSearch('', placesCity);
-            else doSearch('');
+            if (placesCity) {
+              setResults(allPlacesItems); // instantly restore full list
+            } else {
+              doSearch('');
+            }
           }}>
             <Ionicons name="close-circle" size={18} color={colors.secondaryText} />
           </TouchableOpacity>
         )}
       </View>
-      <Text style={styles.hint}>
-        Suggestions are based on your list's category and may not always match. Can't find it? Type the name above and tap Add.
-      </Text>
+      {query.trim().length > 0 && (
+        <TouchableOpacity
+          style={[styles.row, styles.rowNoImage, styles.addManualRow]}
+          onPress={() => handleSelect({ title: query.trim() })}
+        >
+          <View style={styles.rowInfo}>
+            <Text style={styles.addManualText}>Add "{query.trim()}"</Text>
+          </View>
+          <Ionicons name="add-circle" size={22} color={colors.activeTab} />
+        </TouchableOpacity>
+      )}
+      {isNationalCommunity ? (
+        <TouchableOpacity
+          style={styles.browseToggle}
+          onPress={() => {
+            setBrowsing((b) => {
+              if (!b) setResults(allCommunityItems);
+              else setResults(query.trim()
+                ? allCommunityItems.filter((i) => i.title.toLowerCase().includes(query.toLowerCase()))
+                : []);
+              return !b;
+            });
+          }}
+          activeOpacity={0.6}
+        >
+          <Text style={styles.browseToggleText}>Browse suggestions</Text>
+          <Ionicons
+            name={browsing ? 'chevron-up' : 'chevron-forward'}
+            size={13}
+            color={colors.secondaryText}
+          />
+        </TouchableOpacity>
+      ) : (
+        <Text style={styles.hint}>
+          Suggestions are based on your list's category and may not always match. Can't find it? Type the name above and tap Add.
+        </Text>
+      )}
 
       {loading ? (
         <ActivityIndicator style={styles.loader} color={colors.activeTab} />
@@ -208,19 +336,6 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
           data={results}
           keyExtractor={(item, i) => `${item.title}-${i}`}
           keyboardShouldPersistTaps="handled"
-          ListHeaderComponent={
-            query.trim().length > 0 ? (
-              <TouchableOpacity
-                style={[styles.row, styles.rowNoImage, styles.addManualRow]}
-                onPress={() => handleSelect({ title: query.trim() })}
-              >
-                <View style={styles.rowInfo}>
-                  <Text style={styles.addManualText}>Add "{query.trim()}"</Text>
-                </View>
-                <Ionicons name="add-circle" size={22} color={colors.activeTab} />
-              </TouchableOpacity>
-            ) : null
-          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.row, !item.imageUrl && styles.rowNoImage]}
@@ -231,14 +346,22 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
               )}
               <View style={styles.rowInfo}>
                 <Text style={styles.rowText} numberOfLines={2}>{item.title}</Text>
-                {item.year ? <Text style={styles.rowYear}>{item.year}</Text> : null}
+                {item.location
+                  ? <Text style={styles.rowLocation}>{item.location}</Text>
+                  : item.year ? <Text style={styles.rowYear}>{item.year}</Text> : null
+                }
               </View>
               <Ionicons name="add-circle-outline" size={22} color={colors.activeTab} />
             </TouchableOpacity>
           )}
           ListEmptyComponent={
-            query.trim().length === 0 ? (
-              <Text style={styles.empty}>No results found</Text>
+            isNationalCommunity && !query.trim() && !browsing ? (
+              <View style={styles.typePrompt}>
+                <Ionicons name="create-outline" size={36} color={colors.border} />
+                <Text style={styles.typePromptText}>Type the name of your pick</Text>
+              </View>
+            ) : query.trim().length > 0 && results.length === 0 ? (
+              <Text style={styles.empty}>No matches — add it with the button above</Text>
             ) : null
           }
         />
@@ -346,6 +469,33 @@ const styles = StyleSheet.create({
     color: '#CC0000',
     fontWeight: '600',
     marginTop: 2,
+  },
+  rowLocation: {
+    fontSize: 12,
+    color: colors.secondaryText,
+    marginTop: 2,
+  },
+  browseToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginHorizontal: spacing.lg,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  browseToggleText: {
+    fontSize: 12,
+    color: colors.secondaryText,
+  },
+  typePrompt: {
+    alignItems: 'center',
+    marginTop: spacing.xxl * 2,
+    gap: spacing.md,
+  },
+  typePromptText: {
+    fontSize: 15,
+    color: colors.secondaryText,
   },
   empty: {
     textAlign: 'center',

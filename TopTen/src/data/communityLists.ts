@@ -25,6 +25,19 @@ export interface CommunityList {
   staticImageUrl?: string; // pinned image — bypasses all cache/API logic
   region?: string;      // e.g. 'Philadelphia' — present only on local/area lists
   sponsored?: Sponsored;
+  suggestedOptions?: string[]; // static pick-list shown in voting UI instead of free-form search
+  useGlobalPlaces?: boolean;   // @deprecated — use findItemMode: 'google-places-global' instead
+  /**
+   * Explicitly controls the "Find an item" search experience for this list.
+   *   'google-places-local'  — Google Places scoped to the list's region / user's city
+   *   'google-places-global' — Google Places with no location bias (national venue lists)
+   *   'api'                  — Category API (TMDB, MusicBrainz, etc.)
+   *   'suggestions'          — Browse/search pre-seeded suggestedOptions only, no external API
+   *   'manual'               — Type only; no search suggestions shown
+   * If omitted, falls back to legacy heuristics for backward compatibility.
+   */
+  findItemMode?: 'google-places-local' | 'google-places-global' | 'api' | 'suggestions' | 'manual';
+  addedAt?: string;            // 'YYYY-MM-DD' — date this list was first added to the app
 }
 
 export const COMMUNITY_LISTS: CommunityList[] = [
@@ -620,6 +633,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'deli sandwich pastrami rye bread counter shop New York',
     description: 'No national franchise chains. Vote for the specific location you\'ve been to — each outpost stands on its own. Which single sandwich shop location is the best in the country?',
     participantCount: 18,
+    useGlobalPlaces: true,
     items: [
       { id: 'csw-1',  title: 'Katz\'s Delicatessen',         location: 'New York, NY',       seedScore: 540 },
       { id: 'csw-2',  title: 'Turkey and the Wolf',           location: 'New Orleans, LA',    seedScore: 505 },
@@ -640,8 +654,57 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     color: '#FFB347',
     icon: 'restaurant-outline',
     imageQuery: 'sandwich shop chain sub roll counter fresh ingredients',
-    description: 'Chains and franchises only. Ranked by bread quality, ingredient freshness, and consistency.',
+    description: 'Sandwich-focused chains only. Ranked by bread quality, ingredient freshness, and consistency.',
     participantCount: 34,
+    suggestedOptions: [
+      // Sub & hoagie chains
+      "Jersey Mike's Subs", 'Firehouse Subs', "Jimmy John's", 'Subway', 'Quiznos',
+      'Potbelly Sandwich Works', 'Which Wich', "Capriotti's Sandwich Shop",
+      'Penn Station East Coast Subs', "Charley's Grilled Subs", "Schlotzsky's",
+      "Blimpie", "Godfather's Subs", "Tubby's", "Milio's Sandwiches",
+      'Erbert & Gerbert\'s', "Mr. Sub", 'Mr. Hero', 'Cousins Subs',
+      "D'Angelo Grilled Sandwiches", 'Thundercloud Subs', 'Submarina',
+      // Deli-style chains
+      "McAlister's Deli", "Jason's Deli", 'Corner Bakery Cafe', 'Au Bon Pain',
+      'Panera Bread', 'Mendocino Farms', 'La Madeleine', 'Zoup! Fresh Soup Co.',
+      "Bruegger's Bagels", 'Einstein Bros. Bagels', 'Manhattan Bagel',
+      "Noah's New York Bagels", 'Big Apple Bagels',
+      // Cheesesteak & Philly-style
+      "Pat's King of Steaks", "Geno's Steaks", "Jim's Steaks", 'Tony Luke\'s',
+      "Steakadelphia", "Phil's Steaks", "Steak 'n Shake (steak sandwiches)",
+      // Grilled cheese
+      'The Melt', 'Melt Bar and Grilled', 'Clementine\'s Naughty & Nice Creamery',
+      // Cuban & specialty sandwiches
+      'Versailles Restaurant (Cuban)', 'Porto\'s Bakery (media noche)',
+      // Wrap & pita chains
+      'Pita Pit', 'Wrap Works', 'Roti Modern Mediterranean', 'Garbanzo Mediterranean Fresh',
+      "Daphne's California Greek",
+      // Banh mi
+      "Lee's Sandwiches", 'Bon Mi', 'Banh Mi Che Cali',
+      // Hot dog & sausage (sandwich-adjacent)
+      "Portillo's", 'Wienerschnitzel', "Pink's Hot Dogs", 'Shake Shack (hot dogs)',
+      'Dog Haus',
+      // Po\' boy & regional
+      "Mother's Restaurant (po'boys)", 'Domilise\'s', 'Parkway Bakery & Tavern',
+      // Grinders & Italian
+      'Ike\'s Love & Sandwiches', 'DiBella\'s Old Fashioned Submarines',
+      "Amato's", "Barro's", "Hero Certified Burgers",
+      // Club & American deli
+      'Arby\'s', 'Hardee\'s (roast beef)', 'Roy Rogers',
+      "Rax Roast Beef", "Runza", "Checkers (chicken sandwiches)",
+      // Chicken sandwich focused
+      'Chick-fil-A', 'Popeyes', 'Raising Cane\'s', 'PDQ', 'Slim Chickens',
+      "Zaxby's", 'Bojangles', "Church's Chicken", 'Jollibee',
+      // Toasted/hot sandwich chains
+      'Quiznos', 'Torchy\'s Tacos (breakfast tacos)',
+      // Fast-casual sandwich
+      'Così', 'Specialty\'s Café & Bakery', 'Togo\'s', "Earl of Sandwich",
+      'Tropical Smoothie Cafe (sandwiches)', 'Which Wich Superior Sandwiches',
+      "Wawa (hoagies)", "Sheetz (made-to-order subs)", "Weis Markets Deli",
+      // Regional favorites
+      "Skyline Chili (coneys)", "Steak Escape", "Beef 'O' Brady's",
+      "Baja Fresh (fish tacos)", "Rubio's Coastal Grill",
+    ],
     items: [
       { id: 'cswc-1',  title: 'Jersey Mike\'s Subs',       seedScore: 530 },
       { id: 'cswc-2',  title: 'Firehouse Subs',            seedScore: 497 },
@@ -664,6 +727,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'artisan bakery bread loaves rustic wooden counter sourdough',
     description: 'No national franchise chains. Vote for the specific location you\'ve visited — which single bakery location makes the best bread in America?',
     participantCount: 22,
+    useGlobalPlaces: true,
     items: [
       { id: 'cbk-1',  title: 'Tartine Bakery',         location: 'San Francisco, CA', seedScore: 540 },
       { id: 'cbk-2',  title: 'Levain Bakery',          location: 'New York, NY',      seedScore: 510 },
@@ -686,6 +750,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'pastry shop display case croissants tarts elegant patisserie',
     description: 'No national franchise chains. Vote for the specific location you\'ve visited — which single pastry shop location is the best in America?',
     participantCount: 19,
+    useGlobalPlaces: true,
     items: [
       { id: 'cps-1',  title: 'Dominique Ansel Bakery',    location: 'New York, NY',      seedScore: 550 },
       { id: 'cps-2',  title: 'Milk Bar',                  location: 'New York, NY',      seedScore: 515 },
@@ -708,6 +773,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'classic American diner neon sign counter stools chrome retro',
     description: 'Vote for the specific location you\'ve sat down at. Ranked by historical significance, architectural authenticity, and how well that spot captures the spirit of the all-day American diner.',
     participantCount: 27,
+    useGlobalPlaces: true,
     items: [
       { id: 'cdn-1',  title: 'Lou Mitchell\'s',               location: 'Chicago, IL',         seedScore: 525 },
       { id: 'cdn-2',  title: 'Mickey\'s Diner',               location: 'St. Paul, MN',        seedScore: 492 },
@@ -730,6 +796,27 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'fast food burger fries drive through restaurant window counter',
     description: 'Chains only. Ranked by food quality, value, consistency, and cult-level customer devotion — not just sales volume.',
     participantCount: 89,
+    suggestedOptions: [
+      'In-N-Out Burger', 'Chick-fil-A', 'Whataburger', 'Five Guys', "Raising Cane's",
+      "Culver's", 'Popeyes', 'Shake Shack', 'Sonic Drive-In', "McDonald's",
+      'Burger King', "Wendy's", 'Taco Bell', 'KFC', 'Subway', "Domino's",
+      'Pizza Hut', 'Chipotle', 'Panda Express', 'Starbucks', "Dunkin'", 'Panera Bread',
+      "Arby's", 'Wingstop', 'Buffalo Wild Wings', "Zaxby's", 'El Pollo Loco',
+      'Del Taco', 'Smashburger', 'BurgerFi', "Jack in the Box", "Hardee's", "Carl's Jr.",
+      "Freddy's Frozen Custard & Steakburgers", 'Steak \'n Shake', 'White Castle',
+      'Checkers', "Rally's", 'Dairy Queen', 'A&W', 'Tim Hortons',
+      "Jimmy John's", "Jersey Mike's", 'Firehouse Subs', 'Potbelly Sandwich Works',
+      'Qdoba Mexican Eats', "Moe's Southwest Grill", 'Little Caesars', "Papa John's",
+      "Marco's Pizza", 'Blaze Pizza', 'Mod Pizza', "Papa Murphy's",
+      "Bojangles", "Church's Chicken", 'Slim Chickens', 'PDQ', 'Jollibee',
+      'Long John Silver\'s', "Captain D's", 'Boston Market', 'Noodles & Company',
+      'Krispy Kreme', 'Cinnabon', "Auntie Anne's", 'Sbarro', 'Round Table Pizza',
+      "McAlister's Deli", "Jason's Deli", 'Which Wich', 'Quiznos',
+      'Habit Burger Grill', 'Waba Grill', "Rubio's Coastal Grill", 'Baja Fresh',
+      'Taco Cabana', 'L&L Hawaiian Barbecue', 'Waffle House', 'IHOP', "Denny's",
+      'Pei Wei', 'Fatburger', "Portillo's", 'Tropical Smoothie Cafe',
+      "Charley's Grilled Subs", 'Penn Station Subs', "Raising Cane's", "Culver's",
+    ],
     items: [
       { id: 'cff-1',  title: 'In-N-Out Burger',    seedScore: 580 },
       { id: 'cff-2',  title: 'Chick-fil-A',         seedScore: 552 },
@@ -774,6 +861,7 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'bbq brisket smoke pit barbecue Texas ribs wood fire',
     description: 'No national franchise chains. Vote for the specific pit you\'ve eaten at — drawn from Texas Monthly\'s BBQ rankings, Eater\'s regional guides, and James Beard recognition.',
     participantCount: 31,
+    useGlobalPlaces: true,
     items: [
       { id: 'cbbq-1',  title: 'Franklin Barbecue',         location: 'Austin, TX',        seedScore: 590 },
       { id: 'cbbq-2',  title: 'Goldee\'s Barbecue',        location: 'Fort Worth, TX',    seedScore: 558 },
@@ -796,6 +884,39 @@ export const COMMUNITY_LISTS: CommunityList[] = [
     imageQuery: 'fresh salad bowl greens grain healthy restaurant bright colorful',
     description: 'Chains and multi-location concepts only. Ranked by ingredient freshness, menu depth, and how consistently they deliver a real meal.',
     participantCount: 41,
+    suggestedOptions: [
+      // Core salad chains
+      'Sweetgreen', 'Cava', 'Dig', 'Just Salad', 'Mixt', 'Chopt Creative Salad Co.',
+      'Tender Greens', 'Lemonade Restaurant', 'Nékter Juice Bar', 'Salata', 'Saladworks',
+      'Crisp & Green', 'MadGreens', 'Green District', 'The Salad House', 'Salad and Go',
+      'The Salad Station', 'Evergreens', 'Green Leaf\'s & Bananas', 'Grabbagreen',
+      'Field & Vine', 'Greens & Grains',
+      // Healthy fast-casual
+      'Freshii', 'Flower Child', 'True Food Kitchen', 'Protein Bar & Kitchen',
+      'CoreLife Eatery', 'Fresh Kitchen', 'b.good', 'Modern Market Eatery', 'Cafe Zupas',
+      'Harvest Seasonal Grill', "Zoe's Kitchen", 'Veggie Grill', 'Garbanzo Mediterranean Fresh',
+      'Mezeh Mediterranean Grill', 'Bibibop Asian Grill', 'Snap Kitchen', 'LYFE Kitchen',
+      'The Organic Coup', 'Kale Me Crazy', 'Organic Krush', 'Plant Power Fast Food',
+      'Next Level Burger', 'Native Foods', 'Bareburger',
+      // Mediterranean & grain bowls
+      'Pita Pit', "Daphne's California Greek", 'Luna Grill', 'Shawarma Press',
+      'Falafel Republic', 'Garbanzo',
+      // Açaí & bowl chains
+      'Playa Bowls', 'Vitality Bowls', 'Frutta Bowls', 'Açaí Express',
+      // Poke chains
+      'Pokéworks', 'Poke Bros.', 'Island Fin Poke Co.', 'Aloha Poke Co.',
+      '808 Poke Bar', 'Poke to the Max', 'Hissho Sushi',
+      // Juice & smoothie with food
+      'Pressed Juicery', 'Jamba', 'Tropical Smoothie Cafe', 'Robeks', 'Clean Juice',
+      'Juice Press', 'Smoothie King', 'Joe & The Juice', 'Booster Juice', 'Planet Smoothie',
+      // Broader chains with strong salad offerings
+      'Panera Bread', 'Corner Bakery Cafe', 'Au Bon Pain', "McAlister's Deli",
+      'Mendocino Farms', 'Chipotle Mexican Grill', 'Qdoba Mexican Eats',
+      "Moe's Southwest Grill", 'Noodles & Company', 'California Pizza Kitchen',
+      'Baja Fresh', "Rubio's Coastal Grill", "Wahoo's Fish Taco", 'Seasons 52',
+      'Muscle Maker Grill', 'Protein House', 'Fresh&Co', 'Fork in the Road',
+      'GreenSpace Café', 'Harvest Bowl', "Zoup! Fresh Soup Co.",
+    ],
     items: [
       { id: 'csc-1',  title: 'Sweetgreen',               seedScore: 540 },
       { id: 'csc-2',  title: 'Cava',                     seedScore: 508 },

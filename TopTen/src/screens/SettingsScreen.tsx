@@ -11,7 +11,9 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  ActionSheetIOS,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Purchases from 'react-native-purchases';
@@ -22,6 +24,7 @@ import { sendFeedbackEmail } from '../services/emailService';
 import {
   getDetectedLocation,
   DetectedLocation,
+  formatLocationLabel,
 } from '../services/locationService';
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
 import { useAuth } from '../context/AuthContext';
@@ -131,7 +134,10 @@ const FeedbackCard: React.FC = () => {
   return (
     <View style={styles.feedbackCard}>
       <View style={styles.feedbackHeader}>
-        <Text style={styles.feedbackTitle}>Rate Your Experience</Text>
+        <View>
+          <Text style={styles.feedbackTitle}>Rate Your Experience</Text>
+          <Text style={styles.feedbackSubtitle}>Sent directly to the TopX team</Text>
+        </View>
         {rating > 0 && (
           <Text style={styles.ratingLabel}>{RATING_LABELS[rating]}</Text>
         )}
@@ -183,8 +189,9 @@ const FeedbackCard: React.FC = () => {
 /* ── Main Screen ── */
 export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { user, signOut } = useAuth();
+  const { user, userProfile, signOut, updateAvatar } = useAuth();
   const [plansVisible, setPlansVisible] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
   const [changeLocationVisible, setChangeLocationVisible] = useState(false);
@@ -196,12 +203,41 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   };
 
   useEffect(() => {
-    getDetectedLocation().then(setDetectedLocation);
+    if (user) getDetectedLocation().then(setDetectedLocation);
     checkPremium();
-  }, []);
+  }, [user]);
+
+  const pickAvatarImage = async (source: 'library' | 'camera') => {
+    const result = source === 'library'
+      ? await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8 })
+      : await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+    if (!result.canceled && result.assets[0]) {
+      setUploadingAvatar(true);
+      const err = await updateAvatar(result.assets[0].uri);
+      setUploadingAvatar(false);
+      if (err) Alert.alert('Error', err);
+    }
+  };
+
+  const handleAvatarPress = () => {
+    const hasPhoto = !!userProfile?.avatar_url;
+    const options = ['Cancel', 'Choose from Library', 'Take Photo', ...(hasPhoto ? ['Remove Photo'] : [])];
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: 'Profile Photo', options, cancelButtonIndex: 0, destructiveButtonIndex: hasPhoto ? 3 : undefined },
+      async (idx) => {
+        if (idx === 1) await pickAvatarImage('library');
+        if (idx === 2) await pickAvatarImage('camera');
+        if (idx === 3 && hasPhoto) {
+          setUploadingAvatar(true);
+          await updateAvatar(null);
+          setUploadingAvatar(false);
+        }
+      }
+    );
+  };
 
   const locationLabel = detectedLocation
-    ? `${detectedLocation.city || detectedLocation.region}${detectedLocation.region && detectedLocation.city ? `, ${detectedLocation.region}` : ''}${detectedLocation.isManual ? ' (manual)' : ''}`
+    ? formatLocationLabel(detectedLocation)
     : detectedLocation === null ? 'Unknown' : 'Detecting…';
 
   type SettingItem = {
@@ -211,13 +247,14 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     value?: string;
     isLocation?: boolean;
     isDestructive?: boolean;
+    requiresAuth?: boolean;
   };
   const sections: Array<{ title: string; data: SettingItem[] }> = [
     {
       title: 'Preferences',
       data: [
-        { label: 'Location', value: locationLabel, isLocation: true },
-        { label: 'Your Data', route: 'YourData' },
+        { label: 'Location', value: user ? locationLabel : '', isLocation: true },
+        { label: 'Your Data', route: 'YourData', requiresAuth: true },
       ],
     },
     {
@@ -253,16 +290,40 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               {user ? (
                 <View style={styles.profileCard}>
                   <View style={styles.profileRow}>
-                    <View style={styles.profileAvatar}>
-                      <Ionicons name="person" size={22} color={colors.secondaryText} />
-                    </View>
+                    <TouchableOpacity style={styles.profileAvatar} onPress={handleAvatarPress} activeOpacity={0.8}>
+                      {userProfile?.avatar_url ? (
+                        <Image source={{ uri: userProfile.avatar_url }} style={styles.avatarImage} />
+                      ) : (
+                        <Ionicons name="person" size={22} color={colors.secondaryText} />
+                      )}
+                      <View style={styles.cameraBadge}>
+                        {uploadingAvatar
+                          ? <ActivityIndicator size="small" color="#FFF" style={{ transform: [{ scale: 0.55 }] }} />
+                          : <Ionicons name="camera" size={10} color="#FFF" />
+                        }
+                      </View>
+                    </TouchableOpacity>
                     <View style={styles.profileInfo}>
-                      <Text style={styles.profileEmail} numberOfLines={1}>{user.email}</Text>
+                      {userProfile?.username ? (
+                        <Text style={styles.profileEmail}>@{userProfile.username}</Text>
+                      ) : null}
+                      <Text style={[styles.profileSince, !userProfile?.username && styles.profileEmail]} numberOfLines={1}>
+                        {user.email}
+                      </Text>
                       <Text style={styles.profileSince}>
-                        Member since {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                        Member since {new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                       </Text>
                     </View>
                   </View>
+                  <View style={styles.profileDivider} />
+                  <TouchableOpacity
+                    style={styles.editProfileRow}
+                    onPress={() => navigation.navigate('EditProfile')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.editProfileText}>Edit Profile</Text>
+                    <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+                  </TouchableOpacity>
                   <View style={styles.profileDivider} />
                   <TouchableOpacity
                     style={styles.signOutRow}
@@ -292,7 +353,27 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
               {/* Membership section */}
               <Text style={styles.sectionHeader}>Membership</Text>
-              <MembershipCard isPremium={isPremium} onViewPlans={() => setPlansVisible(true)} />
+              {user ? (
+                <MembershipCard isPremium={isPremium} onViewPlans={() => setPlansVisible(true)} />
+              ) : (
+                <View style={styles.memberCard}>
+                  <View style={styles.memberBody}>
+                    <View style={styles.tierRow}>
+                      <View style={styles.tierLeft}>
+                        <View style={styles.tierBadge}>
+                          <Text style={styles.tierBadgeText}>FREE</Text>
+                        </View>
+                        <Text style={styles.memberTier}>Basic</Text>
+                      </View>
+                      <TouchableOpacity style={styles.upgradeCta} onPress={() => navigation.navigate('AuthScreen')} activeOpacity={0.85}>
+                        <Text style={styles.upgradeCtaText}>Sign In</Text>
+                        <Ionicons name="arrow-forward" size={12} color={colors.activeTab} />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.premiumSubLabel}>Sign in to manage membership and upgrade</Text>
+                  </View>
+                </View>
+              )}
             </View>
           }
           renderSectionHeader={({ section }) => (
@@ -304,22 +385,30 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               return (
                 <TouchableOpacity
                   style={[styles.row, isLast && styles.rowLast]}
-                  onPress={() => setChangeLocationVisible(true)}
-                  activeOpacity={0.7}
+                  onPress={() => user && setChangeLocationVisible(true)}
+                  activeOpacity={user ? 0.7 : 1}
                 >
                   <Text style={styles.label}>{item.label}</Text>
-                  <View style={styles.locationValue}>
-                    <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
-                    <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">{item.value}</Text>
-                  </View>
+                  {user && item.value ? (
+                    <View style={styles.locationValue}>
+                      <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
+                      <Text style={styles.value} numberOfLines={1} ellipsizeMode="tail">{item.value}</Text>
+                    </View>
+                  ) : !user ? (
+                    <TouchableOpacity onPress={() => navigation.navigate('AuthScreen')} activeOpacity={0.7}>
+                      <Text style={styles.locationSignIn}>Sign in</Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </TouchableOpacity>
               );
             }
             if (item.route) {
+              const dest = item.requiresAuth && !user ? 'AuthScreen' : item.route;
+              const params = item.requiresAuth && !user ? undefined : item.routeParams;
               return (
                 <TouchableOpacity
                   style={[styles.row, isLast && styles.rowLast]}
-                  onPress={() => navigation.navigate(item.route, item.routeParams)}
+                  onPress={() => navigation.navigate(dest, params)}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.label, item.isDestructive && styles.labelDestructive]}>
@@ -339,7 +428,19 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           ListFooterComponent={
             <View style={styles.feedbackSection}>
               <Text style={styles.sectionHeader}>Feedback</Text>
-              <FeedbackCard />
+              {user ? (
+                <FeedbackCard />
+              ) : (
+                <TouchableOpacity
+                  style={styles.authGateCard}
+                  onPress={() => navigation.navigate('AuthScreen')}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="star-outline" size={18} color={colors.secondaryText} />
+                  <Text style={styles.authGateText}>Sign in to leave feedback</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+                </TouchableOpacity>
+              )}
             </View>
           }
           contentContainerStyle={styles.content}
@@ -429,6 +530,30 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     maxWidth: '55%',
   },
+  locationSignIn: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.activeTab,
+  },
+  authGateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.lg,
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.squircle,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow,
+    shadowOpacity: 0.06,
+  },
+  authGateText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.secondaryText,
+  },
 
   /* ── Profile Card ── */
   profileCard: {
@@ -452,6 +577,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
+  },
+  avatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#CC0000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.cardBackground,
   },
   profileInfo: {
     flex: 1,
@@ -470,6 +614,18 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginHorizontal: spacing.lg,
+  },
+  editProfileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  editProfileText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.primaryText,
   },
   signOutRow: {
     paddingVertical: spacing.md,
@@ -611,6 +767,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.primaryText,
+  },
+  feedbackSubtitle: {
+    fontSize: 11,
+    color: colors.secondaryText,
+    marginTop: 2,
   },
   starsRow: {
     flexDirection: 'row',

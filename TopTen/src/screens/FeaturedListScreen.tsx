@@ -17,7 +17,23 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
 import { usePostHog } from 'posthog-react-native';
-import { markFeaturedViewed } from '../services/viewedListsService';
+
+function statsSourceLabel(url?: string): string {
+  if (!url) return 'Sports Reference';
+  if (url.includes('hockey-reference')) return 'Hockey Reference';
+  if (url.includes('baseball-reference')) return 'Baseball Reference';
+  if (url.includes('pro-football-reference')) return 'Pro Football Reference';
+  if (url.includes('basketball-reference')) return 'Basketball Reference';
+  if (url.includes('pgatour.com')) return 'PGA Tour';
+  if (url.includes('atptour.com')) return 'ATP Tour';
+  if (url.includes('lpga.com')) return 'LPGA';
+  if (url.includes('fifa.com')) return 'FIFA';
+  if (url.includes('unwto.org')) return 'UNWTO';
+  if (url.includes('imf.org')) return 'IMF';
+  if (url.includes('population.un.org')) return 'UN World Population Prospects';
+  if (url.includes('wikipedia.org')) return 'Wikipedia';
+  return 'Sports Reference';
+}
 
 export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { featuredId } = route.params as { featuredId: string };
@@ -50,7 +66,6 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
   const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
-    markFeaturedViewed(featuredId);
     if (list.staticImageUrl) {
       setImageUrl(list.staticImageUrl);
     } else {
@@ -100,12 +115,17 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
 
       {/* Stats verification badge */}
       {list.updatedAt && (
-        <View style={styles.verifiedRow}>
+        <TouchableOpacity
+          style={styles.verifiedRow}
+          onPress={() => list.statsSource && Linking.openURL(list.statsSource)}
+          activeOpacity={list.statsSource ? 0.6 : 1}
+          disabled={!list.statsSource}
+        >
           <Ionicons name="checkmark-circle" size={13} color={colors.secondaryText} />
           <Text style={styles.verifiedText}>
-            Verified via Sports Reference · {list.updatedAt}
+            Verified via {statsSourceLabel(list.statsSource)} · {list.updatedAt}
           </Text>
-        </View>
+        </TouchableOpacity>
       )}
 
       {/* Ranked list */}

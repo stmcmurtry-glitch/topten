@@ -34,6 +34,7 @@ export interface SearchResult {
   year?: string;
   artist?: string;
   album?: string;
+  location?: string; // "City, ST" — for place-based results
 }
 
 const COVERS_BASE = 'https://covers.openlibrary.org/b/id';

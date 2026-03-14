@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { fetchFeaturedImage } from '../services/featuredContentService';
@@ -26,6 +27,12 @@ export const PickCard: React.FC<PickCardProps> = ({ pick, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <View style={[styles.header, { backgroundColor: pick.color }]}>
+        <LinearGradient
+          colors={['#000000', pick.color]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
         {imageUrl && (
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         )}
@@ -35,7 +42,6 @@ export const PickCard: React.FC<PickCardProps> = ({ pick, onPress }) => {
       </View>
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>{pick.title}</Text>
-        <Text style={styles.meta}>Featured · 10 items</Text>
       </View>
     </TouchableOpacity>
   );

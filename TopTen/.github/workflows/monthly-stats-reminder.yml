@@ -1,4 +1,4 @@
-name: Monthly Stats Update Reminder
+name: Monthly Admin Checklist
 
 on:
   schedule:
@@ -7,85 +7,123 @@ on:
   workflow_dispatch: # Allow manual trigger for testing
 
 jobs:
-  create-reminder-issue:
+  send-email:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Parse stats lists and create issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
+      - name: Build and send admin checklist email
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_TO: ${{ secrets.RESEND_TO_EMAIL }}
+        run: |
+          # Parse featuredLists.ts for lists that have updatedAt (stats lists)
+          node -e "
+          const fs = require('fs');
+          const src = fs.readFileSync('src/data/featuredLists.ts', 'utf8');
 
-            // Parse featuredLists.ts to extract all lists with updatedAt set.
-            // Reads: id, title, statsSource, updatedAt — no TypeScript compiler needed.
-            const src = fs.readFileSync('src/data/featuredLists.ts', 'utf8');
-
-            const lists = [];
-            // Split on top-level object boundaries inside FEATURED_LISTS
-            const blocks = src.split(/\n  \{/);
-            for (const block of blocks) {
-              const id        = (block.match(/id:\s*'([^']+)'/)          || [])[1];
-              const title     = (block.match(/title:\s*'([^']+)'/)       || [])[1];
-              const source    = (block.match(/statsSource:\s*'([^']+)'/) || [])[1];
-              const updatedAt = (block.match(/updatedAt:\s*'([^']+)'/)   || [])[1];
-              if (id && title && updatedAt) {
-                lists.push({ id, title, source: source || null });
-              }
+          const lists = [];
+          const blocks = src.split(/\n  \{/);
+          for (const block of blocks) {
+            const id        = (block.match(/id:\s*'([^']+)'/)          || [])[1];
+            const title     = (block.match(/title:\s*'([^']+)'/)       || [])[1];
+            const source    = (block.match(/statsSource:\s*'([^']+)'/) || [])[1];
+            const updatedAt = (block.match(/updatedAt:\s*'([^']+)'/)   || [])[1];
+            if (id && title && updatedAt) {
+              lists.push({ id, title, source: source || null });
             }
+          }
 
-            if (lists.length === 0) {
-              console.log('No stats lists found — skipping issue creation.');
-              return;
+          const today = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+          // Group by source domain
+          const byDomain = {};
+          for (const list of lists) {
+            let domain = 'No source set';
+            if (list.source) {
+              try { domain = new URL(list.source).hostname.replace('www.', ''); } catch {}
             }
+            if (!byDomain[domain]) byDomain[domain] = [];
+            byDomain[domain].push(list);
+          }
 
-            const today = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+          const statsRows = Object.entries(byDomain).map(([domain, items]) => {
+            const rows = items.map(l => {
+              const link = l.source
+                ? \`<li><b>\${l.id}</b> — \${l.title}<br><a href=\"\${l.source}\">\${l.source}</a></li>\`
+                : \`<li><b>\${l.id}</b> — \${l.title} <i>(no source set)</i></li>\`;
+              return link;
+            }).join('');
+            return \`<h3 style=\"margin:16px 0 4px\">\${domain}</h3><ul>\${rows}</ul>\`;
+          }).join('');
 
-            // Group by source domain for a cleaner issue layout
-            const byDomain = {};
-            for (const list of lists) {
-              let domain = 'No source set';
-              if (list.source) {
-                try { domain = new URL(list.source).hostname.replace('www.', ''); } catch {}
-              }
-              if (!byDomain[domain]) byDomain[domain] = [];
-              byDomain[domain].push(list);
-            }
+          const html = \`<!DOCTYPE html>
+          <html>
+          <body style=\"font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#222\">
+            <h1 style=\"color:#CC0000;margin-bottom:4px\">TopTen Monthly Checklist</h1>
+            <p style=\"color:#666;margin-top:0\">\${today}</p>
+            <hr style=\"border:none;border-top:1px solid #eee;margin:16px 0\">
 
-            const sections = Object.entries(byDomain).map(([domain, items]) => {
-              const rows = items.map(l => {
-                const link = l.source ? `[${l.source}](${l.source})` : '_no source_';
-                return `- [ ] **${l.id}** ${l.title}\n  Source: ${link}`;
-              }).join('\n');
-              return `### ${domain}\n${rows}`;
-            }).join('\n\n');
+            <h2>📊 Stats Lists to Verify (\${lists.length} lists)</h2>
+            <p>Check each against its source, correct any numbers, then bump <code>updatedAt</code> to <code>'\${today}'</code> in <code>featuredLists.ts</code>. Also fix matching entries in <code>STATIC_ITEMS</code> in <code>featuredContentService.ts</code>.</p>
+            \${statsRows}
 
-            const body = `
-            ## Monthly Stats Update — ${today}
+            <hr style=\"border:none;border-top:1px solid #eee;margin:24px 0\">
 
-            The following **${lists.length} lists** in \`src/data/featuredLists.ts\` have an \`updatedAt\` field and need to be verified.
-            Check each against its source URL, correct any numbers, then bump all \`updatedAt\` fields to \`'${today}'\`.
+            <h2>💳 Google Places API — Cost Check</h2>
+            <ul>
+              <li>Open <a href=\"https://console.cloud.google.com/billing\">GCP Billing Console</a></li>
+              <li>Check current month spend vs last month</li>
+              <li>If cost spike: review "In Your Area" cache hit rate in Supabase <code>local_lists</code></li>
+              <li>Monthly budget: set/review alert thresholds in GCP if needed</li>
+            </ul>
 
-            ${sections}
+            <h2>🗺️ Local Lists — Supabase Health</h2>
+            <ul>
+              <li>Open Supabase → <code>local_lists</code> table</li>
+              <li>Verify row count is growing (should be ~17 rows per covered city)</li>
+              <li>Check <code>generated_at</code> — confirm last run completed</li>
+              <li>Trigger a manual refresh if any city data is stale: GitHub Actions → Generate Local Lists → Run workflow</li>
+            </ul>
 
-            ---
+            <h2>📱 App Health</h2>
+            <ul>
+              <li>Open Expo Go / TestFlight build — spot check "In Your Area" for your city</li>
+              <li>Check PostHog for any error spikes or unusual drop in DAU</li>
+              <li>Review any open GitHub Issues or user-reported bugs</li>
+            </ul>
 
-            ### After updating
-            1. Fix any incorrect numbers in \`src/data/featuredLists.ts\`
-            2. Set all \`updatedAt\` fields to \`'${today}'\`
-            3. Commit: \`Update stats lists — ${today}\`
+            <h2>📋 After completing stats updates</h2>
+            <ol>
+              <li>Fix incorrect numbers in <code>featuredLists.ts</code> and <code>featuredContentService.ts</code></li>
+              <li>Set all <code>updatedAt</code> fields to <code>'\${today}'</code></li>
+              <li>Commit: <code>Update stats lists — \${today}</code></li>
+            </ol>
 
-            > **New stats list?** Add \`updatedAt\` and \`statsSource\` fields to any new factual list in \`featuredLists.ts\` and it will automatically appear here next month.
-            `.replace(/^ {12}/gm, '').trim();
+            <hr style=\"border:none;border-top:1px solid #eee;margin:24px 0\">
+            <p style=\"color:#999;font-size:12px\">Sent by GitHub Actions · <a href=\"https://github.com\">View repo</a></p>
+          </body>
+          </html>\`;
 
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `📊 Monthly Stats Update — ${today} (${lists.length} lists)`,
-              body,
-              labels: ['stats-update'],
-            });
+          // Write to file so shell can read it
+          fs.writeFileSync('/tmp/email_body.html', html);
+          fs.writeFileSync('/tmp/email_subject.txt', 'TopTen Monthly Checklist — ' + today + ' (' + lists.length + ' stats lists)');
 
-            console.log(`Created issue for ${lists.length} stats lists.`);
+          console.log('Generated email for ' + lists.length + ' stats lists.');
+          "
+
+          # Send via Resend API
+          curl -s -X POST "https://api.resend.com/emails" \
+            -H "Authorization: Bearer ${RESEND_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"from\": \"TopTen Reminders <onboarding@resend.dev>\",
+              \"to\": [\"${RESEND_TO}\"],
+              \"subject\": $(cat /tmp/email_subject.txt | python3 -c \"import sys,json; print(json.dumps(sys.stdin.read().strip()))\"),
+              \"html\": $(cat /tmp/email_body.html | python3 -c \"import sys,json; print(json.dumps(sys.stdin.read()))\")
+            }" \
+            -o /tmp/resend_response.json \
+            -w "\nHTTP %{http_code}\n"
+
+          cat /tmp/resend_response.json

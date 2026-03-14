@@ -9,6 +9,7 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CommunityList } from '../data/communityLists';
@@ -56,10 +57,15 @@ const LocalFeedRow: React.FC<{
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
       <View style={[styles.thumb, { backgroundColor: list.color }]}>
-        {imageUrl ? (
+        <LinearGradient
+          colors={['#000000', list.color]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <Ionicons name={list.icon as any} size={28} color="#FFF" />
+        {imageUrl && (
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : (
-          <Ionicons name={list.icon as any} size={28} color="#FFF" />
         )}
       </View>
       <View style={styles.rowBody}>
@@ -72,7 +78,7 @@ const LocalFeedRow: React.FC<{
           <StatusBadge bucket={bucket} />
         </View>
         <Text style={styles.rowTitle} numberOfLines={2}>{list.title}</Text>
-        <Text style={styles.rowMeta}>{(liveCount ?? list.participantCount).toLocaleString()} voted</Text>
+        <Text style={styles.rowMeta}>{(liveCount ?? 0).toLocaleString()} voted</Text>
       </View>
       <Ionicons name="chevron-forward" size={16} color={colors.border} />
     </TouchableOpacity>
