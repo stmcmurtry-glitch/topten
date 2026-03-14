@@ -22,13 +22,13 @@ const SLIDES = [
     icon: null,
     isLogo: true,
     title: 'Rank everything\nthat matters.',
-    subtitle: 'Your personal top tens, always organized and always with you.',
+    subtitle: 'Your personal rankings, always organized and always with you.',
   },
   {
     id: '2',
     icon: 'list-outline' as const,
     isLogo: false,
-    title: 'Build your\ntop tens.',
+    title: 'Build your\nrankings.',
     subtitle: 'Movies, food, travel, music — create ranked lists for anything across 16 categories.',
   },
   {
@@ -83,7 +83,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onDone }) => {
               <View style={styles.logoContainer}>
                 <View style={styles.logoRow}>
                   <Text style={styles.logoTop}>Top</Text>
-                  <Text style={styles.logoTen}>Ten</Text>
+                  <Text style={styles.logoTen}>X</Text>
                 </View>
               </View>
             ) : (

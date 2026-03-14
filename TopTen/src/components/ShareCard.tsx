@@ -31,9 +31,9 @@ export const ShareCard = React.forwardRef<View, Props>(({ title, category, items
       {/* Logo */}
       <View style={styles.logoRow}>
         <View style={styles.logoMark}>
-          <Text style={styles.logoMarkText}>TT</Text>
+          <Text style={styles.logoMarkText}>TX</Text>
         </View>
-        <Text style={styles.logoLabel}>TOP TEN</Text>
+        <Text style={styles.logoLabel}>TOP X</Text>
       </View>
 
       {/* Divider */}
