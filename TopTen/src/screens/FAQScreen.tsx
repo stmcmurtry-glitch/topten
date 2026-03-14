@@ -86,7 +86,7 @@ const FAQ_SECTIONS: { title: string; items: FAQItem[] }[] = [
       {
         question: "What's the difference between Free and Premium?",
         answer:
-          'Free accounts include full access to all 16 categories, community rankings and voting, Discover featured lists, In Your Area local lists, and the ability to create up to 100 lists with custom cover photos on up to 10 of them.\n\nPremium ($2.49/mo or $9.99/yr) unlocks:\n  · Unlimited lists — no cap, ever\n  · Unlimited custom cover photos on every list\n  · No ads\n\nYour existing lists and customizations are always yours — Premium just removes the limits.',
+          'Free accounts include full access to all 16 categories, community rankings and voting, Discover featured lists, In Your Area local lists, and the ability to create up to 50 lists with custom cover photos on up to 10 of them.\n\nPremium ($2.49/mo or $9.99/yr) unlocks:\n  · Unlimited lists — no cap, ever\n  · Unlimited custom cover photos on every list\n  · No ads\n\nYour existing lists and customizations are always yours — Premium just removes the limits.',
         actionLabel: 'View Premium Plans',
       },
       {

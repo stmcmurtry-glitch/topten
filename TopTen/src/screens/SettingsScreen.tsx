@@ -29,7 +29,7 @@ import {
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
 import { useAuth } from '../context/AuthContext';
 
-const BASIC_LIMIT = 100;
+const BASIC_LIMIT = 50;
 
 /* ── Membership Card ── */
 const MembershipCard: React.FC<{ isPremium: boolean; onViewPlans: () => void }> = ({ isPremium, onViewPlans }) => {

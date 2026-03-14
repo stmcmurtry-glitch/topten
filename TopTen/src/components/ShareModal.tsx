@@ -23,9 +23,10 @@ interface Props {
   title: string;
   category: string;
   items: string[];
+  coverImageUri?: string | null;
 }
 
-export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category, items }) => {
+export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category, items, coverImageUri }) => {
   const cardRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -63,7 +64,7 @@ export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category,
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.content}>
-          <ShareCard ref={cardRef} title={title} category={category} items={items} />
+          <ShareCard ref={cardRef} title={title} category={category} items={items} coverImageUri={coverImageUri} />
 
           <TouchableOpacity
             style={styles.shareButton}

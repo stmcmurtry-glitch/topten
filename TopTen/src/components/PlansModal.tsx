@@ -24,7 +24,7 @@ const PREMIUM_FEATURES = [
 const BASIC_FEATURES = [
   'Community rankings & voting',
   'Discover featured lists',
-  'Build up to 100 lists free',
+  'Build up to 50 lists free',
 ];
 
 interface PlansModalProps {

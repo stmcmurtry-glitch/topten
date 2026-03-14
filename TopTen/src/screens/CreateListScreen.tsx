@@ -8,22 +8,38 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Purchases from 'react-native-purchases';
 import { usePostHog } from 'posthog-react-native';
 import { useListContext } from '../data/ListContext';
 import { CATEGORIES } from '../data/categories';
+import { PlansModal } from '../components/PlansModal';
 import { colors, spacing, borderRadius } from '../theme';
+
+const FREE_LIST_LIMIT = 50;
 
 export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [customName, setCustomName] = useState('');
-  const { addList } = useListContext();
+  const [isPremium, setIsPremium] = useState(false);
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const { addList, lists } = useListContext();
   const posthog = usePostHog();
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    Purchases.getCustomerInfo()
+      .then(info => setIsPremium(!!info.entitlements.active['premium']))
+      .catch(() => {});
+  }, []);
 
   const canCreate = selectedCategory.length > 0;
 
   const handleCreate = () => {
     if (!canCreate) return;
+    if (!isPremium && lists.length >= FREE_LIST_LIMIT) {
+      setShowPlansModal(true);
+      return;
+    }
     const title = customName.trim() || undefined;
     const id = addList(selectedCategory, title);
     posthog?.capture('list_created', { category: selectedCategory, has_custom_name: !!title });
@@ -58,9 +74,10 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
   }, [navigation, canCreate, selectedCategory, customName]);
 
   return (
+    <View style={styles.container}>
     <ScrollView
       ref={scrollRef}
-      style={styles.container}
+      style={styles.scrollView}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
       automaticallyAdjustKeyboardInsets
@@ -96,6 +113,9 @@ export const CreateListScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       />
       <Text style={styles.hint}>Leave blank to use the default name for this category</Text>
     </ScrollView>
+
+    <PlansModal visible={showPlansModal} onClose={() => setShowPlansModal(false)} />
+    </View>
   );
 };
 
@@ -103,6 +123,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     padding: spacing.xl,

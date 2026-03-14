@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { CATEGORY_COLORS } from './FeedRow';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -10,14 +10,21 @@ interface Props {
   title: string;
   category: string;
   items: string[]; // only filled slots, in rank order
+  coverImageUri?: string | null;
 }
 
-export const ShareCard = React.forwardRef<View, Props>(({ title, category, items }, ref) => {
+export const ShareCard = React.forwardRef<View, Props>(({ title, category, items, coverImageUri }, ref) => {
   const accentColor = CATEGORY_COLORS[category] ?? '#CC0000';
   const filled = items.filter((t) => t.trim());
 
   return (
     <View ref={ref} style={styles.card} collapsable={false}>
+      {/* Cover image background (premium feature) */}
+      {!!coverImageUri && (
+        <Image source={{ uri: coverImageUri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      )}
+      {!!coverImageUri && <View style={styles.coverOverlay} />}
+
       {/* Top accent bar */}
       <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
 
@@ -70,6 +77,10 @@ const styles = StyleSheet.create({
     padding: 28,
     paddingTop: 0,
     justifyContent: 'flex-start',
+  },
+  coverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.62)',
   },
 
   /* Top accent */

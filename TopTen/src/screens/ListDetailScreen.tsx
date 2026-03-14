@@ -210,21 +210,15 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const FREE_PHOTO_LIMIT = 10;
 
-  const coverCount = lists.filter(l => !!l.coverImageUri).length;
-  const profileCount = lists.filter(l => !!l.profileImageUri).length;
+  const totalPhotoCount = lists.filter(l => !!l.coverImageUri || !!l.profileImageUri).length;
   const thisListHasCover = !!list?.coverImageUri;
   const thisListHasProfile = !!list?.profileImageUri;
+  const thisListHasAnyPhoto = thisListHasCover || thisListHasProfile;
 
   const handlePickPhoto = (target: 'cover' | 'profile') => {
-    if (!isPremium) {
-      if (target === 'cover' && !thisListHasCover && coverCount >= FREE_PHOTO_LIMIT) {
-        setShowPlansModal(true);
-        return;
-      }
-      if (target === 'profile' && !thisListHasProfile && profileCount >= FREE_PHOTO_LIMIT) {
-        setShowPlansModal(true);
-        return;
-      }
+    if (!isPremium && !thisListHasAnyPhoto && totalPhotoCount >= FREE_PHOTO_LIMIT) {
+      setShowPlansModal(true);
+      return;
     }
     setPhotoPickerTarget(target);
   };
@@ -585,6 +579,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         title={list.title}
         category={list.category}
         items={slots}
+        coverImageUri={coverImageUri}
       />
       <ReportIssueModal
         visible={showReportModal}
