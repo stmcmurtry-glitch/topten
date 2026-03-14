@@ -210,21 +210,19 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const filledCount = current.slots.filter((s) => s.trim()).length;
       posthog?.capture('community_vote_submitted', { list_id: listId, filled_slots: filledCount });
 
-      // Use authenticated user ID if available, fall back to device ID for guests
-      const voterId = user?.id ?? deviceId;
+      // Guests get a local-only experience — only authenticated votes count toward community scores
+      if (!user) return;
 
-      // Upsert to Supabase if we have a voter ID and client is configured
+      // Upsert to Supabase for authenticated users only
       if (!supabase) {
         posthog?.capture('community_vote_supabase_null', { list_id: listId });
-      } else if (!voterId) {
-        posthog?.capture('community_vote_no_voter_id', { list_id: listId });
       } else {
         try {
           // Normalize slots before storing: trim whitespace and lowercase so
           // "Beef Wellington" / "beef wellington" aggregate to the same row in Supabase.
           const normalizedSlots = current.slots.map((s) => s.trim().toLowerCase());
           const { error: upsertError } = await supabase.from('community_votes').upsert(
-            { device_id: voterId, list_id: listId, slots: normalizedSlots, submitted_at: new Date().toISOString() },
+            { device_id: user.id, list_id: listId, slots: normalizedSlots, submitted_at: new Date().toISOString() },
             { onConflict: 'device_id,list_id' }
           );
           if (upsertError) {
