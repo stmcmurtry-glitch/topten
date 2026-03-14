@@ -85,7 +85,7 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
             <Image source={require('../../assets/logo.png')} style={styles.logoIcon} />
             <View style={styles.wordmark}>
               <Text style={styles.wordmarkLight}>Top</Text>
-              <Text style={styles.wordmarkBold}>Ten</Text>
+              <Text style={styles.wordmarkBold}>X</Text>
             </View>
             <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>

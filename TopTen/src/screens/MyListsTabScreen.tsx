@@ -71,7 +71,7 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       <SignInPrompt
         icon="list-outline"
         title="Your Lists"
-        message="Sign in to create and save your top 10 lists."
+        message="Sign in to create and save your ranked lists."
         onSignIn={() => navigation.navigate('AuthScreen')}
       />
     );
