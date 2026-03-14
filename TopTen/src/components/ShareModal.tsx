@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Alert,
   Share,
-  Clipboard,
 } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,13 +28,10 @@ interface Props {
 export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category, items, coverImageUri }) => {
   const cardRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
 
   const handleShare = async () => {
     if (!cardRef.current) return;
     setSharing(true);
-    // Copy App Store link to clipboard so user can paste it as an Instagram link sticker
-    Clipboard.setString(APP_STORE_URL);
     try {
       const uri = await captureRef(cardRef, {
         format: 'png',
@@ -52,12 +48,6 @@ export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category,
     } finally {
       setSharing(false);
     }
-  };
-
-  const handleCopyLink = () => {
-    Clipboard.setString(APP_STORE_URL);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2500);
   };
 
   return (
@@ -80,13 +70,6 @@ export const ShareModal: React.FC<Props> = ({ visible, onClose, title, category,
                 <Text style={styles.shareButtonText}>Share</Text>
               </>
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.copyLinkButton} onPress={handleCopyLink} activeOpacity={0.7}>
-            <Ionicons name={linkCopied ? 'checkmark' : 'link-outline'} size={15} color="rgba(255,255,255,0.7)" />
-            <Text style={styles.copyLinkText}>
-              {linkCopied ? 'App Store link copied!' : 'Copy App Store link for Instagram'}
-            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cancel} onPress={onClose}>
@@ -125,16 +108,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 17,
     fontWeight: '700',
-  },
-  copyLinkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.sm,
-  },
-  copyLinkText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
   },
   cancel: {
     paddingVertical: spacing.sm,
