@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -16,17 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { FEATURED_LISTS, POPULAR_LISTS, STARTER_LISTS, FeaturedList, PopularList } from '../data/featuredLists';
 import { useViewedLists } from '../context/ViewedListsContext';
-import { LOCAL_COMMUNITY_LISTS, COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
-import { fetchLocalPlacesLists } from '../services/googlePlacesService';
-import { registerDynamicLists } from '../data/dynamicListRegistry';
-import { fetchFeaturedItems, fetchFeaturedImage, fetchCommunityImage, fetchCityImage } from '../services/featuredContentService';
+import { COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
+import { fetchFeaturedItems, fetchFeaturedImage, fetchCityImage } from '../services/featuredContentService';
 import { CATEGORY_COLORS } from '../components/FeedRow';
-import { getDetectedLocation, regionMatches, DetectedLocation, formatLocationLabel } from '../services/locationService';
-import { ChangeLocationModal } from '../components/ChangeLocationModal';
 import { EXPLORE_CITIES, ExploreCity } from '../data/exploreCities';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useAuth } from '../context/AuthContext';
-import { InYourAreaLockCard } from '../components/InYourAreaLockCard';
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   'Greatest Athletes of All Time': 'The greatest competitors across all sports, ranked by career dominance, legacy, and cultural impact.',
@@ -40,7 +34,7 @@ const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   'Albums You Must Hear Before You Die': 'Records that demand to be heard front to back, ranked by artistry, influence, and staying power.',
   'Most Thrilling Sporting Events Ever': 'The moments that made hearts race worldwide, ranked by stakes, drama, and all-time greatness.',
   'My Favorite Foods': 'Your personal food hall of fame. Add the dishes and flavors you\'d never want to live without.',
-  'My Favorite Movies': 'The films that stuck with you. Build your definitive personal top ten.',
+  'My Favorite Movies': 'The films that stuck with you. Build your definitive personal ranking.',
   'My Favorite TV Shows': 'The series you\'d watch on repeat. Your personal streaming hall of fame.',
   'My Favorite Animals': 'From beloved pets to wildlife wonders — rank your favorite creatures on the planet.',
   'My Favorite Colors': 'Every palette tells a story. Which colors speak to you most?',
@@ -72,37 +66,6 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
   const [query, setQuery] = useState('');
   const { viewedIds } = useViewedLists();
-  const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
-  const [localPlacesLists, setLocalPlacesLists] = useState<CommunityList[]>([]);
-  const [changeLocationVisible, setChangeLocationVisible] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!user) return;
-      getDetectedLocation().then(setDetectedLocation);
-    }, [user])
-  );
-
-
-  useEffect(() => {
-    if (!user || !detectedLocation?.city) return;
-    fetchLocalPlacesLists(detectedLocation.city).then((lists) => {
-      if (lists.length > 0) {
-        registerDynamicLists(lists);
-        setLocalPlacesLists(lists);
-      }
-    });
-  }, [detectedLocation?.city]);
-
-  const localLists = useMemo(() => {
-    if (!detectedLocation) return [];
-    return LOCAL_COMMUNITY_LISTS.filter(l => l.region && regionMatches(l.region, detectedLocation));
-  }, [detectedLocation]);
-
-  const allLocalLists = useMemo(
-    () => [...localLists, ...localPlacesLists],
-    [localLists, localPlacesLists]
-  );
 
   const q = query.toLowerCase().trim();
 
@@ -259,66 +222,8 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             ))}
           </View>
 
-          {/* In your area */}
-          {!user ? (
-            <InYourAreaLockCard onSignIn={() => navigation.navigate('AuthScreen')} />
-          ) : allLocalLists.length > 0 ? (
-            <>
-              <View style={styles.areaSectionHeader}>
-                <TouchableOpacity
-                  style={styles.titleWithIcon}
-                  onPress={() => navigation.navigate('AllLocalLists', {
-                    lists: allLocalLists,
-                    city: detectedLocation?.city || detectedLocation?.region,
-                  })}
-                  activeOpacity={0.6}
-                >
-                  <Text style={styles.sectionHeaderInline}>In Your Area</Text>
-                  <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
-                </TouchableOpacity>
-                {detectedLocation && (
-                  <TouchableOpacity
-                    style={styles.areaLocationPill}
-                    onPress={() => setChangeLocationVisible(true)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
-                    <Text style={styles.areaLocationText}>
-                      {formatLocationLabel(detectedLocation)}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <View style={styles.popularCard}>
-                {allLocalLists.slice(0, 10).map((list, index, arr) => (
-                  <React.Fragment key={list.id}>
-                    <CommunityRow
-                      list={list}
-                      onPress={() => navigation.navigate('CommunityList', { communityListId: list.id })}
-                    />
-                    {index < arr.length - 1 && <View style={styles.popularDivider} />}
-                  </React.Fragment>
-                ))}
-              </View>
-            </>
-          ) : null}
         </ScrollView>
       )}
-
-      <ChangeLocationModal
-        visible={changeLocationVisible}
-        currentCity={detectedLocation?.city || detectedLocation?.region || ''}
-        onClose={() => setChangeLocationVisible(false)}
-        onLocationChanged={(newLoc) => {
-          setDetectedLocation(newLoc);
-          fetchLocalPlacesLists(newLoc.city).then((lists) => {
-            if (lists.length > 0) {
-              registerDynamicLists(lists);
-              setLocalPlacesLists(lists);
-            }
-          });
-        }}
-      />
     </View>
   );
 };
@@ -369,16 +274,6 @@ const FeaturedCard: React.FC<{ list: FeaturedList; onPress: () => void }> = ({ l
 
 /* ── Popular Row (thin card inside grouped container) ── */
 const PopularRow: React.FC<{ list: PopularList; onPress: () => void }> = ({ list, onPress }) => (
-  <TouchableOpacity style={styles.popularRow} onPress={onPress} activeOpacity={0.6}>
-    <View style={[styles.popularDot, { backgroundColor: list.color }]} />
-    <Text style={styles.popularTitle} numberOfLines={1}>{list.title}</Text>
-    <Text style={styles.popularCategory}>{list.category}</Text>
-    <Ionicons name="chevron-forward" size={14} color={colors.border} />
-  </TouchableOpacity>
-);
-
-/* ── Community Row (In Your Area) ── */
-const CommunityRow: React.FC<{ list: CommunityList; onPress: () => void }> = ({ list, onPress }) => (
   <TouchableOpacity style={styles.popularRow} onPress={onPress} activeOpacity={0.6}>
     <View style={[styles.popularDot, { backgroundColor: list.color }]} />
     <Text style={styles.popularTitle} numberOfLines={1}>{list.title}</Text>
@@ -531,33 +426,6 @@ const styles = StyleSheet.create({
   },
   seeAllPadding: {
     paddingRight: spacing.lg,
-  },
-  areaSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  titleWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  areaLocationPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(204,0,0,0.08)',
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  areaLocationText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.activeTab,
   },
   carousel: {
     paddingHorizontal: spacing.lg,
