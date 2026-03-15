@@ -59,7 +59,7 @@ const cloudUpsert = (userId: string, list: TopTenList, sortOrder: number) => {
     data: list,
     updated_at: new Date().toISOString(),
   }).then(({ error }) => {
-    if (error) console.warn('[cloud] upsert failed:', error.message);
+    if (error) console.error('[cloud] upsert failed:', error.message, error.code);
   });
 };
 
@@ -74,14 +74,14 @@ const cloudUpsertBatch = (userId: string, lists: TopTenList[]) => {
       updated_at: new Date().toISOString(),
     }))
   ).then(({ error }) => {
-    if (error) console.warn('[cloud] batch upsert failed:', error.message);
+    if (error) console.error('[cloud] batch upsert failed:', error.message, error.code);
   });
 };
 
 const cloudDelete = (listId: string) => {
   if (!supabase) return;
   supabase.from('user_lists').delete().eq('id', listId).then(({ error }) => {
-    if (error) console.warn('[cloud] delete failed:', error.message);
+    if (error) console.error('[cloud] delete failed:', error.message, error.code);
   });
 };
 
@@ -144,6 +144,8 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
       const cloudLists: TopTenList[] = rows.map((r: any) => r.data);
       const { lists: withIcons } = backfillIcons(cloudLists);
+      // Keep AsyncStorage in sync with cloud so local backup is always fresh
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(withIcons));
       setLists(withIcons);
     }
 
@@ -175,13 +177,12 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // ---- Mutations ----
 
-  // For guests: persist to AsyncStorage. For signed-in users: cloud writes are handled per-mutation.
+  // Always write to AsyncStorage as a local backup — protects against in-flight cloud
+  // upserts being lost when the app is killed before they complete.
   const persistLocal = useCallback((updatedLists: TopTenList[]) => {
     setLists(updatedLists);
-    if (!user) {
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLists));
-    }
-  }, [user]);
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLists));
+  }, []);
 
   const addList = useCallback((category: string, title?: string, description?: string): string => {
     const id = Date.now().toString();

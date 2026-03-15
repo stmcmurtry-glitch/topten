@@ -81,7 +81,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // Safety valve: if auth init doesn't resolve within 6s (slow/no network),
+    // unblock the app so lists and screens can load from local cache.
+    let settled = false;
+    const safetyTimer = setTimeout(() => {
+      if (!settled) {
+        console.warn('[auth] init timed out — proceeding with cached state');
+        settled = true;
+        setLoading(false);
+        setProfileChecked(true);
+      }
+    }, 6000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (settled) return;
       const u = session?.user ?? null;
       setUser(u);
       if (u) {
@@ -89,6 +102,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setNeedsOnboarding(needs);
         setUserProfile(profile);
       }
+      settled = true;
+      clearTimeout(safetyTimer);
       setLoading(false);
       setProfileChecked(true);
     });
@@ -110,7 +125,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   const signInWithEmail = async (emailOrUsername: string, password: string) => {
