@@ -78,7 +78,9 @@ const LocalFeedRow: React.FC<{
           <StatusBadge bucket={bucket} />
         </View>
         <Text style={styles.rowTitle} numberOfLines={2}>{list.title}</Text>
-        <Text style={styles.rowMeta}>{(liveCount ?? 0).toLocaleString()} voted</Text>
+        {liveCount !== undefined && (
+          <Text style={styles.rowMeta}>{liveCount.toLocaleString()} voted</Text>
+        )}
       </View>
       <Ionicons name="chevron-forward" size={16} color={colors.border} />
     </TouchableOpacity>

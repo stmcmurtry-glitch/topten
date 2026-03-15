@@ -18,6 +18,7 @@ const PREMIUM_FEATURES = [
   'Unlimited lists',
   'Lists beyond 10 items',
   'Unlimited custom cover photos',
+  'Post lists to your city\'s Community Feed',
   'No ads',
 ];
 
@@ -407,6 +408,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   featureLabel: {
+    flex: 1,
     fontSize: 15,
     fontWeight: '500',
     color: colors.primaryText,

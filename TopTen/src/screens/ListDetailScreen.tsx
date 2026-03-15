@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
-import Purchases from 'react-native-purchases';
+import { getIsPremium } from '../services/premiumService';
 import { useListContext } from '../data/ListContext';
 import { TopTenItem } from '../data/schema';
 import { CATEGORY_COLORS } from '../components/FeedRow';
@@ -107,9 +107,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const isCurrentVenueList = list ? isVenueList(list.title, list.category) : false;
 
   useEffect(() => {
-    Purchases.getCustomerInfo()
-      .then(info => setIsPremium(!!info.entitlements.active['premium']))
-      .catch(() => {});
+    getIsPremium().then(setIsPremium);
   }, []);
 
   useEffect(() => { setSlots(buildSlots()); }, [buildSlots]);
@@ -390,6 +388,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                 <Ionicons name="share-outline" size={18} color={categoryColor} />
                 <Text style={styles.actionTileLabel}>Share</Text>
               </TouchableOpacity>
+
 
               <TouchableOpacity style={styles.actionTile} onPress={() => handlePickPhoto('profile')} activeOpacity={0.7}>
                 <Ionicons name="person-circle-outline" size={18} color={categoryColor} />

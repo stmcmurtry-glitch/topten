@@ -21,6 +21,11 @@ import { CATEGORY_COLORS } from '../components/FeedRow';
 import { EXPLORE_CITIES, ExploreCity } from '../data/exploreCities';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { FeedPostCard } from '../components/FeedPostCard';
+import { useCityFeedPreview } from '../hooks/useCityFeedPreview';
+import { FEED_MIN_POSTS } from '../data/feedTypes';
+import { getDetectedLocation } from '../services/locationService';
+import { TOP_500_CITY_SLUG_SET } from '../data/topCities';
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   'Greatest Athletes of All Time': 'The greatest competitors across all sports, ranked by career dominance, legacy, and cultural impact.',
@@ -47,6 +52,16 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { lists, addList } = useListContext();
+  const [discoverCity, setDiscoverCity] = useState<{ name: string; slug: string } | null>(null);
+
+  useEffect(() => {
+    getDetectedLocation().then((loc) => {
+      if (loc?.city) {
+        const slug = loc.city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        setDiscoverCity({ name: loc.city, slug });
+      }
+    });
+  }, []);
 
   const handlePopularPress = useCallback((item: PopularList) => {
     // Trending Lists have a featuredId — navigate to the curated Featured List
@@ -66,6 +81,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
   const [query, setQuery] = useState('');
   const { viewedIds } = useViewedLists();
+  const { posts: discoverFeedPosts, total: discoverFeedTotal } = useCityFeedPreview(discoverCity?.slug ?? null);
 
   const q = query.toLowerCase().trim();
 
@@ -199,6 +215,41 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
               />
             ))}
           </ScrollView>
+
+          {/* Community Feed teaser — top-500 cities only */}
+          {discoverFeedTotal >= FEED_MIN_POSTS && discoverFeedPosts.length > 0 && discoverCity &&
+            TOP_500_CITY_SLUG_SET.has(discoverCity.slug) && (
+            <>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionHeaderInline}>
+                  Community Feed
+                  <Text style={{ color: colors.activeTab }}> · {discoverCity.name}</Text>
+                </Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('CommunityFeed', {
+                    citySlug: discoverCity.slug,
+                    cityName: discoverCity.name,
+                  })}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.seeAllButton}>See all</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.carousel}
+              >
+                {discoverFeedPosts.map((post) => (
+                  <FeedPostCard
+                    key={post.id}
+                    post={post}
+                    onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
+                  />
+                ))}
+              </ScrollView>
+            </>
+          )}
 
           {/* Popular */}
           <Text style={styles.sectionHeader}>Trending Lists</Text>

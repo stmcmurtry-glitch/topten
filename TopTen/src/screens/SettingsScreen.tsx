@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Purchases from 'react-native-purchases';
+import { getIsPremium, setDevPremiumOverride, getDevPremiumOverride } from '../services/premiumService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useListContext } from '../data/ListContext';
 import { PlansModal } from '../components/PlansModal';
@@ -196,10 +197,21 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
   const [changeLocationVisible, setChangeLocationVisible] = useState(false);
 
+  const [devPremiumOverride, setDevPremiumOverrideState] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (__DEV__) getDevPremiumOverride().then(setDevPremiumOverrideState);
+  }, []);
+
   const checkPremium = () => {
-    Purchases.getCustomerInfo()
-      .then(info => setIsPremium(!!info.entitlements.active['premium']))
-      .catch(() => {});
+    getIsPremium().then(setIsPremium);
+  };
+
+  const toggleDevPremium = async () => {
+    const next = devPremiumOverride === true ? false : true;
+    await setDevPremiumOverride(next);
+    setDevPremiumOverrideState(next);
+    setIsPremium(next);
   };
 
   useEffect(() => {
@@ -248,6 +260,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     isLocation?: boolean;
     isDestructive?: boolean;
     requiresAuth?: boolean;
+    onPress?: () => void;
   };
   const sections: Array<{ title: string; data: SettingItem[] }> = [
     {
@@ -266,6 +279,15 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         { label: 'Contact Us', route: 'Contact' },
       ],
     },
+    ...(__DEV__ ? [{
+      title: '🛠 Dev Tools',
+      data: [
+        {
+          label: `Premium override: ${devPremiumOverride === true ? 'ON' : devPremiumOverride === false ? 'OFF' : 'unset (uses RevenueCat)'}`,
+          onPress: toggleDevPremium,
+        } as SettingItem,
+      ],
+    }] : []),
   ];
 
   return (
@@ -399,6 +421,18 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                       <Text style={styles.locationSignIn}>Sign in</Text>
                     </TouchableOpacity>
                   ) : null}
+                </TouchableOpacity>
+              );
+            }
+            if (item.onPress) {
+              return (
+                <TouchableOpacity
+                  style={[styles.row, isLast && styles.rowLast]}
+                  onPress={item.onPress}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.label}>{item.label}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
                 </TouchableOpacity>
               );
             }

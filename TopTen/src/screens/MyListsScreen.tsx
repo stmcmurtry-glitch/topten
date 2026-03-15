@@ -36,6 +36,9 @@ import {
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
 import { InYourAreaLockCard } from '../components/InYourAreaLockCard';
 import { useAuth } from '../context/AuthContext';
+import { FeedPostCard } from '../components/FeedPostCard';
+import { useCityFeedPreview } from '../hooks/useCityFeedPreview';
+import { FEED_MIN_POSTS } from '../data/feedTypes';
 
 const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 
@@ -216,6 +219,11 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     setVotedIds(new Set(submittedKeys));
   }, [userRankings]);
 
+  const citySlugForFeed = detectedLocation?.city
+    ? detectedLocation.city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    : null;
+  const { posts: feedPosts, total: feedTotal } = useCityFeedPreview(citySlugForFeed);
+
   const allCategories = ['All', ...ALL_CATEGORY_LABELS];
 
   // Respect the user-defined order (set via All Lists reorder)
@@ -349,6 +357,42 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                   AsyncStorage.setItem('@topten_viewed_featured', JSON.stringify([...next])).catch(() => {});
                   navigation.navigate('FeaturedList', { featuredId: list.id });
                 }}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
+
+      {/* Community Feed teaser — only shown for top-500 cities with ≥ FEED_MIN_POSTS */}
+      {feedTotal >= FEED_MIN_POSTS && feedPosts.length > 0 && detectedLocation?.city &&
+        citySlugForFeed && TOP_500_CITY_SLUG_SET.has(citySlugForFeed) && (
+        <>
+          <View style={styles.divider} />
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeaderInline}>
+              Community Feed
+              <Text style={{ color: colors.activeTab }}> · {detectedLocation.city}</Text>
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CommunityFeed', {
+                citySlug: citySlugForFeed,
+                cityName: detectedLocation.city,
+              })}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.seeAllButton}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carousel}
+          >
+            {feedPosts.map((post) => (
+              <FeedPostCard
+                key={post.id}
+                post={post}
+                onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
               />
             ))}
           </ScrollView>
@@ -508,7 +552,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
           <Ionicons name="lock-closed-outline" size={18} color={colors.secondaryText} />
           <View style={{ flex: 1 }}>
             <Text style={styles.myListsLockTitle}>Sign in to see your lists</Text>
-            <Text style={styles.myListsLockSub}>Create and manage your personal top tens</Text>
+            <Text style={styles.myListsLockSub}>Create and manage your personal rankings</Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
         </TouchableOpacity>
@@ -521,6 +565,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         onLocationChanged={(newLoc) => {
           fetchGenRef.current += 1;  // invalidate any in-flight fetch immediately
           setLocalPlacesLists([]);
+          setLocalListsReady(false);
           setDetectedLocation(newLoc);
         }}
       />

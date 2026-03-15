@@ -25,6 +25,8 @@ import { AuthScreen } from '../screens/AuthScreen';
 import { CreateAccountScreen } from '../screens/CreateAccountScreen';
 import { ProfileSetupScreen } from '../screens/ProfileSetupScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { CommunityFeedScreen } from '../screens/CommunityFeedScreen';
+import { PublishedListScreen } from '../screens/PublishedListScreen';
 import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -109,6 +111,16 @@ const HomeStack = () => (
       component={ProfileSetupScreen}
       options={{ presentation: 'modal', headerShown: false }}
     />
+    <Stack.Screen
+      name="CommunityFeed"
+      component={CommunityFeedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="PublishedList"
+      component={PublishedListScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -181,6 +193,16 @@ const MyListsStack = () => (
       component={ProfileSetupScreen}
       options={{ presentation: 'modal', headerShown: false }}
     />
+    <Stack.Screen
+      name="CommunityFeed"
+      component={CommunityFeedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="PublishedList"
+      component={PublishedListScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -234,6 +256,16 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="CityLists"
       component={CityListsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="CommunityFeed"
+      component={CommunityFeedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="PublishedList"
+      component={PublishedListScreen}
       options={{ headerShown: false }}
     />
   </Stack.Navigator>
