@@ -327,7 +327,7 @@ export async function searchLocalPlaces(
 }
 
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? '';
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_TTL_MS = 72 * 60 * 60 * 1000; // 72 hours
 
 interface PlaceConfig {
   slug: string;
@@ -747,13 +747,15 @@ export async function fetchLocalListsFromSupabase(city: string): Promise<Communi
   const citySlug = slugify(city);
   const slugsToTry = [citySlug, ...(CITY_SLUG_ALIASES[citySlug] ?? [])];
   try {
-    const { data, error } = await supabase
-      .from('local_lists')
-      .select('data')
-      .in('city_slug', slugsToTry)
-      .is('neighborhood', null)
-      .order('sort_index')
-      .limit(100);
+    const queryResult = await Promise.race([
+      supabase.from('local_lists').select('data').in('city_slug', slugsToTry)
+        .is('neighborhood', null)
+        .order('sort_index')
+        .limit(100),
+      new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+    ]);
+    if (!queryResult) return [];
+    const { data, error } = queryResult;
     if (error || !data) return [];
     return data.map((row: any) => backfillListFields(row.data as CommunityList));
   } catch {

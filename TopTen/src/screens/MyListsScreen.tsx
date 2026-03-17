@@ -154,7 +154,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       setLocalListsReady(false);
       setLocalPlacesLists([]);
       const [lists] = await Promise.all([
-        fetchLocalPlacesLists(detectedLocation.city),
+        fetchLocalPlacesLists(detectedLocation.city).catch(() => [] as any[]),
         new Promise<void>(r => setTimeout(r, 600)),
       ]);
       if (fetchGenRef.current === gen && lists.length > 0) {
@@ -181,6 +181,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     if (!user || !detectedLocation?.city) return;
     const gen = fetchGenRef.current;
     setLocalListsReady(false);
+    setLocalPlacesLists([]);
     fetchLocalPlacesLists(detectedLocation.city).then((lists) => {
       if (fetchGenRef.current !== gen) return; // location changed while fetching — discard
       if (lists.length > 0) {
@@ -188,6 +189,8 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         setLocalPlacesLists(lists);
       }
       setLocalListsReady(true);
+    }).catch(() => {
+      if (fetchGenRef.current === gen) setLocalListsReady(true);
     });
   }, [detectedLocation?.city]);
 
@@ -430,7 +433,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       )}
 
       {/* In your area */}
-      {(!user || allLocalLists.length > 0 || refreshing || (user && !localListsReady && detectedLocation?.city)) && (
+      {(!user || (user && detectedLocation?.city) || allLocalLists.length > 0 || refreshing) && (
         <>
           <View style={styles.divider} />
           {!user ? (
@@ -471,6 +474,10 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                 >
                   {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
                 </ScrollView>
+              ) : allLocalLists.length === 0 ? (
+                <View style={styles.emptyArea}>
+                  <Text style={styles.emptyAreaText}>No local picks here yet — pull down to refresh.</Text>
+                </View>
               ) : (
                 <ScrollView
                   horizontal
@@ -693,6 +700,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: colors.secondaryText,
+  },
+  emptyArea: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  emptyAreaText: {
+    fontSize: 13,
+    color: colors.secondaryText,
+    fontStyle: 'italic',
   },
   carousel: {
     paddingHorizontal: spacing.lg,

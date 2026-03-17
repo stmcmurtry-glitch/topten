@@ -321,14 +321,18 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       )}
 
       {loading ? (
-        <ActivityIndicator style={styles.loader} color={colors.activeTab} />
+        <View style={styles.loaderWrap}>
+          <ActivityIndicator style={styles.loader} color={colors.activeTab} />
+          {category === 'Books' && (
+            <Text style={styles.loaderHint}>Taking a moment to find all the books in the world…</Text>
+          )}
+        </View>
       ) : apiError ? (
         <View style={styles.errorState}>
           <Ionicons name="cloud-offline-outline" size={44} color={colors.secondaryText} />
           <Text style={styles.errorTitle}>Couldn't load results</Text>
           <Text style={styles.errorBody}>
-            The {category} search requires a valid API key.{'\n'}
-            Add EXPO_PUBLIC_TMDB_API_KEY to your .env file.
+            Check your connection and try again.
           </Text>
         </View>
       ) : (
@@ -424,8 +428,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     lineHeight: 17,
   },
+  loaderWrap: {
+    alignItems: 'center',
+  },
   loader: {
     marginTop: spacing.xxl,
+  },
+  loaderHint: {
+    marginTop: spacing.md,
+    fontSize: 13,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
   },
   row: {
     flexDirection: 'row',

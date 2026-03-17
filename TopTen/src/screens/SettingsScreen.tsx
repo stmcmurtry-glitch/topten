@@ -12,6 +12,7 @@ import {
   Alert,
   ActivityIndicator,
   ActionSheetIOS,
+  Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -54,6 +55,15 @@ const MembershipCard: React.FC<{ isPremium: boolean; onViewPlans: () => void }> 
           </View>
           <Text style={styles.premiumSubLabel}>Unlimited lists · Full search · No ads</Text>
         </View>
+        <View style={styles.profileDivider} />
+        <TouchableOpacity
+          style={styles.manageSubRow}
+          onPress={() => Linking.openURL('itms-apps://apps.apple.com/account/subscriptions')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.manageSubText}>Manage Subscription</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+        </TouchableOpacity>
       </View>
     );
   }
@@ -658,7 +668,6 @@ const styles = StyleSheet.create({
   },
   editProfileText: {
     fontSize: 16,
-    fontWeight: '500',
     color: colors.primaryText,
   },
   signOutRow: {
@@ -759,6 +768,17 @@ const styles = StyleSheet.create({
   },
   progressFillWarn: {
     backgroundColor: '#FF3B30',
+  },
+  manageSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  manageSubText: {
+    fontSize: 16,
+    color: colors.primaryText,
   },
   upgradeCta: {
     flexDirection: 'row',

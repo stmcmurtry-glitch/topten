@@ -13,7 +13,7 @@ interface ListContextType {
   listsLoading: boolean;
   addList: (category: string, title?: string, description?: string) => string;
   updateListItems: (listId: string, items: TopTenItem[]) => void;
-  updateListMeta: (listId: string, meta: { description?: string; customIcon?: string; category?: string; coverImageUri?: string; profileImageUri?: string }) => void;
+  updateListMeta: (listId: string, meta: { title?: string; description?: string; customIcon?: string; category?: string; coverImageUri?: string; profileImageUri?: string }) => void;
   deleteList: (listId: string) => void;
   reorderLists: (newOrder: TopTenList[]) => void;
 }
@@ -116,11 +116,24 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const { data: rows, error } = await supabase
-      .from('user_lists')
-      .select('id, sort_order, data')
-      .eq('user_id', userId)
-      .order('sort_order', { ascending: true });
+    // Safety valve: if Supabase is slow on cold start, fall back to local cache
+    // so lists are never blocked indefinitely.
+    const queryResult = await Promise.race([
+      supabase
+        .from('user_lists')
+        .select('id, sort_order, data')
+        .eq('user_id', userId)
+        .order('sort_order', { ascending: true }),
+      new Promise<null>(resolve => setTimeout(() => resolve(null), 5000)),
+    ]);
+
+    if (!queryResult) {
+      console.warn('[cloud] load timed out — using local cache');
+      await loadLocalLists();
+      return;
+    }
+
+    const { data: rows, error } = queryResult;
 
     if (error) {
       console.warn('[cloud] load failed, falling back to local:', error.message);
@@ -202,7 +215,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return id;
   }, [lists, persistLocal, user]);
 
-  const updateListMeta = useCallback((listId: string, meta: { description?: string; customIcon?: string; category?: string; coverImageUri?: string; profileImageUri?: string }) => {
+  const updateListMeta = useCallback((listId: string, meta: { title?: string; description?: string; customIcon?: string; category?: string; coverImageUri?: string; profileImageUri?: string }) => {
     const updated = lists.map((l) => {
       if (l.id !== listId) return l;
       const patch: Partial<TopTenList> = { ...meta };

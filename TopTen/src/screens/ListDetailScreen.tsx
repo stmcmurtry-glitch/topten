@@ -88,6 +88,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [typeSlotIndex, setTypeSlotIndex] = useState<number | null>(null);
   const [typedValue, setTypedValue] = useState('');
+  const [titleValue, setTitleValue] = useState(list?.title ?? '');
   const [description, setDescription] = useState(list?.description ?? '');
   const [descFocused, setDescFocused] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -200,6 +201,15 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
     ]);
   };
 
+  const saveTitle = () => {
+    const trimmed = titleValue.trim();
+    if (list && trimmed && trimmed !== list.title) {
+      updateListMeta(listId, { title: trimmed });
+    } else if (!trimmed) {
+      setTitleValue(list?.title ?? ''); // revert if cleared
+    }
+  };
+
   const saveDescription = () => {
     if (list && description !== list.description) {
       updateListMeta(listId, { description });
@@ -265,8 +275,18 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           />
         )}
 
-        {/* Title — flows directly into description with no row wrapper */}
-        <Text style={styles.heroTitle} numberOfLines={2}>{list.title}</Text>
+        {/* Title — editable inline */}
+        <TextInput
+          style={styles.heroTitle}
+          value={titleValue}
+          onChangeText={(t) => setTitleValue(t.slice(0, 60))}
+          onBlur={saveTitle}
+          placeholder="List title…"
+          placeholderTextColor="rgba(255,255,255,0.4)"
+          returnKeyType="done"
+          blurOnSubmit
+          maxLength={60}
+        />
 
         {/* Editable description — immediately below title */}
         <TextInput
