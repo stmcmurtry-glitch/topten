@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   FlatList,
   TouchableOpacity,
   StyleSheet,
@@ -9,19 +10,97 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { supabase } from '../services/supabase';
 import { FeedPost } from '../data/feedTypes';
-import { FeedPostCard } from '../components/FeedPostCard';
-import { colors, spacing, borderRadius, shadow } from '../theme';
+import { CATEGORY_COLORS } from '../components/FeedRow';
+import { colors, spacing, borderRadius } from '../theme';
 import { rowToPost } from '../hooks/useCityFeedPreview';
 
 const PAGE_SIZE = 20;
+
+function timeAgo(epochMs: number): string {
+  const diff = Date.now() - epochMs;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(epochMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function clean(s: string) {
+  return s.replace(/\s+/g, ' ').trim();
+}
 
 interface RouteParams {
   citySlug: string;
   cityName: string;
 }
+
+const PostRow: React.FC<{ item: FeedPost; onPress: () => void }> = ({ item, onPress }) => {
+  const categoryColor = CATEGORY_COLORS[item.category] ?? '#CC0000';
+  return (
+    <TouchableOpacity style={styles.postRow} onPress={onPress} activeOpacity={0.7}>
+      {/* Left: avatar */}
+      <View style={styles.avatarCol}>
+        {item.avatarUrl ? (
+          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarFallback]}>
+            <Ionicons name="person" size={18} color={colors.secondaryText} />
+          </View>
+        )}
+      </View>
+
+      {/* Right: content */}
+      <View style={styles.contentCol}>
+        {/* Username · time · category */}
+        <View style={styles.postMeta}>
+          <Text style={styles.username} numberOfLines={1}>{item.username ?? 'Anonymous'}</Text>
+          <Text style={styles.metaSep}>·</Text>
+          <Text style={styles.metaTime}>{timeAgo(item.publishedAt)}</Text>
+          <View style={styles.metaSpacer} />
+          <View style={[styles.categoryPill, { backgroundColor: categoryColor + '18' }]}>
+            <Text style={[styles.categoryText, { color: categoryColor }]}>{item.category}</Text>
+          </View>
+        </View>
+
+        {/* Title */}
+        <Text style={styles.postTitle}>{clean(item.title)}</Text>
+
+        {/* Blurb */}
+        {!!item.blurb && (
+          <Text style={styles.postBlurb} numberOfLines={3}>{clean(item.blurb)}</Text>
+        )}
+
+        {/* Numbered items */}
+        <View style={styles.itemsList}>
+          {item.items.slice(0, 3).map((t, i) => (
+            <View key={i} style={styles.itemRow}>
+              <Text style={[styles.itemNum, { color: categoryColor }]}>{i + 1}</Text>
+              <Text style={styles.itemText} numberOfLines={1}>{clean(t)}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Footer */}
+        <View style={styles.postFooter}>
+          <Ionicons name="location-sharp" size={11} color={colors.secondaryText} />
+          <Text style={styles.footerCity}>{item.cityName}</Text>
+          {item.likeCount > 0 && (
+            <>
+              <Text style={styles.footerSep}>·</Text>
+              <Ionicons name="heart-outline" size={11} color={colors.secondaryText} />
+              <Text style={styles.footerLikes}>{item.likeCount}</Text>
+            </>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export const CommunityFeedScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { citySlug, cityName } = route.params as RouteParams;
@@ -66,10 +145,8 @@ export const CommunityFeedScreen: React.FC<{ route: any; navigation: any }> = ({
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.75}>
-          <BlurView intensity={50} tint="light" style={styles.backBtnInner}>
-            <Ionicons name="chevron-back" size={20} color={colors.primaryText} />
-          </BlurView>
+        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.75} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
         </TouchableOpacity>
         <View style={styles.headerTitleWrap}>
           <Text style={styles.headerTitle}>Community Feed</Text>
@@ -83,10 +160,11 @@ export const CommunityFeedScreen: React.FC<{ route: any; navigation: any }> = ({
         <FlatList
           data={posts}
           keyExtractor={(p) => p.id}
-          contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           onEndReached={loadMore}
           onEndReachedThreshold={0.3}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="megaphone-outline" size={44} color={colors.border} />
@@ -100,32 +178,10 @@ export const CommunityFeedScreen: React.FC<{ route: any; navigation: any }> = ({
               : null
           }
           renderItem={({ item }) => (
-            <View style={styles.itemWrap}>
-              <TouchableOpacity
-                style={styles.fullCard}
-                onPress={() => navigation.navigate('PublishedList', { postId: item.id })}
-                activeOpacity={0.85}
-              >
-                <View style={styles.fullCardLeft}>
-                  <View style={[styles.categoryPill, { backgroundColor: 'rgba(204,0,0,0.08)' }]}>
-                    <Text style={styles.categoryPillText}>{item.category}</Text>
-                  </View>
-                  <Text style={styles.fullCardTitle} numberOfLines={2}>{item.title}</Text>
-                  <Text style={styles.fullCardUser} numberOfLines={1}>
-                    by {item.username ?? 'Anonymous'}
-                  </Text>
-                  {item.blurb ? (
-                    <Text style={styles.fullCardBlurb} numberOfLines={2}>{item.blurb}</Text>
-                  ) : null}
-                  {item.items.slice(0, 3).map((t, i) => (
-                    <Text key={i} style={styles.fullCardItem} numberOfLines={1}>
-                      {i + 1}. {t}
-                    </Text>
-                  ))}
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.border} />
-              </TouchableOpacity>
-            </View>
+            <PostRow
+              item={item}
+              onPress={() => navigation.navigate('PublishedList', { postId: item.id })}
+            />
           )}
         />
       )}
@@ -136,7 +192,7 @@ export const CommunityFeedScreen: React.FC<{ route: any; navigation: any }> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.cardBackground,
   },
   header: {
     flexDirection: 'row',
@@ -146,19 +202,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
-    backgroundColor: colors.background,
-  },
-  backBtn: {
-    flexShrink: 0,
-  },
-  backBtnInner: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.cardBackground,
   },
   headerTitleWrap: {
     flex: 1,
@@ -169,65 +212,124 @@ const styles = StyleSheet.create({
     color: colors.primaryText,
   },
   headerSub: {
+    fontSize: 12,
+    color: colors.secondaryText,
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
+
+  /* ── Post row (X-style) ── */
+  postRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+    backgroundColor: colors.cardBackground,
+  },
+  avatarCol: {
+    paddingTop: 2,
+  },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+  },
+  avatarFallback: {
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contentCol: {
+    flex: 1,
+    gap: 4,
+  },
+  postMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  username: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primaryText,
+    flexShrink: 1,
+  },
+  metaSep: {
     fontSize: 13,
     color: colors.secondaryText,
   },
-  list: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xxl,
-    gap: spacing.sm,
+  metaTime: {
+    fontSize: 13,
+    color: colors.secondaryText,
   },
-  itemWrap: {
-    marginBottom: spacing.sm,
-  },
-  fullCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderRadius: borderRadius.squircle,
-    padding: spacing.lg,
-    gap: spacing.md,
-    ...shadow,
-    shadowOpacity: 0.06,
-  },
-  fullCardLeft: {
+  metaSpacer: {
     flex: 1,
-    gap: 3,
   },
   categoryPill: {
-    alignSelf: 'flex-start',
-    borderRadius: borderRadius.sm,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    marginBottom: 4,
+    borderRadius: 4,
   },
-  categoryPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.activeTab,
+  categoryText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
-  fullCardTitle: {
+  postTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: colors.primaryText,
+    lineHeight: 21,
+    letterSpacing: -0.2,
   },
-  fullCardUser: {
+  postBlurb: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    lineHeight: 20,
+  },
+  itemsList: {
+    gap: 3,
+    marginTop: 2,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  itemNum: {
+    fontSize: 12,
+    fontWeight: '800',
+    width: 16,
+    textAlign: 'right',
+  },
+  itemText: {
+    fontSize: 13,
+    color: colors.primaryText,
+    fontWeight: '500',
+    flex: 1,
+  },
+  postFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  footerCity: {
     fontSize: 12,
     color: colors.secondaryText,
-    marginBottom: 2,
   },
-  fullCardBlurb: {
-    fontSize: 13,
-    fontStyle: 'italic',
+  footerSep: {
+    fontSize: 12,
+    color: colors.border,
+  },
+  footerLikes: {
+    fontSize: 12,
     color: colors.secondaryText,
-    lineHeight: 18,
   },
-  fullCardItem: {
-    fontSize: 13,
-    color: colors.secondaryText,
-    lineHeight: 18,
-  },
+
+  /* ── Empty state ── */
   empty: {
     alignItems: 'center',
     paddingTop: spacing.xxl * 2,

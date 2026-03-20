@@ -29,7 +29,9 @@ import { useCommunity } from '../context/CommunityContext';
 import { fetchCommunityImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
+import { PublishModal, PublishableList } from '../components/PublishModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
+import { useAuth } from '../context/AuthContext';
 import { usePostHog } from 'posthog-react-native';
 
 const SCORE_BAR_MAX_WIDTH = 100;
@@ -50,6 +52,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   } = useCommunity();
 
   const list = resolveCommunityList(communityListId);
+  const { user } = useAuth();
   const posthog = usePostHog();
   const [activeTab, setActiveTab] = useState<'community' | 'yours'>('community');
   const [showVoteOrderModal, setShowVoteOrderModal] = useState(false);
@@ -58,6 +61,8 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const [showVoteHint, setShowVoteHint] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showAllItems, setShowAllItems] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const hasFetched = useRef(false);
   const buttonScale = useRef(new Animated.Value(1)).current;
@@ -176,7 +181,9 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     if (cachedScores) {
       Object.keys(cachedScores).forEach((key) => {
         if (!base.find((i) => i.title.toLowerCase().trim() === key)) {
-          base.push({ id: `live-${key}`, title: key, seedScore: 0 });
+          // Title-case user-submitted items so "parc" → "Parc", "jean-georges" → "Jean-Georges"
+          const display = key.replace(/\b\w/g, (c) => c.toUpperCase());
+          base.push({ id: `live-${key}`, title: display, seedScore: 0 });
         }
       });
     }
@@ -393,18 +400,17 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                   </TouchableOpacity>
                 </View>
               )}
-              {participantCount > 0 && communityRanked.map((item, idx) => {
+              {participantCount > 0 && communityRanked.slice(0, showAllItems ? 50 : 10).map((item, idx) => {
                 const score = getScore(item.title);
                 const barWidth = (score / maxScore) * SCORE_BAR_MAX_WIDTH;
+                const subtitle = item.location ?? item.artist ?? null;
                 return (
                   <View key={item.id} style={styles.communityRow}>
                     <Text style={styles.rankNum}>{idx + 1}</Text>
                     <View style={styles.communityItemInfo}>
                       <Text style={styles.communityItemTitle} numberOfLines={1}>{item.title}</Text>
-                      {(item.location || item.artist) && (
-                        <Text style={styles.communityItemArtist} numberOfLines={1}>
-                          {item.location ?? item.artist}
-                        </Text>
+                      {subtitle && (
+                        <Text style={styles.communityItemArtist} numberOfLines={1}>{subtitle}</Text>
                       )}
                     </View>
                     <View style={styles.scoreCol}>
@@ -414,6 +420,16 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                   </View>
                 );
               })}
+              {participantCount > 0 && communityRanked.length > 10 && !showAllItems && (
+                <TouchableOpacity
+                  style={styles.showMoreButton}
+                  onPress={() => setShowAllItems(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.showMoreText}>Show more ({Math.min(communityRanked.length, 50) - 10} more)</Text>
+                  <Ionicons name="chevron-down" size={14} color={colors.secondaryText} />
+                </TouchableOpacity>
+              )}
               </>
             )}
             {!loadingScores && participantCount > 0 && communityRanked.length > 0 && (
@@ -553,6 +569,16 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
               </Text>
             </View>
           ) : null}
+          {user && filledCount > 0 && (
+            <TouchableOpacity
+              style={styles.postToFeedButton}
+              onPress={() => setShowPublishModal(true)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="megaphone-outline" size={15} color={list.color} />
+              <Text style={[styles.postToFeedText, { color: list.color }]}>Post my rankings to Community Feed</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -562,6 +588,17 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
         title={list.title}
         category={list.category}
         items={communityRanked.map((i) => i.title)}
+      />
+      <PublishModal
+        visible={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        list={{
+          id: list.id,
+          title: list.title,
+          category: list.category,
+          items: userSlots.filter(s => s.trim()).map(title => ({ title })),
+          coverImageUri: heroImageUrl,
+        }}
       />
       <ReportIssueModal
         visible={showReportModal}
@@ -988,6 +1025,31 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   }, // backgroundColor applied inline via list.color
   shareButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  showMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: spacing.md,
+    marginTop: spacing.xs,
+  },
+  showMoreText: {
+    fontSize: 13,
+    color: colors.secondaryText,
+    fontWeight: '500',
+  },
+  postToFeedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  postToFeedText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   reportButton: {
     flexDirection: 'row',
     alignItems: 'center',

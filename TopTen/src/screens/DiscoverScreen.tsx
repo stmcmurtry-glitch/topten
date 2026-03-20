@@ -240,10 +240,11 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.carousel}
               >
-                {discoverFeedPosts.map((post) => (
+                {discoverFeedPosts.slice(0, 5).map((post) => (
                   <FeedPostCard
                     key={post.id}
                     post={post}
+                    compact
                     onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
                   />
                 ))}

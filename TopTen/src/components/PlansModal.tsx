@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -240,8 +241,17 @@ export const PlansModal: React.FC<PlansModalProps> = ({ visible, onClose }) => {
           )}
 
           <Text style={styles.legalText}>
-            Subscription auto-renews. Cancel anytime in App Store settings.
+            Subscription auto-renews at the end of each period. Cancel anytime in App Store settings.
           </Text>
+          <View style={styles.legalLinks}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://sites.google.com/view/toptenapp-privacy/home')}>
+              <Text style={styles.legalLink}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <Text style={styles.legalDot}>·</Text>
+            <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+              <Text style={styles.legalLink}>Terms of Use</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
 
         {/* Restore */}
@@ -461,7 +471,23 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     textAlign: 'center',
     lineHeight: 16,
+    marginBottom: spacing.xs,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: spacing.sm,
+  },
+  legalLink: {
+    fontSize: 11,
+    color: colors.activeTab,
+    fontWeight: '500',
+  },
+  legalDot: {
+    fontSize: 11,
+    color: colors.secondaryText,
   },
 
   /* ── Restore ── */

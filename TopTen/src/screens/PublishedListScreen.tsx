@@ -121,7 +121,7 @@ export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({
           {/* Hero content */}
           <View style={styles.heroContent}>
             <Text style={styles.heroCategory}>{post.category.toUpperCase()}</Text>
-            <Text style={styles.heroTitle} numberOfLines={3}>{post.title}</Text>
+            <Text style={styles.heroTitle} numberOfLines={3}>{post.title.replace(/\s+/g, ' ').trim()}</Text>
           </View>
         </View>
 
@@ -145,16 +145,19 @@ export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({
 
         {/* Blurb */}
         {!!post.blurb && (
-          <Text style={styles.blurb}>{post.blurb}</Text>
+          <Text style={styles.blurb}>{post.blurb!.replace(/\s+/g, ' ').trim()}</Text>
         )}
 
         {/* Numbered items */}
         <View style={styles.itemsList}>
           {post.items.map((item, i) => (
-            <View key={i} style={styles.itemRow}>
-              <Text style={styles.itemRank}>{i + 1}</Text>
-              <Text style={styles.itemTitle}>{item}</Text>
-            </View>
+            <React.Fragment key={i}>
+              <View style={styles.itemRow}>
+                <Text style={styles.itemRank}>{i + 1}</Text>
+                <Text style={styles.itemTitle}>{item.replace(/\s+/g, ' ').trim()}</Text>
+              </View>
+              {i < post.items.length - 1 && <View style={styles.itemDivider} />}
+            </React.Fragment>
           ))}
         </View>
       </ScrollView>
@@ -266,34 +269,40 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   itemsList: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.squircle,
+    overflow: 'hidden',
+    ...shadow,
+    shadowOpacity: 0.06,
   },
   itemRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderRadius: borderRadius.sm,
-    paddingVertical: spacing.md,
+    alignItems: 'flex-start',
+    paddingVertical: 11,
     paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-    ...shadow,
-    shadowOpacity: 0.05,
+    gap: spacing.md,
+  },
+  itemDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginLeft: spacing.lg + 22 + spacing.md,
   },
   itemRank: {
     width: 22,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.primaryText,
+    color: colors.secondaryText,
     textAlign: 'right',
-    opacity: 0.5,
+    marginTop: 2,
   },
   itemTitle: {
     flex: 1,
     fontSize: 16,
     fontWeight: '500',
     color: colors.primaryText,
+    lineHeight: 22,
   },
   backBtnAbs: {
     margin: spacing.lg,

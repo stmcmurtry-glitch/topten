@@ -27,7 +27,9 @@ import { TopTenItem } from '../data/schema';
 import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
+import { PublishModal, PublishableList } from '../components/PublishModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
+import { useAuth } from '../context/AuthContext';
 import { CATEGORIES } from '../data/categories';
 import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces } from '../services/googlePlacesService';
 import { getDetectedLocation } from '../services/locationService';
@@ -97,7 +99,9 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [photoPickerTarget, setPhotoPickerTarget] = useState<'cover' | 'profile' | null>(null);
   const [showPlansModal, setShowPlansModal] = useState(false);
   const [showPremiumPrompt, setShowPremiumPrompt] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const { user } = useAuth();
   const [typedArtist, setTypedArtist] = useState('');
   const [typedAlbum, setTypedAlbum] = useState('');
   const [typedSuggestions, setTypedSuggestions] = useState<Array<{ title: string; location?: string }>>([]);
@@ -409,6 +413,12 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                 <Text style={styles.actionTileLabel}>Share</Text>
               </TouchableOpacity>
 
+              {user && (
+                <TouchableOpacity style={styles.actionTile} onPress={() => setShowPublishModal(true)} activeOpacity={0.7}>
+                  <Ionicons name="megaphone-outline" size={18} color={categoryColor} />
+                  <Text style={styles.actionTileLabel}>Post to Feed</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity style={styles.actionTile} onPress={() => handlePickPhoto('profile')} activeOpacity={0.7}>
                 <Ionicons name="person-circle-outline" size={18} color={categoryColor} />
@@ -599,6 +609,17 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         category={list.category}
         items={slots}
         coverImageUri={coverImageUri}
+      />
+      <PublishModal
+        visible={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        list={{
+          id: list.id,
+          title: list.title,
+          category: list.category,
+          items: [...list.items].sort((a, b) => a.rank - b.rank),
+          coverImageUri: list.coverImageUri,
+        }}
       />
       <ReportIssueModal
         visible={showReportModal}

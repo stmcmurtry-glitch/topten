@@ -19,7 +19,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 import { getDetectedLocation } from '../services/locationService';
-import { TopTenList } from '../data/schema';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { CATEGORY_COLORS } from './FeedRow';
 import { PlansModal } from './PlansModal';
@@ -30,10 +29,18 @@ function slugify(city: string): string {
   return city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
+export interface PublishableList {
+  id: string;
+  title: string;
+  category: string;
+  items: Array<{ title: string }>;   // pre-sorted, top items first
+  coverImageUri?: string | null;
+}
+
 interface Props {
   visible: boolean;
   onClose: () => void;
-  list: TopTenList;
+  list: PublishableList;
 }
 
 export const PublishModal: React.FC<Props> = ({ visible, onClose, list }) => {
@@ -48,7 +55,6 @@ export const PublishModal: React.FC<Props> = ({ visible, onClose, list }) => {
 
   const categoryColor = CATEGORY_COLORS[list.category] ?? '#CC0000';
   const previewItems = list.items
-    .sort((a, b) => a.rank - b.rank)
     .slice(0, 5)
     .map((i) => i.title)
     .filter(Boolean);

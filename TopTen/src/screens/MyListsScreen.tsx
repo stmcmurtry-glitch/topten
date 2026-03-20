@@ -182,16 +182,33 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     const gen = fetchGenRef.current;
     setLocalListsReady(false);
     setLocalPlacesLists([]);
+
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      if (!settled && fetchGenRef.current === gen) {
+        settled = true;
+        setLocalListsReady(true);
+      }
+    }, 8000);
+
     fetchLocalPlacesLists(detectedLocation.city).then((lists) => {
-      if (fetchGenRef.current !== gen) return; // location changed while fetching — discard
+      clearTimeout(timeoutId);
+      if (settled || fetchGenRef.current !== gen) return;
+      settled = true;
       if (lists.length > 0) {
         registerDynamicLists(lists);
         setLocalPlacesLists(lists);
       }
       setLocalListsReady(true);
     }).catch(() => {
-      if (fetchGenRef.current === gen) setLocalListsReady(true);
+      clearTimeout(timeoutId);
+      if (!settled && fetchGenRef.current === gen) {
+        settled = true;
+        setLocalListsReady(true);
+      }
     });
+
+    return () => clearTimeout(timeoutId);
   }, [detectedLocation?.city]);
 
   // Load persisted viewed featured IDs on mount — filter to valid list IDs only
@@ -366,42 +383,6 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         </>
       )}
 
-      {/* Community Feed teaser — only shown for top-500 cities with ≥ FEED_MIN_POSTS */}
-      {feedTotal >= FEED_MIN_POSTS && feedPosts.length > 0 && detectedLocation?.city &&
-        citySlugForFeed && TOP_500_CITY_SLUG_SET.has(citySlugForFeed) && (
-        <>
-          <View style={styles.divider} />
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionHeaderInline}>
-              Community Feed
-              <Text style={{ color: colors.activeTab }}> · {detectedLocation.city}</Text>
-            </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('CommunityFeed', {
-                citySlug: citySlugForFeed,
-                cityName: detectedLocation.city,
-              })}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.seeAllButton}>See all</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carousel}
-          >
-            {feedPosts.map((post) => (
-              <FeedPostCard
-                key={post.id}
-                post={post}
-                onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
-              />
-            ))}
-          </ScrollView>
-        </>
-      )}
-
       {/* Community Lists */}
       {filteredCommunity.length > 0 && (
         <>
@@ -563,6 +544,43 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
         </TouchableOpacity>
+      )}
+
+      {/* Community Feed teaser — only shown for top-500 cities with ≥ FEED_MIN_POSTS */}
+      {feedTotal >= FEED_MIN_POSTS && feedPosts.length > 0 && detectedLocation?.city &&
+        citySlugForFeed && TOP_500_CITY_SLUG_SET.has(citySlugForFeed) && (
+        <>
+          <View style={styles.divider} />
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeaderInline}>
+              Community Feed
+              <Text style={{ color: colors.activeTab }}> · {detectedLocation.city}</Text>
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CommunityFeed', {
+                citySlug: citySlugForFeed,
+                cityName: detectedLocation.city,
+              })}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.seeAllButton}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carousel}
+          >
+            {feedPosts.slice(0, 5).map((post) => (
+              <FeedPostCard
+                key={post.id}
+                post={post}
+                compact
+                onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
+              />
+            ))}
+          </ScrollView>
+        </>
       )}
 
       <ChangeLocationModal
