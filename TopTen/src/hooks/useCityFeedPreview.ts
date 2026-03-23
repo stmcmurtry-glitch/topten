@@ -27,7 +27,7 @@ function rowToPost(row: any): FeedPost {
   };
 }
 
-export function useCityFeedPreview(citySlug: string | null): CityFeedPreview {
+export function useCityFeedPreview(citySlug: string | null, refreshKey = 0): CityFeedPreview {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -75,7 +75,7 @@ export function useCityFeedPreview(citySlug: string | null): CityFeedPreview {
     })();
 
     return () => { cancelled = true; };
-  }, [citySlug]);
+  }, [citySlug, refreshKey]);
 
   return { posts, total, loading };
 }

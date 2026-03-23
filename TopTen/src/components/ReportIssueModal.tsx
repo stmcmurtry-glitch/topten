@@ -14,6 +14,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../theme';
 import { sendReportEmail } from '../services/emailService';
+import { supabase } from '../services/supabase';
+import { useAuth } from '../context/AuthContext';
 
 interface Props {
   visible: boolean;
@@ -23,6 +25,7 @@ interface Props {
 }
 
 export const ReportIssueModal: React.FC<Props> = ({ visible, onClose, listTitle, listType }) => {
+  const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -34,6 +37,12 @@ export const ReportIssueModal: React.FC<Props> = ({ visible, onClose, listTitle,
     setError(false);
     try {
       await sendReportEmail({ listTitle, listType, message: message.trim() });
+      supabase?.from('reports').insert({
+        user_id: user?.id ?? null,
+        list_title: listTitle,
+        list_type: listType,
+        message: message.trim(),
+      }).then(() => {});
       setSent(true);
       setMessage('');
     } catch {

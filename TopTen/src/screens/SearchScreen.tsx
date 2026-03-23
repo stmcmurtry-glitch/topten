@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
 import { useCommunity } from '../context/CommunityContext';
 import { searchSuggestions, isApiCategory, SearchResult } from '../data/suggestions';
-import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces, searchPlacesGlobal } from '../services/googlePlacesService';
+import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces, searchPlacesGlobal, getConfigForListId } from '../services/googlePlacesService';
 import { resolveCommunityList } from '../data/dynamicListRegistry';
 import { getDetectedLocation } from '../services/locationService';
 import { TopTenItem } from '../data/schema';
@@ -65,7 +65,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     !isNationalCommunity && isVenueList(listTitle, category) ? undefined : null
   );
   const { updateListItems, lists } = useListContext();
-  const { userRankings, setUserSlots } = useCommunity();
+  const { userRankings, setUserSlots, recordItemLocation } = useCommunity();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const placesReqRef = useRef(0); // incremented on each Places API call; stale responses are discarded
 
@@ -83,10 +83,13 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
     placesReqRef.current += 1;
     const reqId = placesReqRef.current;
     const isInitialLoad = !q.trim();
-    const effectiveQuery = q.trim() || derivePlacesQuery(listTitle, category);
+    // If we have a resolved community list, use its PLACE_CONFIG query/type directly
+    // so mechanics, gyms, salons, etc. don't fall through to the restaurants default.
+    const resolvedConfig = resolvedCommunityList ? getConfigForListId(resolvedCommunityList.id) : undefined;
+    const effectiveQuery = q.trim() || resolvedConfig?.queryTerm || derivePlacesQuery(listTitle, category);
     // Only apply type filter on initial browse (no user query) — typed searches skip it
     // so specific venues like stadiums, arenas, etc. aren't filtered out
-    const placeType = isInitialLoad ? derivePlacesType(listTitle, category) : undefined;
+    const placeType = isInitialLoad ? (resolvedConfig?.placeType ?? derivePlacesType(listTitle, category)) : undefined;
     searchLocalPlaces(city, effectiveQuery, placeType)
       .then((r) => {
         if (placesReqRef.current !== reqId) return; // stale — a newer request is in flight
@@ -202,6 +205,7 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       const updated = [...existing];
       updated[slotIndex] = result.title;
       setUserSlots(communityListId, updated);
+      if (result.location) recordItemLocation(communityListId, result.title, result.location);
       navigation.goBack();
       return;
     }

@@ -30,6 +30,7 @@ import { ShareModal } from '../components/ShareModal';
 import { PublishModal, PublishableList } from '../components/PublishModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../services/supabase';
 import { CATEGORIES } from '../data/categories';
 import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces } from '../services/googlePlacesService';
 import { getDetectedLocation } from '../services/locationService';
@@ -101,6 +102,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [showPremiumPrompt, setShowPremiumPrompt] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [existingPostId, setExistingPostId] = useState<string | null>(null);
   const { user } = useAuth();
   const [typedArtist, setTypedArtist] = useState('');
   const [typedAlbum, setTypedAlbum] = useState('');
@@ -128,6 +130,21 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
       }
     });
   }, [navigation, listId, list, updateListMeta]);
+
+  const checkExistingPost = useCallback(async () => {
+    if (!user || !supabase) return;
+    const { data } = await supabase
+      .from('community_feed_posts')
+      .select('id')
+      .eq('list_id', list?.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    setExistingPostId(data?.id ?? null);
+  }, [user, list?.id]);
+
+  useEffect(() => { checkExistingPost(); }, [checkExistingPost]);
+
+  useEffect(() => { if (!showPublishModal) checkExistingPost(); }, [showPublishModal]);
 
   // Fetch nearby place suggestions when the type modal opens for a venue list
   useEffect(() => {
@@ -239,7 +256,6 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
   if (!list) return null;
 
-  const heroImage = list.items.find(i => i.rank === 1)?.imageUrl ?? null;
   const categoryColor = CATEGORY_COLORS[list.category] ?? '#CC0000';
   const coverImageUri = list.coverImageUri ?? null;
 
@@ -269,16 +285,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
       </View>
 
       {/* Bottom content */}
-      <View style={[styles.heroContent, heroImage && styles.heroContentWithPoster]}>
-        {/* Poster: absolutely positioned so it doesn't push description down */}
-        {heroImage && (
-          <Image
-            source={{ uri: heroImage }}
-            style={styles.heroPoster}
-            resizeMode="cover"
-          />
-        )}
-
+      <View style={styles.heroContent}>
         {/* Title — editable inline */}
         <TextInput
           style={styles.heroTitle}
@@ -414,10 +421,37 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
               </TouchableOpacity>
 
               {user && (
-                <TouchableOpacity style={styles.actionTile} onPress={() => setShowPublishModal(true)} activeOpacity={0.7}>
-                  <Ionicons name="megaphone-outline" size={18} color={categoryColor} />
-                  <Text style={styles.actionTileLabel}>Post to Feed</Text>
-                </TouchableOpacity>
+                existingPostId ? (
+                  <TouchableOpacity
+                    style={styles.actionTile}
+                    onPress={() => {
+                      Alert.alert(
+                        'Delete Post',
+                        'Remove this post from the community feed? This cannot be undone.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Delete',
+                            style: 'destructive',
+                            onPress: async () => {
+                              await supabase!.from('community_feed_posts').delete().eq('id', existingPostId);
+                              setExistingPostId(null);
+                            },
+                          },
+                        ],
+                      );
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="checkmark-circle" size={18} color={categoryColor} />
+                    <Text style={styles.actionTileLabel}>Posted to Feed</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={styles.actionTile} onPress={() => setShowPublishModal(true)} activeOpacity={0.7}>
+                    <Ionicons name="megaphone-outline" size={18} color={categoryColor} />
+                    <Text style={styles.actionTileLabel}>Post to Feed</Text>
+                  </TouchableOpacity>
+                )
               )}
 
               <TouchableOpacity style={styles.actionTile} onPress={() => handlePickPhoto('profile')} activeOpacity={0.7}>
@@ -763,21 +797,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: 18,
     paddingTop: spacing.sm,
-  },
-  heroContentWithPoster: {
-    // Reserve right space so text doesn't run under the poster
-    paddingRight: spacing.lg + 58 + spacing.md,
-  },
-  heroPoster: {
-    position: 'absolute',
-    right: spacing.lg,
-    // Centers poster on title: paddingTop(8) + lineHeight/2(13) - posterHeight/2(43) = -22
-    top: -22,
-    width: 58,
-    height: 86,
-    borderRadius: borderRadius.md,
-    ...shadow,
-    shadowOpacity: 0.35,
   },
   heroTitle: {
     fontSize: 24,

@@ -21,8 +21,11 @@ interface CommunityContextType {
   userRankings: Record<string, UserCommunityRanking>;
   deviceId: string | null;
   liveScoreCache: Record<string, Record<string, number>>;
+  itemLocations: Record<string, Record<string, string>>;
   participantCounts: Record<string, number>;
+  refreshParticipantCounts: (listIds?: string[]) => void;
   fetchLiveScores: (listId: string) => Promise<void>;
+  recordItemLocation: (listId: string, title: string, location: string) => void;
   setUserSlots: (listId: string, slots: string[]) => void;
   submitRanking: (listId: string) => Promise<void>;
 }
@@ -41,27 +44,38 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [userRankings, setUserRankings] = useState<Record<string, UserCommunityRanking>>({});
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [liveScoreCache, setLiveScoreCache] = useState<Record<string, Record<string, number>>>({});
+  const [itemLocations, setItemLocations] = useState<Record<string, Record<string, string>>>({});
+
+  const normalizeTitle = (s: string) =>
+    s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const [participantCounts, setParticipantCounts] = useState<Record<string, number>>({});
   const posthog = usePostHog();
   const loadedForRef = useRef<string | null | undefined>(undefined);
 
-  // Bulk-fetch participant counts for all lists at startup
-  useEffect(() => {
+  // Bulk-fetch participant counts for all lists
+  const refreshParticipantCounts = useCallback((listIds?: string[]) => {
     if (!supabase) return;
-    Promise.resolve(supabase
+    let query = supabase
       .from('community_scores')
-      .select('list_id, participant_count')
-    ).then(({ data }) => {
+      .select('list_id, participant_count');
+    if (listIds && listIds.length > 0) {
+      query = (query as any).in('list_id', listIds);
+    } else {
+      query = (query as any).limit(5000);
+    }
+    Promise.resolve(query).then(({ data }: { data: Array<{ list_id: string; participant_count: number }> | null }) => {
       if (!data || data.length === 0) return;
       const counts: Record<string, number> = {};
-      data.forEach((row: { list_id: string; participant_count: number }) => {
+      data.forEach((row) => {
         if (!counts[row.list_id] || row.participant_count > counts[row.list_id]) {
           counts[row.list_id] = row.participant_count;
         }
       });
-      setParticipantCounts(counts);
-    }).catch(() => {/* silent fallback to seed counts */});
+      setParticipantCounts((prev) => ({ ...prev, ...counts }));
+    }).catch(() => {});
   }, []);
+
+  useEffect(() => { refreshParticipantCounts(); }, []);
 
   // Load/reload rankings whenever the signed-in user changes
   useEffect(() => {
@@ -142,41 +156,60 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
 
+  const recordItemLocation = useCallback((listId: string, title: string, location: string) => {
+    const key = normalizeTitle(title);
+    setItemLocations((prev) => ({
+      ...prev,
+      [listId]: { ...(prev[listId] ?? {}), [key]: location },
+    }));
+    if (supabase) {
+      supabase.from('community_item_locations').upsert(
+        { list_id: listId, normalized_title: key, location, updated_at: new Date().toISOString() },
+        { onConflict: 'list_id,normalized_title' }
+      ).catch(() => {});
+    }
+  }, []);
+
   const fetchLiveScores = useCallback(async (listId: string) => {
-    const list = resolveCommunityList(listId);
-    if (!list || !supabase) return;
+    if (!supabase) return;
 
     try {
-      const { data, error } = await supabase
-        .from('community_scores')
-        .select('item_title, total_score, participant_count')
-        .eq('list_id', listId);
+      const [scoresRes, locsRes] = await Promise.all([
+        supabase
+          .from('community_scores')
+          .select('item_title, total_score, participant_count')
+          .eq('list_id', listId),
+        supabase
+          .from('community_item_locations')
+          .select('normalized_title, location')
+          .eq('list_id', listId),
+      ]);
 
-      if (error || !data || data.length === 0) return;
-
-      // Build seed fallback map: normalized title → seedScore
-      const seedByTitle: Record<string, number> = {};
-      list.items.forEach((item) => {
-        seedByTitle[item.title.toLowerCase().trim()] = item.seedScore;
-      });
+      if (!scoresRes.data || scoresRes.data.length === 0) return;
 
       const scores: Record<string, number> = {};
       let maxParticipants = 0;
-
-      data.forEach((row: { item_title: string; total_score: number; participant_count: number }) => {
-        const key = row.item_title.toLowerCase().trim();
-        scores[key] = row.total_score;
-        if (row.participant_count > maxParticipants) {
-          maxParticipants = row.participant_count;
-        }
+      scoresRes.data.forEach((row: { item_title: string; total_score: number; participant_count: number }) => {
+        scores[row.item_title.toLowerCase().trim()] = row.total_score;
+        if (row.participant_count > maxParticipants) maxParticipants = row.participant_count;
       });
-
       setLiveScoreCache((prev) => ({ ...prev, [listId]: scores }));
       if (maxParticipants > 0) {
         setParticipantCounts((prev) => ({ ...prev, [listId]: maxParticipants }));
       }
+
+      if (locsRes.data && locsRes.data.length > 0) {
+        const locs: Record<string, string> = {};
+        locsRes.data.forEach((row: { normalized_title: string; location: string }) => {
+          locs[row.normalized_title] = row.location;
+        });
+        setItemLocations((prev) => ({
+          ...prev,
+          [listId]: { ...(prev[listId] ?? {}), ...locs },
+        }));
+      }
     } catch {
-      // Network error — silently fall back to seed scores
+      // Network error — silently skip
     }
   }, []);
 
@@ -218,9 +251,9 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         posthog?.capture('community_vote_supabase_null', { list_id: listId });
       } else {
         try {
-          // Normalize slots before storing: trim whitespace and lowercase so
-          // "Beef Wellington" / "beef wellington" aggregate to the same row in Supabase.
-          const normalizedSlots = current.slots.map((s) => s.trim().toLowerCase());
+          // Trim whitespace only — keep original casing for display.
+          // Aggregation in refresh_community_scores uses lower() for case-insensitive grouping.
+          const normalizedSlots = current.slots.map((s) => s.trim());
           const { error: upsertError } = await supabase.from('community_votes').upsert(
             { device_id: user.id, list_id: listId, slots: normalizedSlots, submitted_at: new Date().toISOString() },
             { onConflict: 'device_id,list_id' }
@@ -233,8 +266,9 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             });
           } else {
             posthog?.capture('community_vote_saved_to_supabase', { list_id: listId });
-            // Refresh aggregated scores after vote is saved
-            await supabase.rpc('refresh_community_scores');
+            // Refresh aggregated scores for this list only — fire-and-forget so
+            // a slow rebuild never blocks vote confirmation or causes a timeout.
+            supabase.rpc('refresh_community_scores_for_list', { p_list_id: listId }).catch(() => {});
           }
         } catch (err: unknown) {
           posthog?.capture('community_vote_exception', {
@@ -256,8 +290,11 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         userRankings,
         deviceId,
         liveScoreCache,
+        itemLocations,
         participantCounts,
+        refreshParticipantCounts,
         fetchLiveScores,
+        recordItemLocation,
         setUserSlots,
         submitRanking,
       }}

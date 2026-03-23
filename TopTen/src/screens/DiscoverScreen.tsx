@@ -23,9 +23,7 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { FeedPostCard } from '../components/FeedPostCard';
 import { useCityFeedPreview } from '../hooks/useCityFeedPreview';
-import { FEED_MIN_POSTS } from '../data/feedTypes';
 import { getDetectedLocation } from '../services/locationService';
-import { TOP_500_CITY_SLUG_SET } from '../data/topCities';
 
 const TEMPLATE_DESCRIPTIONS: Record<string, string> = {
   'Greatest Athletes of All Time': 'The greatest competitors across all sports, ranked by career dominance, legacy, and cultural impact.',
@@ -81,7 +79,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
   const [query, setQuery] = useState('');
   const { viewedIds } = useViewedLists();
-  const { posts: discoverFeedPosts, total: discoverFeedTotal } = useCityFeedPreview(discoverCity?.slug ?? null);
+  const { posts: discoverFeedPosts, loading: discoverFeedLoading } = useCityFeedPreview(discoverCity?.slug ?? null);
 
   const q = query.toLowerCase().trim();
 
@@ -216,39 +214,54 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             ))}
           </ScrollView>
 
-          {/* Community Feed teaser — top-500 cities only */}
-          {discoverFeedTotal >= FEED_MIN_POSTS && discoverFeedPosts.length > 0 && discoverCity &&
-            TOP_500_CITY_SLUG_SET.has(discoverCity.slug) && (
+          {/* Community Feed teaser — any city */}
+          {discoverCity && (
             <>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionHeaderInline}>
-                  Community Feed
-                  <Text style={{ color: colors.activeTab }}> · {discoverCity.name}</Text>
-                </Text>
                 <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                   onPress={() => navigation.navigate('CommunityFeed', {
                     citySlug: discoverCity.slug,
                     cityName: discoverCity.name,
                   })}
-                  activeOpacity={0.7}
+                  activeOpacity={0.6}
                 >
-                  <Text style={styles.seeAllButton}>See all</Text>
+                  <Text style={styles.sectionHeaderInline}>Community Feed</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
                 </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
+                  <Text style={{ fontSize: 13, fontWeight: '500', color: colors.secondaryText }}>{discoverCity.name}</Text>
+                </View>
               </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.carousel}
-              >
-                {discoverFeedPosts.slice(0, 5).map((post) => (
-                  <FeedPostCard
-                    key={post.id}
-                    post={post}
-                    compact
-                    onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
-                  />
-                ))}
-              </ScrollView>
+              {discoverFeedPosts.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.carousel}
+                >
+                  {discoverFeedPosts.slice(0, 5).map((post) => (
+                    <FeedPostCard
+                      key={post.id}
+                      post={post}
+                      compact
+                      onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
+                    />
+                  ))}
+                </ScrollView>
+              ) : !discoverFeedLoading ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingVertical: 12 }}>
+                  <Ionicons name="megaphone-outline" size={22} color={colors.border} />
+                  <View>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.primaryText, marginBottom: 2 }}>
+                      Be the first to post in {discoverCity.name}!
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.secondaryText }}>
+                      Open any list → tap Post to Community Feed
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
             </>
           )}
 

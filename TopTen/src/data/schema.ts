@@ -19,4 +19,5 @@ export interface TopTenList {
   customIcon?: string;
   coverImageUri?: string;   // hero/banner image at top of ListDetailScreen
   profileImageUri?: string; // thumbnail shown in My Lists rows
+  updatedAt?: string;       // ISO timestamp of last mutation; used for cloud/local merge
 }

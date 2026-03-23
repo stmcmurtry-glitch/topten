@@ -156,10 +156,47 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLists(toMigrate);
     } else {
       const cloudLists: TopTenList[] = rows.map((r: any) => r.data);
-      const { lists: withIcons } = backfillIcons(cloudLists);
-      // Keep AsyncStorage in sync with cloud so local backup is always fresh
+
+      // Merge cloud with local: if a cloudUpsert failed silently, the cloud may have
+      // a stale version (e.g. items: []). For each list, prefer whichever version has
+      // a newer updatedAt timestamp so locally-edited data is never overwritten.
+      const localData = await AsyncStorage.getItem(STORAGE_KEY);
+      const localMap = new Map<string, TopTenList>();
+      if (localData) {
+        (JSON.parse(localData) as TopTenList[]).forEach(l => localMap.set(l.id, l));
+      }
+
+      const listsToReSync: Array<{ list: TopTenList; idx: number }> = [];
+      const merged = cloudLists.map((cloudList, idx) => {
+        const local = localMap.get(cloudList.id);
+        if (!local) return cloudList;
+        // Both have timestamps — prefer the newer one
+        if (cloudList.updatedAt && local.updatedAt) {
+          if (local.updatedAt > cloudList.updatedAt) {
+            listsToReSync.push({ list: local, idx });
+            return local;
+          }
+          return cloudList;
+        }
+        // Local has a timestamp but cloud doesn't — local was edited after the last
+        // successful cloud sync, so it is newer
+        if (local.updatedAt && !cloudList.updatedAt) {
+          listsToReSync.push({ list: local, idx });
+          return local;
+        }
+        // Default: trust cloud
+        return cloudList;
+      });
+
+      const { lists: withIcons } = backfillIcons(merged);
+      // Keep AsyncStorage in sync with merged result
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(withIcons));
       setLists(withIcons);
+
+      // Push any locally-preferred lists back up to cloud so they stay in sync
+      if (listsToReSync.length > 0) {
+        listsToReSync.forEach(({ list, idx }) => cloudUpsert(userId, list, idx));
+      }
     }
 
     setListsLoading(false);
@@ -199,13 +236,15 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addList = useCallback((category: string, title?: string, description?: string): string => {
     const id = Date.now().toString();
+    const now = new Date().toISOString();
     const newList: TopTenList = {
       id,
       category,
       title: title ?? `My Top 10 ${category}`,
       icon: CATEGORY_ICONS[category] ?? 'list-outline',
       items: [],
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
       isCustom: true,
       description,
     };
@@ -218,7 +257,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateListMeta = useCallback((listId: string, meta: { title?: string; description?: string; customIcon?: string; category?: string; coverImageUri?: string; profileImageUri?: string }) => {
     const updated = lists.map((l) => {
       if (l.id !== listId) return l;
-      const patch: Partial<TopTenList> = { ...meta };
+      const patch: Partial<TopTenList> = { ...meta, updatedAt: new Date().toISOString() };
       if (meta.category) patch.icon = CATEGORY_ICONS[meta.category] ?? 'list-outline';
       return { ...l, ...patch };
     });
@@ -235,7 +274,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [persistLocal, user]);
 
   const updateListItems = useCallback((listId: string, items: TopTenItem[]) => {
-    const updated = lists.map((l) => (l.id === listId ? { ...l, items } : l));
+    const updated = lists.map((l) => (l.id === listId ? { ...l, items, updatedAt: new Date().toISOString() } : l));
     persistLocal(updated);
     if (user) {
       const idx = updated.findIndex((l) => l.id === listId);

@@ -19,7 +19,7 @@ import { ReportIssueModal } from '../components/ReportIssueModal';
 import { usePostHog } from 'posthog-react-native';
 
 function statsSourceLabel(url?: string): string {
-  if (!url) return 'Sports Reference';
+  if (!url) return 'the source';
   if (url.includes('hockey-reference')) return 'Hockey Reference';
   if (url.includes('baseball-reference')) return 'Baseball Reference';
   if (url.includes('pro-football-reference')) return 'Pro Football Reference';
@@ -32,7 +32,17 @@ function statsSourceLabel(url?: string): string {
   if (url.includes('imf.org')) return 'IMF';
   if (url.includes('population.un.org')) return 'UN World Population Prospects';
   if (url.includes('wikipedia.org')) return 'Wikipedia';
-  return 'Sports Reference';
+  if (url.includes('riaa.com')) return 'RIAA';
+  if (url.includes('boxofficemojo.com')) return 'Box Office Mojo';
+  if (url.includes('billboard.com')) return 'Billboard';
+  if (url.includes('olympic.org')) return 'Olympics';
+  if (url.includes('guide.michelin.com')) return 'Michelin Guide';
+  try {
+    const { hostname } = new URL(url);
+    return hostname.replace(/^www\./, '');
+  } catch {
+    return 'the source';
+  }
 }
 
 export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {

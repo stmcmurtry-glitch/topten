@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, shadow } from '../theme';
@@ -87,6 +88,16 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
     debounceRef.current = setTimeout(() => searchPhotos(text), 500);
   };
 
+  // Copy a temp device URI to the app's permanent documents directory so it
+  // survives app restarts. Unsplash https:// URLs are passed through unchanged.
+  const persistUri = async (tempUri: string): Promise<string> => {
+    if (tempUri.startsWith('http')) return tempUri;
+    const ext = tempUri.split('.').pop()?.split('?')[0] ?? 'jpg';
+    const dest = `${FileSystem.documentDirectory}photo-${Date.now()}.${ext}`;
+    await FileSystem.copyAsync({ from: tempUri, to: dest });
+    return dest;
+  };
+
   const handleLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -100,7 +111,8 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
       quality: 0.8,
     });
     if (!result.canceled) {
-      onSelectUri(result.assets[0].uri);
+      const uri = await persistUri(result.assets[0].uri);
+      onSelectUri(uri);
       onClose();
     }
   };
@@ -117,7 +129,8 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
       quality: 0.8,
     });
     if (!result.canceled) {
-      onSelectUri(result.assets[0].uri);
+      const uri = await persistUri(result.assets[0].uri);
+      onSelectUri(uri);
       onClose();
     }
   };

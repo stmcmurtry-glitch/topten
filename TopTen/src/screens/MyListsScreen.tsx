@@ -10,13 +10,16 @@ import {
   ActivityIndicator,
   RefreshControl,
   Animated,
+  Modal,
+  Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useListContext } from '../data/ListContext';
-import { FeedRow, CATEGORY_COLORS } from '../components/FeedRow';
+import { TopTenList } from '../data/schema';
+import { CATEGORY_COLORS } from '../components/FeedRow';
 import { PickCard } from '../components/PickCard';
 import { FEATURED_LISTS } from '../data/featuredLists';
 import { COMMUNITY_LISTS, LOCAL_COMMUNITY_LISTS, CommunityList } from '../data/communityLists';
@@ -34,13 +37,14 @@ import {
   DetectedLocation,
 } from '../services/locationService';
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
+import { PhotoPickerModal } from '../components/PhotoPickerModal';
 import { InYourAreaLockCard } from '../components/InYourAreaLockCard';
 import { useAuth } from '../context/AuthContext';
 import { FeedPostCard } from '../components/FeedPostCard';
 import { useCityFeedPreview } from '../hooks/useCityFeedPreview';
-import { FEED_MIN_POSTS } from '../data/feedTypes';
 
 const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
+
 
 
 const SkeletonCard: React.FC = () => {
@@ -64,6 +68,34 @@ const SkeletonCard: React.FC = () => {
         <View style={[styles.skeletonLine, { width: '80%' }]} />
       </View>
     </Animated.View>
+  );
+};
+
+const STORY_CIRCLE_SIZE = 68;
+
+const StoryCircle: React.FC<{ list: TopTenList; onPress: () => void }> = ({ list, onPress }) => {
+  const profileImage = list.profileImageUri;   // square avatar — independent from cover
+  const categoryColor = CATEGORY_COLORS[list.category] || '#CC0000';
+  const catIcon = CATEGORIES.find((c) => c.label === list.category)?.icon ?? 'list-outline';
+  return (
+    <TouchableOpacity style={styles.storyWrap} onPress={onPress} activeOpacity={0.8}>
+      <View style={[styles.storyCircle, { borderColor: categoryColor }]}>
+        {profileImage ? (
+          <Image source={{ uri: profileImage }} style={[StyleSheet.absoluteFill, { borderRadius: STORY_CIRCLE_SIZE / 2 }]} resizeMode="cover" />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: categoryColor, borderRadius: STORY_CIRCLE_SIZE / 2, alignItems: 'center', justifyContent: 'center' }]}>
+            <Ionicons name={catIcon as any} size={26} color="rgba(255,255,255,0.9)" />
+          </View>
+        )}
+      </View>
+      {/* Camera badge shows when no profile image is set */}
+      {!profileImage && (
+        <View style={styles.storyCameraBadge}>
+          <Ionicons name="camera" size={10} color="#FFF" />
+        </View>
+      )}
+      <Text style={styles.storyTitle} numberOfLines={2}>{list.title}</Text>
+    </TouchableOpacity>
   );
 };
 
@@ -125,8 +157,8 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress,
 
 export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user } = useAuth();
-  const { lists, listsLoading } = useListContext();
-  const { userRankings, participantCounts } = useCommunity();
+  const { lists, listsLoading, updateListMeta } = useListContext();
+  const { userRankings, participantCounts, refreshParticipantCounts } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
   // undefined = still detecting, null = failed / no match
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
@@ -139,6 +171,11 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
   const fetchGenRef = useRef(0);
   const [refreshing, setRefreshing] = useState(false);
   const [localListsReady, setLocalListsReady] = useState(false);
+  const [storyList, setStoryList] = useState<TopTenList | null>(null);
+  const [feedRefreshKey, setFeedRefreshKey] = useState(0);
+  // Separate state for photo target so the story modal can fully close before the picker opens
+  const [photoTargetId, setPhotoTargetId] = useState<string | null>(null);
+  const [storyPhotoPickerVisible, setStoryPhotoPickerVisible] = useState(false);
   const [viewedIds, setViewedIds] = useState<Set<string>>(new Set());
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
   const votedInitialized = useRef(false);
@@ -160,12 +197,14 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       if (fetchGenRef.current === gen && lists.length > 0) {
         registerDynamicLists(lists);
         setLocalPlacesLists(lists);
+        refreshParticipantCounts(lists.map((l) => l.id));
       }
       setLocalListsReady(true);
     }
     // Apply card reordering right as spinner disappears
     setViewedIds(new Set(storedIds));
     setVotedIds(new Set(Object.keys(userRankings).filter(id => userRankings[id]?.submitted)));
+    setFeedRefreshKey(k => k + 1);
     setRefreshing(false);
   }, [detectedLocation?.city, userRankings]);
 
@@ -173,7 +212,13 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     useCallback(() => {
       if (!user) return;
       getDetectedLocation().then(setDetectedLocation);
-    }, [user])
+      setFeedRefreshKey(k => k + 1);
+      if (localPlacesLists.length > 0) {
+        refreshParticipantCounts(localPlacesLists.map(l => l.id));
+      } else {
+        refreshParticipantCounts();
+      }
+    }, [user, refreshParticipantCounts, localPlacesLists])
   );
 
 
@@ -198,6 +243,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       if (lists.length > 0) {
         registerDynamicLists(lists);
         setLocalPlacesLists(lists);
+        refreshParticipantCounts(lists.map((l) => l.id));
       }
       setLocalListsReady(true);
     }).catch(() => {
@@ -242,7 +288,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
   const citySlugForFeed = detectedLocation?.city
     ? detectedLocation.city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     : null;
-  const { posts: feedPosts, total: feedTotal } = useCityFeedPreview(citySlugForFeed);
+  const { posts: feedPosts, total: feedTotal, loading: feedLoading } = useCityFeedPreview(citySlugForFeed, feedRefreshKey);
 
   const allCategories = ['All', ...ALL_CATEGORY_LABELS];
 
@@ -350,37 +396,53 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         showsVerticalScrollIndicator={false}
       >
 
-      {/* Featured Lists */}
-      {filteredFeatured.length > 0 && (
+      {/* My Lists — story strip (top of feed) */}
+      <View style={styles.sectionHeaderRow}>
+        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={() => user ? navigation.navigate('MyLists') : navigation.navigate('AuthScreen')} activeOpacity={0.7}>
+          <Text style={styles.sectionHeaderInline}>My Lists</Text>
+          <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
+        </TouchableOpacity>
+      </View>
+
+      {user ? (
         <>
-          <TouchableOpacity
-            style={styles.sectionHeaderLink}
-            onPress={() => navigation.navigate('AllFeaturedLists')}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.sectionHeaderInline}>Featured Lists</Text>
-            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
-          </TouchableOpacity>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carousel}
-          >
-            {filteredFeatured.map((list) => (
-              <PickCard
-                key={list.id}
-                pick={list}
-                onPress={() => {
-                  // Write to AsyncStorage — picked up by handleRefresh on next pull-to-refresh
-                  const next = new Set(viewedIds);
-                  next.add(list.id);
-                  AsyncStorage.setItem('@topten_viewed_featured', JSON.stringify([...next])).catch(() => {});
-                  navigation.navigate('FeaturedList', { featuredId: list.id });
-                }}
-              />
-            ))}
-          </ScrollView>
+          {listsLoading ? (
+            <ActivityIndicator size="small" color={colors.activeTab} style={{ marginVertical: 24 }} />
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.storyStrip}
+            >
+              {displayLists.map((list) => (
+                <StoryCircle
+                  key={list.id}
+                  list={list}
+                  onPress={() => setStoryList(list)}
+                />
+              ))}
+              {displayLists.length === 0 && (
+                <Text style={styles.storyEmptyHint}>No lists yet — create your first one!</Text>
+              )}
+              {/* New List circle */}
+              <TouchableOpacity style={styles.storyWrap} onPress={() => navigation.navigate('CreateList')} activeOpacity={0.8}>
+                <View style={styles.storyCircleNew}>
+                  <Ionicons name="add" size={28} color={colors.activeTab} />
+                </View>
+                <Text style={styles.storyTitle}>New List</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
         </>
+      ) : (
+        <TouchableOpacity style={styles.myListsLockCard} onPress={() => navigation.navigate('AuthScreen')} activeOpacity={0.85}>
+          <Ionicons name="lock-closed-outline" size={18} color={colors.secondaryText} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.myListsLockTitle}>Sign in to see your lists</Text>
+            <Text style={styles.myListsLockSub}>Create and manage your personal rankings</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+        </TouchableOpacity>
       )}
 
       {/* Community Lists */}
@@ -482,106 +544,194 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         </>
       )}
 
-      {/* Thin divider */}
-      <View style={styles.divider} />
-
-      {/* My Lists */}
-      <View style={styles.sectionHeaderRow}>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} onPress={() => user ? navigation.navigate('MyLists') : navigation.navigate('AuthScreen')} activeOpacity={0.7}>
-          <Text style={styles.sectionHeaderInline}>My Lists</Text>
-          <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
-        </TouchableOpacity>
-      </View>
-
-      {user ? (
-        <>
-          {listsLoading ? (
-            <ActivityIndicator size="small" color={colors.activeTab} style={{ marginVertical: 24 }} />
-          ) : (
-            <>
-              <View style={styles.feedCard}>
-                {displayLists.map((list, index) => (
-                  <React.Fragment key={list.id}>
-                    <FeedRow
-                      list={list}
-                      onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
-                      flat
-                      rank={index + 1}
-                    />
-                    {index < displayLists.length - 1 && <View style={styles.rowDivider} />}
-                  </React.Fragment>
-                ))}
-              </View>
-
-              {displayLists.length === 0 && (
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>No lists in this category yet.</Text>
-                  <TouchableOpacity
-                    style={styles.emptyButton}
-                    onPress={() => navigation.navigate('CreateList')}
-                  >
-                    <Text style={styles.emptyButtonText}>Create one</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => navigation.navigate('CreateList')}
-              >
-                <Ionicons name="add-circle-outline" size={22} color={colors.activeTab} />
-                <Text style={styles.addText}>New List</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </>
-      ) : (
-        <TouchableOpacity style={styles.myListsLockCard} onPress={() => navigation.navigate('AuthScreen')} activeOpacity={0.85}>
-          <Ionicons name="lock-closed-outline" size={18} color={colors.secondaryText} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.myListsLockTitle}>Sign in to see your lists</Text>
-            <Text style={styles.myListsLockSub}>Create and manage your personal rankings</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
-        </TouchableOpacity>
-      )}
-
-      {/* Community Feed teaser — only shown for top-500 cities with ≥ FEED_MIN_POSTS */}
-      {feedTotal >= FEED_MIN_POSTS && feedPosts.length > 0 && detectedLocation?.city &&
-        citySlugForFeed && TOP_500_CITY_SLUG_SET.has(citySlugForFeed) && (
+      {/* Featured Lists — bottom of feed */}
+      {filteredFeatured.length > 0 && (
         <>
           <View style={styles.divider} />
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionHeaderInline}>
-              Community Feed
-              <Text style={{ color: colors.activeTab }}> · {detectedLocation.city}</Text>
-            </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('CommunityFeed', {
-                citySlug: citySlugForFeed,
-                cityName: detectedLocation.city,
-              })}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.seeAllButton}>See all</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.sectionHeaderLink}
+            onPress={() => navigation.navigate('AllFeaturedLists')}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.sectionHeaderInline}>Featured Lists</Text>
+            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
+          </TouchableOpacity>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.carousel}
           >
-            {feedPosts.slice(0, 5).map((post) => (
-              <FeedPostCard
-                key={post.id}
-                post={post}
-                compact
-                onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
+            {filteredFeatured.map((list) => (
+              <PickCard
+                key={list.id}
+                pick={list}
+                onPress={() => {
+                  const next = new Set(viewedIds);
+                  next.add(list.id);
+                  AsyncStorage.setItem('@topten_viewed_featured', JSON.stringify([...next])).catch(() => {});
+                  navigation.navigate('FeaturedList', { featuredId: list.id });
+                }}
               />
             ))}
           </ScrollView>
         </>
       )}
+
+      {/* Community Feed teaser — any city with a detected location */}
+      {citySlugForFeed && detectedLocation?.city && (
+        <>
+          <View style={styles.divider} />
+          <View style={styles.sectionHeaderRow}>
+            <TouchableOpacity
+              style={styles.titleWithIcon}
+              onPress={() => navigation.navigate('CommunityFeed', {
+                citySlug: citySlugForFeed,
+                cityName: detectedLocation.city,
+              })}
+              activeOpacity={0.6}
+            >
+              <Text style={styles.sectionHeaderInline}>Community Feed</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.areaHeaderLeft}
+              onPress={() => setChangeLocationVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="location-sharp" size={13} color={colors.secondaryText} />
+              <Text style={styles.areaRegionLabel}>{detectedLocation.city}</Text>
+            </TouchableOpacity>
+          </View>
+          {feedPosts.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carousel}
+            >
+              {feedPosts.slice(0, 5).map((post) => (
+                <FeedPostCard
+                  key={post.id}
+                  post={post}
+                  compact
+                  onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
+                />
+              ))}
+            </ScrollView>
+          ) : !feedLoading ? (
+            <View style={styles.feedEmptyState}>
+              <Ionicons name="megaphone-outline" size={22} color={colors.border} />
+              <View>
+                <Text style={styles.feedEmptyText}>Be the first to post in {detectedLocation.city}!</Text>
+                <Text style={styles.feedEmptyHint}>Open any list → tap Post to Community Feed</Text>
+              </View>
+            </View>
+          ) : null}
+        </>
+      )}
+
+      {/* Story quick-view sheet */}
+      {storyList && (() => {
+        const catColor = CATEGORY_COLORS[storyList.category] || '#CC0000';
+        const hasCover = !!storyList.coverImageUri;   // wide header in the sheet
+        const hasProfile = !!storyList.profileImageUri; // circle + My Lists row avatar
+        return (
+          <Modal
+            visible
+            transparent
+            animationType="slide"
+            onRequestClose={() => setStoryList(null)}
+          >
+            {/* justifyContent:flex-end pins the sheet to the bottom */}
+            <View style={styles.storyModalContainer}>
+              {/* absoluteFillObject backdrop — dark behind corners too, fixing white corner bleed */}
+              <Pressable style={styles.storyOverlay} onPress={() => setStoryList(null)} />
+              {/* onStartShouldSetResponder claims touches so the backdrop doesn't fire */}
+              <View style={styles.storySheet} onStartShouldSetResponder={() => true}>
+                {/* Header — drag handle overlaid on the image */}
+                <View style={[styles.storySheetHeader, { backgroundColor: catColor }]}>
+                  {hasCover && (
+                    <Image
+                      source={{ uri: storyList.coverImageUri }}
+                      style={StyleSheet.absoluteFill}
+                      resizeMode="cover"
+                    />
+                  )}
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
+                  <View style={styles.storyDragHandle} />
+                  <TouchableOpacity style={styles.storySheetClose} onPress={() => setStoryList(null)}>
+                    <Ionicons name="close" size={18} color="#FFF" />
+                  </TouchableOpacity>
+                  <View style={styles.storySheetHeaderContent}>
+                    <Text style={styles.storySheetCategory}>{storyList.category.toUpperCase()}</Text>
+                    <Text style={styles.storySheetTitle} numberOfLines={2}>{storyList.title}</Text>
+                    <Text style={styles.storySheetCount}>{storyList.items.length} item{storyList.items.length !== 1 ? 's' : ''}</Text>
+                  </View>
+                </View>
+
+                {/* Add cover photo nudge */}
+                {!hasProfile && (
+                  <TouchableOpacity
+                    style={styles.storyAddPhoto}
+                    onPress={() => {
+                      setPhotoTargetId(storyList.id);
+                      setStoryList(null); // close story sheet first
+                      setTimeout(() => setStoryPhotoPickerVisible(true), 350); // wait for slide-out animation
+                    }}
+                    activeOpacity={0.75}
+                  >
+                    <Ionicons name="camera-outline" size={18} color={colors.secondaryText} />
+                    <Text style={styles.storyAddPhotoText}>Add a profile photo</Text>
+                    <Ionicons name="chevron-forward" size={15} color={colors.secondaryText} />
+                  </TouchableOpacity>
+                )}
+
+                {/* Items — top 5 preview */}
+                <View style={styles.storyItemList}>
+                  {storyList.items.length === 0 ? (
+                    <Text style={styles.storyEmptyItems}>No items yet — tap Edit to add some!</Text>
+                  ) : (
+                    <>
+                      {storyList.items.slice(0, 5).map((item, i) => (
+                        <View key={item.id} style={styles.storyItem}>
+                          <Text style={[styles.storyItemRank, i === 0 && { color: catColor }]}>{i + 1}</Text>
+                          <Text style={[styles.storyItemTitle, i === 0 && { fontWeight: '700' }]} numberOfLines={1}>{item.title}</Text>
+                        </View>
+                      ))}
+                      {storyList.items.length > 5 && (
+                        <Text style={styles.storyMoreItems}>…and {storyList.items.length - 5} more</Text>
+                      )}
+                    </>
+                  )}
+                </View>
+
+                {/* Edit button */}
+                <TouchableOpacity
+                  style={[styles.storyEditButton, { backgroundColor: catColor }]}
+                  onPress={() => { setStoryList(null); navigation.navigate('ListDetail', { listId: storyList.id }); }}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="pencil-outline" size={16} color="#FFF" />
+                  <Text style={styles.storyEditButtonText}>Edit List</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        );
+      })()}
+
+      <PhotoPickerModal
+        visible={storyPhotoPickerVisible}
+        onClose={() => { setStoryPhotoPickerVisible(false); setPhotoTargetId(null); }}
+        title="Profile Photo"
+        aspect={[1, 1]}
+        orientation="squarish"
+        currentUri={lists.find(l => l.id === photoTargetId)?.profileImageUri}
+        onSelectUri={(uri) => {
+          if (photoTargetId) updateListMeta(photoTargetId, { profileImageUri: uri });
+          setStoryPhotoPickerVisible(false);
+          setPhotoTargetId(null);
+        }}
+      />
 
       <ChangeLocationModal
         visible={changeLocationVisible}
@@ -871,6 +1021,215 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.secondaryText,
     lineHeight: 16,
+  },
+
+  feedEmptyState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  feedEmptyText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primaryText,
+    marginBottom: 2,
+  },
+  feedEmptyHint: {
+    fontSize: 12,
+    color: colors.secondaryText,
+  },
+
+  /* ── Story strip ── */
+  storyStrip: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: 14,
+  },
+  storyWrap: {
+    alignItems: 'center',
+    width: 82,
+  },
+  storyCircle: {
+    width: STORY_CIRCLE_SIZE,
+    height: STORY_CIRCLE_SIZE,
+    borderRadius: STORY_CIRCLE_SIZE / 2,
+    borderWidth: 2.5,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  storyCameraBadge: {
+    position: 'absolute',
+    // Anchored relative to storyWrap — sits at bottom-right of the 68px circle
+    // (circle is centered in 82px wrap, so right edge ≈ 4.5px from wrap's right)
+    top: STORY_CIRCLE_SIZE - 14,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#CC0000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
+  storyCircleNew: {
+    width: STORY_CIRCLE_SIZE,
+    height: STORY_CIRCLE_SIZE,
+    borderRadius: STORY_CIRCLE_SIZE / 2,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    backgroundColor: colors.cardBackground,
+  },
+  storyTitle: {
+    fontSize: 11,
+    color: colors.secondaryText,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  storyEmptyHint: {
+    fontSize: 13,
+    color: colors.secondaryText,
+    fontStyle: 'italic',
+    alignSelf: 'center',
+    marginTop: 20,
+  },
+  /* ── Story sheet ── */
+  storyModalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  storyOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  storySheet: {
+    backgroundColor: colors.cardBackground,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+  },
+  storyDragHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    alignSelf: 'center',
+    marginTop: 10,
+  },
+  storySheetHeader: {
+    height: 140,
+    overflow: 'hidden',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  storySheetClose: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    zIndex: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storySheetHeaderContent: {
+    position: 'absolute',
+    bottom: 14,
+    left: 18,
+    right: 50,
+  },
+  storySheetCategory: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: 1.1,
+    marginBottom: 3,
+  },
+  storySheetTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFF',
+    letterSpacing: -0.4,
+  },
+  storySheetCount: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.65)',
+    marginTop: 3,
+  },
+  storyAddPhoto: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  storyAddPhotoText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.primaryText,
+  },
+  storyItemList: {},
+  storyMoreItems: {
+    fontSize: 12,
+    color: colors.secondaryText,
+    fontStyle: 'italic',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  storyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    gap: spacing.md,
+  },
+  storyItemRank: {
+    width: 22,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.secondaryText,
+    textAlign: 'center',
+  },
+  storyItemTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.primaryText,
+  },
+  storyEmptyItems: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+  },
+  storyEditButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md + 2,
+    margin: spacing.lg,
+    borderRadius: borderRadius.sm,
+  },
+  storyEditButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 
   /* ── Skeleton loader ── */

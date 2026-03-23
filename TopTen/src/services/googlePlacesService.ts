@@ -28,6 +28,10 @@ const VENUE_KEYWORDS = [
   'cafe', 'cafes', 'coffee shop', 'coffee shops',
   'ice cream', 'dessert', 'desserts',
   'live music', 'music venue', 'music venues', 'concert',
+  'bbq', 'barbecue', 'patio', 'breakfast', 'seafood',
+  'thai', 'chinese', 'dim sum', 'indian',
+  'sandwich', 'sandwiches', 'deli', 'delis',
+  'vegan', 'vegetarian', 'food truck', 'food trucks',
 ];
 
 // Keywords that indicate a "places to visit" list (Travel category → tourist_attraction)
@@ -64,6 +68,15 @@ export function isVenueList(listTitle: string, category: string): boolean {
     if (t.includes('bar') || t.includes('bars') || t.includes('pub') || t.includes('nightlife')) return true;
     return false;
   }
+  if (category === 'Health') {
+    return t.includes('spa') || t.includes('spas') || t.includes('wellness');
+  }
+  if (category === 'Arts') {
+    return t.includes('gallery') || t.includes('galleries') || t.includes('comedy');
+  }
+  if (category === 'Sports') {
+    return t.includes('bowling');
+  }
   if (category !== 'Food') return false;
   if (PRODUCT_KEYWORDS.some((kw) => t.includes(kw))) return false;
   if (VENUE_KEYWORDS.some((kw) => t.includes(kw))) return true;
@@ -84,6 +97,9 @@ export function derivePlacesType(listTitle: string, category: string): string | 
   if (t.includes('coffee') || t.includes('cafe')) return 'cafe';
   if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bar';
   if (category === 'Drinks') return 'bar';
+  if (t.includes('spa') || t.includes('wellness')) return 'spa';
+  if (t.includes('bowling')) return 'bowling_alley';
+  if (t.includes('gallery') || t.includes('galleries')) return 'art_gallery';
   return 'restaurant';
 }
 
@@ -98,17 +114,35 @@ export function derivePlacesQuery(listTitle: string, category: string): string {
   if (t.includes('pizza')) return 'pizza restaurants';
   if (t.includes('wing')) return 'wings restaurants';
   if (t.includes('brunch')) return 'brunch restaurants';
+  if (t.includes('breakfast')) return 'breakfast restaurants';
   if (t.includes('burger')) return 'burger restaurants';
   if (t.includes('sushi')) return 'sushi restaurants';
-  if (t.includes('steak')) return 'steakhouses';
+  if (t.includes('steak') || t.includes('steakhouse')) return 'steakhouses';
+  if (t.includes('fine dining') || t.includes('upscale') || t.includes('fine-dining')) return 'fine dining restaurants';
+  if (t.includes('bbq') || t.includes('barbecue')) return 'BBQ restaurants';
+  if (t.includes('outdoor dining') || t.includes('patio')) return 'outdoor patio dining restaurants';
+  if (t.includes('seafood')) return 'seafood restaurants';
+  if (t.includes('italian')) return 'Italian restaurants';
+  if (t.includes('taco') || t.includes('mexican')) return 'mexican restaurants';
+  if (t.includes('thai')) return 'Thai restaurants';
+  if (t.includes('chinese') || t.includes('dim sum')) return 'Chinese restaurants';
+  if (t.includes('indian')) return 'Indian restaurants';
+  if (t.includes('sandwich') || t.includes('deli')) return 'sandwich shops and delis';
+  if (t.includes('vegan') || t.includes('vegetarian')) return 'vegan restaurants';
+  if (t.includes('food truck')) return 'food trucks';
+  if (t.includes('wine bar')) return 'wine bars';
+  if (t.includes('cocktail')) return 'cocktail bars';
   if (t.includes('brewery') || t.includes('breweries')) return 'breweries';
   if (t.includes('rooftop')) return 'rooftop bars';
   if (t.includes('ice cream') || t.includes('dessert')) return 'ice cream and dessert shops';
   if (t.includes('live music') || t.includes('music venue')) return 'live music venues';
   if (t.includes('sports bar')) return 'sports bars';
+  if (t.includes('comedy')) return 'comedy clubs';
+  if (t.includes('spa') || t.includes('wellness')) return 'spas and wellness centers';
+  if (t.includes('bowling')) return 'bowling alleys';
+  if (t.includes('gallery') || t.includes('galleries')) return 'art galleries';
   if (t.includes('coffee') || t.includes('cafe')) return 'coffee shops';
   if (t.includes('bar') || t.includes('pub') || t.includes('nightlife')) return 'bars';
-  if (t.includes('taco') || t.includes('mexican')) return 'mexican restaurants';
   if (t.includes('golf')) return 'public golf courses';
   if (t.includes('pickleball')) return 'pickleball courts';
   if (t.includes('museum')) return 'museums';
@@ -138,16 +172,13 @@ export async function searchCities(
   }
 }
 
-/** Parses "900 E 11th St, Austin, TX 78702, USA" → "Austin, TX" */
+/** Parses "2121 Market St, Philadelphia, PA 19103, USA" → "2121 Market St"
+ *  Returns empty string for addresses without a street (e.g. city-only strings).
+ */
 function parseLocation(formattedAddress: string): string {
+  // Need at least 4 parts: [street, city, state+zip, country]
   const parts = formattedAddress.split(', ');
-  if (parts.length >= 3) {
-    const city = parts[parts.length - 3];
-    const stateZip = parts[parts.length - 2];
-    const state = stateZip.split(' ')[0];
-    if (city && state && state.length <= 3) return `${city}, ${state}`;
-  }
-  return '';
+  return parts.length >= 4 ? parts[0] : '';
 }
 
 /**
@@ -328,6 +359,9 @@ export async function searchLocalPlaces(
 
 const GOOGLE_PLACES_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY ?? '';
 const CACHE_TTL_MS = 72 * 60 * 60 * 1000; // 72 hours
+// Bump when the shape/quality of generated list data changes (e.g. street addresses in v2).
+// Existing local_lists rows without this version are treated as stale and re-generated.
+const DATA_VERSION = 'v4';
 
 interface PlaceConfig {
   slug: string;
@@ -555,14 +589,15 @@ const PLACE_CONFIGS: PlaceConfig[] = [
   {
     slug: 'golf-courses',
     queryTerm: 'public golf courses',
+    placeType: 'golf_course',
     title: (city) => `Best Public Golf Courses near ${city}`,
     icon: 'golf-outline',
     color: '#27AE60',
     appCategory: 'Sports',
     description: (city) => `The top-rated public golf courses near ${city}, ranked by players.`,
     imageQuery: (city) => `${city} golf course green fairway landscape wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
-    emptyItems: true,
   },
   {
     slug: 'pickleball-courts',
@@ -598,25 +633,388 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     imageQuery: (city) => `${city} walking trail path nature outdoor scenic wide`,
     findItemMode: 'google-places-local',
   },
+  {
+    slug: 'date-night',
+    queryTerm: 'romantic date night restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Date Night Spots near ${city}`,
+    icon: 'heart-outline',
+    color: '#C0392B',
+    appCategory: 'Food',
+    description: (city) => `The most romantic and memorable dinner spots near ${city}, ranked by locals.`,
+    imageQuery: () => 'romantic restaurant candles dim light intimate dinner couple wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'happy-hour',
+    queryTerm: 'best happy hour bars',
+    title: (city) => `Best Happy Hour near ${city}`,
+    icon: 'wine-outline',
+    color: '#F39C12',
+    appCategory: 'Food',
+    description: (city) => `The best deals on drinks and bites after work near ${city}.`,
+    imageQuery: () => 'happy hour cocktails bar drinks specials crowd wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'late-night',
+    queryTerm: 'late night food restaurants',
+    title: (city) => `Best Late Night Eats near ${city}`,
+    icon: 'moon-outline',
+    color: '#6C3483',
+    appCategory: 'Food',
+    description: (city) => `Still hungry after midnight? The best late-night spots near ${city}.`,
+    imageQuery: () => 'late night diner food neon lights city street night wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'dog-friendly',
+    queryTerm: 'dog friendly parks and patios',
+    title: (city) => `Best Dog-Friendly Spots near ${city}`,
+    icon: 'paw-outline',
+    color: '#27AE60',
+    appCategory: 'Nature',
+    description: (city) => `Parks, patios, and places where your dog is always welcome near ${city}.`,
+    imageQuery: () => 'dog park outdoor patio pet friendly nature green wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'barbers',
+    queryTerm: 'barber shops',
+    title: (city) => `Top Barbers near ${city}`,
+    icon: 'cut-outline',
+    color: '#34495E',
+    appCategory: 'Health',
+    description: (city) => `The highest-rated barber shops near ${city}, ranked by locals.`,
+    imageQuery: () => 'barber shop haircut vintage pole chair interior wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'salons',
+    queryTerm: 'hair and beauty salons',
+    placeType: 'beauty_salon',
+    title: (city) => `Top Hair & Beauty Salons near ${city}`,
+    icon: 'sparkles-outline',
+    color: '#8E44AD',
+    appCategory: 'Health',
+    description: (city) => `The highest-rated hair and beauty salons near ${city}, ranked by locals.`,
+    imageQuery: () => 'hair salon beauty styling interior modern elegant wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'gyms',
+    queryTerm: 'gyms and fitness studios',
+    placeType: 'gym',
+    title: (city) => `Best Gyms & Fitness Studios near ${city}`,
+    icon: 'barbell-outline',
+    color: '#2980B9',
+    appCategory: 'Health',
+    description: (city) => `From big-box gyms to boutique studios — the top fitness spots near ${city}.`,
+    imageQuery: () => 'gym fitness studio workout equipment modern interior wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'mechanics',
+    queryTerm: 'auto mechanics and car repair',
+    placeType: 'car_repair',
+    title: (city) => `Top-Rated Auto Mechanics near ${city}`,
+    icon: 'construct-outline',
+    color: '#7F8C8D',
+    appCategory: 'Miscellaneous',
+    description: (city) => `The most trusted mechanics and auto repair shops near ${city}.`,
+    imageQuery: () => 'auto mechanic car repair shop garage tools wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'farmers-markets',
+    queryTerm: 'farmers markets',
+    title: (city) => `Best Farmers Markets near ${city}`,
+    icon: 'basket-outline',
+    color: '#2ECC71',
+    appCategory: 'Food',
+    description: (city) => `Fresh produce, local vendors, and weekend vibes — the best farmers markets near ${city}.`,
+    imageQuery: () => 'farmers market fresh produce vegetables outdoor stalls vendors wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'grocery',
+    queryTerm: 'specialty and high-end grocery stores',
+    placeType: 'supermarket',
+    title: (city) => `Best Grocery Stores near ${city}`,
+    icon: 'cart-outline',
+    color: '#E67E22',
+    appCategory: 'Food',
+    description: (city) => `Whole Foods or local gem? The top-rated grocery stores near ${city}, ranked.`,
+    imageQuery: () => 'grocery store produce fresh market interior specialty wide',
+    findItemMode: 'google-places-local',
+  },
+
+  // ── Dining deep-dives ─────────────────────────────────────────────────────
+  {
+    slug: 'fine-dining',
+    queryTerm: 'fine dining restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Fine Dining near ${city}`,
+    icon: 'star-outline',
+    color: '#6C3483',
+    appCategory: 'Food',
+    description: (city) => `The top upscale and fine dining restaurants near ${city}, ranked by locals.`,
+    imageQuery: () => 'fine dining elegant restaurant upscale interior candlelight wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&fit=crop&crop=center&auto=format&q=80',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'bbq',
+    queryTerm: 'BBQ restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best BBQ near ${city}`,
+    icon: 'flame-outline',
+    color: '#C0392B',
+    appCategory: 'Food',
+    description: (city) => `Smoked, sauced, and slow-cooked — the best BBQ near ${city}.`,
+    imageQuery: () => 'BBQ barbecue smoked ribs brisket restaurant food wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=600&fit=crop&crop=center&auto=format&q=80',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'outdoor-dining',
+    queryTerm: 'outdoor patio dining restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Outdoor Dining near ${city}`,
+    icon: 'sunny-outline',
+    color: '#27AE60',
+    appCategory: 'Food',
+    description: (city) => `The best patios, terraces, and al fresco dining near ${city}.`,
+    imageQuery: () => 'outdoor patio restaurant al fresco dining terrace string lights wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'breakfast',
+    queryTerm: 'breakfast restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Breakfast near ${city}`,
+    icon: 'cafe-outline',
+    color: '#F39C12',
+    appCategory: 'Food',
+    description: (city) => `Early bird or lazy Sunday — the best breakfast spots near ${city}.`,
+    imageQuery: () => 'breakfast pancakes eggs benedict morning restaurant food wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=600&fit=crop&crop=center&auto=format&q=80',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'seafood',
+    queryTerm: 'seafood restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Seafood near ${city}`,
+    icon: 'fish-outline',
+    color: '#2980B9',
+    appCategory: 'Food',
+    description: (city) => `Fresh catches and ocean flavors — the top seafood restaurants near ${city}.`,
+    imageQuery: () => 'seafood lobster shrimp oysters fresh restaurant food wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'italian',
+    queryTerm: 'Italian restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Italian Restaurants near ${city}`,
+    icon: 'restaurant-outline',
+    color: '#E74C3C',
+    appCategory: 'Food',
+    description: (city) => `Pasta, risotto, and more — the top Italian restaurants near ${city}.`,
+    imageQuery: () => 'Italian restaurant pasta risotto interior rustic cozy wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'mexican',
+    queryTerm: 'Mexican restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Mexican Food near ${city}`,
+    icon: 'flame-outline',
+    color: '#E67E22',
+    appCategory: 'Food',
+    description: (city) => `Tacos, enchiladas, and margaritas — the best Mexican spots near ${city}.`,
+    imageQuery: () => 'Mexican restaurant tacos colorful food margaritas wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&fit=crop&crop=center&auto=format&q=80',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'thai',
+    queryTerm: 'Thai restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Thai Food near ${city}`,
+    icon: 'restaurant-outline',
+    color: '#F39C12',
+    appCategory: 'Food',
+    description: (city) => `Pad thai, curries, and more — the top Thai restaurants near ${city}.`,
+    imageQuery: () => 'Thai food restaurant pad thai curry colorful dishes wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'chinese',
+    queryTerm: 'Chinese restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Chinese Restaurants near ${city}`,
+    icon: 'restaurant-outline',
+    color: '#C0392B',
+    appCategory: 'Food',
+    description: (city) => `Dim sum to Peking duck — the top Chinese restaurants near ${city}.`,
+    imageQuery: () => 'Chinese restaurant dim sum dumplings noodles food wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'indian',
+    queryTerm: 'Indian restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Indian Food near ${city}`,
+    icon: 'restaurant-outline',
+    color: '#E67E22',
+    appCategory: 'Food',
+    description: (city) => `Curries, naan, and tandoor — the best Indian restaurants near ${city}.`,
+    imageQuery: () => 'Indian food restaurant curry naan colorful spices wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'sandwiches',
+    queryTerm: 'sandwich shops and delis',
+    title: (city) => `Best Sandwich Shops & Delis near ${city}`,
+    icon: 'fast-food-outline',
+    color: '#E17055',
+    appCategory: 'Food',
+    description: (city) => `From hoagies to reubens — the best sandwich shops and delis near ${city}.`,
+    imageQuery: () => 'sandwich deli shop hoagie sub food counter wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'vegan',
+    queryTerm: 'vegan restaurants',
+    placeType: 'restaurant',
+    title: (city) => `Best Vegan Restaurants near ${city}`,
+    icon: 'leaf-outline',
+    color: '#2ECC71',
+    appCategory: 'Food',
+    description: (city) => `Plant-based dining done right — the top vegan restaurants near ${city}.`,
+    imageQuery: () => 'vegan restaurant plant based food healthy bowls colorful wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'food-trucks',
+    queryTerm: 'food trucks',
+    title: (city) => `Best Food Trucks near ${city}`,
+    icon: 'fast-food-outline',
+    color: '#E67E22',
+    appCategory: 'Food',
+    description: (city) => `Street food at its finest — the best food trucks near ${city}.`,
+    imageQuery: () => 'food truck street food colorful vendor outdoor wide',
+    findItemMode: 'google-places-local',
+  },
+
+  // ── Drinks ────────────────────────────────────────────────────────────────
+  {
+    slug: 'wine-bars',
+    queryTerm: 'wine bars',
+    placeType: 'bar',
+    title: (city) => `Best Wine Bars near ${city}`,
+    icon: 'wine-outline',
+    color: '#8E44AD',
+    appCategory: 'Drinks',
+    description: (city) => `Natural, old world, or new world — the top wine bars near ${city}.`,
+    imageQuery: () => 'wine bar glasses bottles elegant interior cozy wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&fit=crop&crop=center&auto=format&q=80',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'cocktail-bars',
+    queryTerm: 'cocktail bars',
+    placeType: 'bar',
+    title: (city) => `Best Cocktail Bars near ${city}`,
+    icon: 'wine-outline',
+    color: '#3498DB',
+    appCategory: 'Drinks',
+    description: (city) => `Craft cocktails and creative drinks — the best cocktail bars near ${city}.`,
+    imageQuery: () => 'cocktail bar craft drinks mixologist elegant moody wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&fit=crop&crop=center&auto=format&q=80',
+    findItemMode: 'google-places-local',
+  },
+
+  // ── Entertainment & Wellness ──────────────────────────────────────────────
+  {
+    slug: 'comedy-clubs',
+    queryTerm: 'comedy clubs',
+    title: (city) => `Best Comedy Clubs near ${city}`,
+    icon: 'happy-outline',
+    color: '#E74C3C',
+    appCategory: 'Arts',
+    description: (city) => `Stand-up, improv, and open mics — the best comedy venues near ${city}.`,
+    imageQuery: () => 'comedy club stand up microphone stage audience laughing wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'spas',
+    queryTerm: 'spas and wellness centers',
+    placeType: 'spa',
+    title: (city) => `Best Spas & Wellness near ${city}`,
+    icon: 'water-outline',
+    color: '#16A085',
+    appCategory: 'Health',
+    description: (city) => `Massages, facials, and full relaxation — the top spas near ${city}.`,
+    imageQuery: () => 'spa wellness massage relaxation serene interior luxury wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=600&fit=crop&crop=center&auto=format&q=80',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'bowling',
+    queryTerm: 'bowling alleys',
+    placeType: 'bowling_alley',
+    title: (city) => `Best Bowling Alleys near ${city}`,
+    icon: 'tennisball-outline',
+    color: '#2980B9',
+    appCategory: 'Sports',
+    description: (city) => `Classic lanes to boutique bowling bars — the best spots to bowl near ${city}.`,
+    imageQuery: () => 'bowling alley lanes pins ball neon interior wide',
+    findItemMode: 'google-places-local',
+  },
+  {
+    slug: 'art-galleries',
+    queryTerm: 'art galleries',
+    placeType: 'art_gallery',
+    title: (city) => `Best Art Galleries near ${city}`,
+    icon: 'color-palette-outline',
+    color: '#9B59B6',
+    appCategory: 'Arts',
+    description: (city) => `Contemporary, classic, and everything in between — the top art galleries near ${city}.`,
+    imageQuery: (city) => `${city} art gallery contemporary exhibit interior wide`,
+    findItemMode: 'google-places-local',
+  },
 ];
+
+/**
+ * Returns the queryTerm and placeType for a local community list ID.
+ * List IDs follow the format `local-{configSlug}-{citySlug}`.
+ * Used by SearchScreen to drive the correct "Find an item" Places query.
+ */
+export function getConfigForListId(
+  listId: string
+): { queryTerm: string; placeType?: string } | undefined {
+  for (const config of PLACE_CONFIGS) {
+    if (listId.startsWith(`local-${config.slug}-`)) {
+      return { queryTerm: config.queryTerm, placeType: config.placeType };
+    }
+  }
+  return undefined;
+}
 
 function slugify(city: string): string {
   return city.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
-/** Stable pseudo-random seed count (2–10) derived from slug — same value every time. */
-function seedParticipantCount(slug: string): number {
-  let h = 0;
-  for (let i = 0; i < slug.length; i++) h = (Math.imul(31, h) + slug.charCodeAt(i)) | 0;
-  return 2 + (Math.abs(h) % 9); // 2..10
-}
 
 async function fetchPlacesForConfig(
   config: PlaceConfig,
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const localCacheKey = `@topten_places_v11_${citySlug}_${config.slug}`;
+  const localCacheKey = `@topten_places_v15_${citySlug}_${config.slug}`;
 
   // L1: Device AsyncStorage — fastest, no network
   try {
@@ -627,14 +1025,15 @@ async function fetchPlacesForConfig(
     }
   } catch { /* ignore */ }
 
-  // L2: Supabase shared cache — one fetch per city across all users
+  // L2: Supabase shared cache — versioned so old entries don't block fresh generation
+  const cacheConfigSlug = `${config.slug}-${DATA_VERSION}`;
   if (supabase) {
     try {
       const { data: row } = await supabase
         .from('places_cache')
         .select('data, updated_at')
         .eq('city_slug', citySlug)
-        .eq('config_slug', config.slug)
+        .eq('config_slug', cacheConfigSlug)
         .single();
       if (row) {
         const age = Date.now() - new Date(row.updated_at).getTime();
@@ -682,15 +1081,16 @@ async function fetchPlacesForConfig(
     description: config.description(city),
     imageQuery: config.imageQuery(city),
     staticImageUrl: config.staticImageUrl,
-    participantCount: config.emptyItems ? 0 : seedParticipantCount(`${config.slug}-${citySlug}`),
+    participantCount: 0,
     items,
     region: city,
     findItemMode: config.findItemMode,
+    dataVersion: DATA_VERSION,
   };
 
-  // Write to L1 (device) and promote to local_lists (permanent Supabase) — don't block return.
-  // Writing to local_lists means every subsequent user for this city is served from Supabase
-  // for free, forever — no repeated Google Places calls after the first user triggers generation.
+  // Write to L1 (device), L2 (places_cache), and local_lists (permanent) — don't block return.
+  // local_lists means every subsequent user for this city is served from Supabase for free.
+  // places_cache (versioned) is the fast path for subsequent device-cache misses.
   AsyncStorage.setItem(localCacheKey, JSON.stringify({ timestamp: Date.now(), data: list })).catch(() => {});
   if (supabase) {
     const sortIndex = PLACE_CONFIGS.indexOf(config);
@@ -706,6 +1106,10 @@ async function fetchPlacesForConfig(
         sort_index: sortIndex,
       },
       { onConflict: 'id' }
+    ).catch(() => {});
+    supabase.from('places_cache').upsert(
+      { city_slug: citySlug, config_slug: cacheConfigSlug, data: list, updated_at: new Date().toISOString() },
+      { onConflict: 'city_slug,config_slug' }
     ).catch(() => {});
   }
 
@@ -727,19 +1131,31 @@ const CITY_SLUG_ALIASES: Record<string, string[]> = {
   'washington-dc':     ['washington'],
 };
 
+// Matches old-style "City, ST" location strings (e.g. "Philadelphia, PA").
+// These were generated before we switched to street-level addresses and are useless
+// on local lists where the city is already implied by the list title.
+const CITY_STATE_RE = /^[^,]+,\s[A-Z]{2}$/;
+
 /**
  * Backfills fields that may be missing from lists stored in Supabase before
- * a schema addition (e.g. findItemMode was added after initial generation).
- * Uses the config slug embedded in the list ID — format: local-{configSlug}-{citySlug}.
+ * a schema addition. Also strips legacy city-level location strings so existing
+ * cached data cleans up on-read without a full re-seed.
  */
 function backfillListFields(list: CommunityList): CommunityList {
-  if (list.findItemMode) return list;
+  // Strip "City, ST" location strings — street addresses are kept, missing is fine.
+  const items = list.items.map(item =>
+    item.location && CITY_STATE_RE.test(item.location)
+      ? { ...item, location: undefined }
+      : item
+  );
+  const base = { ...list, items };
+  if (base.findItemMode) return base;
   for (const config of PLACE_CONFIGS) {
-    if (list.id.startsWith(`local-${config.slug}-`)) {
-      return { ...list, findItemMode: config.findItemMode };
+    if (base.id.startsWith(`local-${config.slug}-`)) {
+      return { ...base, findItemMode: config.findItemMode };
     }
   }
-  return list;
+  return base;
 }
 
 export async function fetchLocalListsFromSupabase(city: string): Promise<CommunityList[]> {
@@ -764,23 +1180,51 @@ export async function fetchLocalListsFromSupabase(city: string): Promise<Communi
 }
 
 export async function fetchLocalPlacesLists(city: string): Promise<CommunityList[]> {
-  // Try server-generated lists first (fast, single query, no API cost)
   const serverLists = await fetchLocalListsFromSupabase(city);
-  if (serverLists.length > 0) return serverLists;
 
-  // Fall back to client-side generation (used during transition / dev)
-  if (!GOOGLE_PLACES_KEY || !city) return [];
+  if (!GOOGLE_PLACES_KEY || !city) return serverLists;
+
+  // Find configs that are absent OR have stale data (no current dataVersion).
+  // Stale rows lack street-level addresses — re-generating them writes fresh data back
+  // to local_lists and places_cache so all future users benefit immediately.
+  const missingConfigs = PLACE_CONFIGS.filter(
+    (config) => !serverLists.some(
+      (l) => l.id.startsWith(`local-${config.slug}-`) && l.dataVersion === DATA_VERSION
+    )
+  );
+
+  if (missingConfigs.length === 0) return serverLists;
 
   const citySlug = slugify(city);
   const results = await Promise.allSettled(
-    PLACE_CONFIGS.map((config, i) =>
+    missingConfigs.map((config, i) =>
       new Promise<CommunityList | null>(resolve =>
         setTimeout(() => fetchPlacesForConfig(config, city, citySlug).then(resolve).catch(() => resolve(null)), i * 80)
       )
     )
   );
 
-  return results
+  const newLists = results
     .map((r) => (r.status === 'fulfilled' ? r.value : null))
     .filter((l): l is CommunityList => l !== null);
+
+  if (newLists.length === 0) return serverLists;
+
+  // Merge: new lists replace stale server lists with the same ID; genuinely new ones are appended.
+  const combined = [...serverLists];
+  for (const newList of newLists) {
+    const existingIdx = combined.findIndex((l) => l.id === newList.id);
+    if (existingIdx >= 0) {
+      combined[existingIdx] = newList; // replace stale v1 with fresh v2
+    } else {
+      combined.push(newList);
+    }
+  }
+  combined.sort((a, b) => {
+    const aIdx = PLACE_CONFIGS.findIndex((c) => a.id.startsWith(`local-${c.slug}-`));
+    const bIdx = PLACE_CONFIGS.findIndex((c) => b.id.startsWith(`local-${c.slug}-`));
+    return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+  });
+
+  return combined;
 }

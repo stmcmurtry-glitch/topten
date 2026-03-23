@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTopRatedMovies, getTopRatedTVShows, searchMovies, searchTVShows } from './tmdb';
 import { FeaturedList } from '../data/featuredLists';
 
-const CACHE_V = 'v8';
+const CACHE_V = 'v9';
 const ITEMS_PREFIX = `@topten_fitems_${CACHE_V}_`;
 const IMAGE_PREFIX = `@topten_fimg_v8_`;
 
@@ -71,6 +71,54 @@ async function fetchSportsDBImage(name: string): Promise<string | null> {
 // Use this for any Movies/TV list that is editorial (villains, characters, etc.)
 // rather than "best films/shows overall", so it isn't overridden by the TMDB fetch.
 const STATIC_ITEMS: Record<string, string[]> = {
+  'f-68': [
+    'Salvator Mundi — da Vinci ($450.3M, 2017)',
+    'Interchange — de Kooning ($300M private sale, 2015)',
+    'The Card Players — Cézanne ($250M private sale, 2011)',
+    'Nafea Faa Ipoipo — Gauguin ($210M private sale, 2014)',
+    'Number 17A — Pollock ($200M private sale, 2015)',
+    'Shot Sage Blue Marilyn — Warhol ($195M, 2022)',
+    "Les Femmes d'Alger (Version O) — Picasso ($179.4M, 2015)",
+    'Nu couché — Modigliani ($170.4M, 2015)',
+    'Nu couché (sur le côté gauche) — Modigliani ($157.2M, 2018)',
+    'Les Poseuses, Ensemble — Seurat ($149.2M, 2022)',
+  ],
+  'f-67': [
+    'The Phantom of the Opera — 13,981 performances (1988–2023)',
+    'Chicago (revival) — 11,500+ performances (1996–present)*',
+    'The Lion King — 11,000+ performances (1997–present)*',
+    'Wicked — ~8,500+ performances (2003–present)*',
+    'Cats — 7,485 performances (1982–2000)',
+    'Les Misérables — 6,680 performances (1987–2003)',
+    'A Chorus Line — 6,137 performances (1975–1990)',
+    'Oh! Calcutta! (revival) — 5,959 performances (1976–1989)',
+    'Mamma Mia! — 5,765 performances (2001–2015)',
+    'Beauty and the Beast — 5,461 performances (1994–2007)',
+  ],
+  'f-64': [
+    'Michael Phelps (Swimming, USA) — 23 gold medals',
+    'Johannes Høsflot Klæbo (Cross-Country Skiing, Norway) — 11 gold medals*',
+    'Larisa Latynina (Gymnastics, USSR) — 9 gold medals',
+    'Paavo Nurmi (Athletics, Finland) — 9 gold medals',
+    'Mark Spitz (Swimming, USA) — 9 gold medals',
+    'Carl Lewis (Athletics, USA) — 9 gold medals',
+    'Usain Bolt (Athletics, Jamaica) — 8 gold medals',
+    'Bjørn Dæhlie (Cross-Country Skiing, Norway) — 8 gold medals',
+    'Birgit Fischer (Canoe/Kayak, Germany) — 8 gold medals',
+    'Sawao Kato (Gymnastics, Japan) — 8 gold medals',
+  ],
+  'f-60': [
+    'Gone with the Wind (1939) — ~$4.2B adjusted',
+    'Star Wars: A New Hope (1977) — ~$3.6B adjusted',
+    'The Sound of Music (1965) — ~$3.0B adjusted',
+    'E.T. the Extra-Terrestrial (1982) — ~$2.9B adjusted',
+    'Titanic (1997) — ~$2.4B adjusted',
+    'The Ten Commandments (1956) — ~$2.4B adjusted',
+    'Jaws (1975) — ~$2.3B adjusted',
+    'Doctor Zhivago (1965) — ~$2.1B adjusted',
+    'The Exorcist (1973) — ~$1.9B adjusted',
+    'Snow White and the Seven Dwarfs (1937) — ~$1.8B adjusted',
+  ],
   'f-58': [
     'Hannibal Lecter — The Silence of the Lambs',
     'Darth Vader — Star Wars',
@@ -320,6 +368,9 @@ export async function fetchCommunityImage(
 // ── Items ──────────────────────────────────────────────────────────────────
 
 export async function fetchFeaturedItems(list: FeaturedList): Promise<string[]> {
+  // Static items always win — never overridden by cache or API.
+  if (STATIC_ITEMS[list.id]) return STATIC_ITEMS[list.id];
+
   if (itemsMemCache.has(list.id)) return itemsMemCache.get(list.id)!;
 
   try {
@@ -333,9 +384,7 @@ export async function fetchFeaturedItems(list: FeaturedList): Promise<string[]> 
 
   let items: string[] = [];
   try {
-    if (STATIC_ITEMS[list.id]) {
-      items = STATIC_ITEMS[list.id];
-    } else if (list.category === 'Movies') {
+    if (list.category === 'Movies') {
       const movies = await getTopRatedMovies();
       items = movies.slice(0, 10).map((m) => m.title);
     } else if (list.category === 'TV') {

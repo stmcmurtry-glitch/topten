@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   Share,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import { FeedPost } from '../data/feedTypes';
 import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { rowToPost } from '../hooks/useCityFeedPreview';
+import { useAuth } from '../context/AuthContext';
 
 function timeAgo(epochMs: number): string {
   const diff = Date.now() - epochMs;
@@ -34,6 +36,7 @@ function timeAgo(epochMs: number): string {
 export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { postId } = route.params as { postId: string };
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [post, setPost] = useState<FeedPost | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +52,26 @@ export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({
         setLoading(false);
       });
   }, [postId]);
+
+  const isOwner = !!user && post?.userId === user.id;
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Post',
+      'Remove this post from the community feed? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await supabase!.from('community_feed_posts').delete().eq('id', postId);
+            navigation.goBack();
+          },
+        },
+      ],
+    );
+  };
 
   const handleShare = async () => {
     if (!post) return;
@@ -111,11 +134,20 @@ export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({
                 <Ionicons name="chevron-back" size={20} color="#FFF" />
               </BlurView>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.heroNavBtn} onPress={handleShare} activeOpacity={0.75}>
-              <BlurView intensity={60} tint="dark" style={styles.heroNavBtnInner}>
-                <Ionicons name="share-outline" size={18} color="#FFF" />
-              </BlurView>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {isOwner && (
+                <TouchableOpacity style={styles.heroNavBtn} onPress={handleDelete} activeOpacity={0.75}>
+                  <BlurView intensity={60} tint="dark" style={styles.heroNavBtnInner}>
+                    <Ionicons name="trash-outline" size={17} color="#FF6B6B" />
+                  </BlurView>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.heroNavBtn} onPress={handleShare} activeOpacity={0.75}>
+                <BlurView intensity={60} tint="dark" style={styles.heroNavBtnInner}>
+                  <Ionicons name="share-outline" size={18} color="#FFF" />
+                </BlurView>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Hero content */}

@@ -23,6 +23,7 @@ import { colors, spacing, borderRadius, shadow } from '../theme';
 import { useListContext } from '../data/ListContext';
 import { PlansModal } from '../components/PlansModal';
 import { sendFeedbackEmail } from '../services/emailService';
+import { supabase } from '../services/supabase';
 import {
   getDetectedLocation,
   DetectedLocation,
@@ -112,6 +113,7 @@ const MembershipCard: React.FC<{ isPremium: boolean; onViewPlans: () => void }> 
 const RATING_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'];
 
 const FeedbackCard: React.FC = () => {
+  const { user } = useAuth();
   const [rating, setRating] = useState(0);
   const [text, setText] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -125,6 +127,13 @@ const FeedbackCard: React.FC = () => {
     setSending(true);
     try {
       await sendFeedbackEmail({ rating, ratingLabel: RATING_LABELS[rating], message: text.trim() });
+      // Log to Supabase — fire and forget, don't block on failure
+      supabase?.from('feedback').insert({
+        user_id: user?.id ?? null,
+        rating,
+        rating_label: RATING_LABELS[rating],
+        message: text.trim() || null,
+      }).then(() => {});
       setSubmitted(true);
     } catch {
       Alert.alert('Error', 'Could not send feedback. Please try again.');

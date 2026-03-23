@@ -15,4 +15,4 @@ export interface FeedPost {
   likeCount: number;
 }
 
-export const FEED_MIN_POSTS = 5;
+export const FEED_MIN_POSTS = 1;

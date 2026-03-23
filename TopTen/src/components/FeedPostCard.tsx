@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FeedPost } from '../data/feedTypes';
 import { CATEGORY_COLORS } from './FeedRow';
+import { CATEGORIES } from '../data/categories';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
 function timeAgo(epochMs: number): string {
@@ -25,14 +26,15 @@ interface Props {
 
 export const FeedPostCard: React.FC<Props> = ({ post, onPress, compact }) => {
   const categoryColor = CATEGORY_COLORS[post.category] ?? '#CC0000';
+  const categoryIcon = CATEGORIES.find(c => c.label === post.category)?.icon ?? 'list-outline';
 
   if (compact) {
     return (
       <TouchableOpacity style={styles.compactCard} onPress={onPress} activeOpacity={0.85}>
-        <View style={[styles.compactColorBar, { backgroundColor: categoryColor }]} />
         <View style={styles.compactContent}>
           <View style={styles.compactHeader}>
             <View style={[styles.compactCategoryPill, { backgroundColor: categoryColor + '18' }]}>
+              <Ionicons name={categoryIcon as any} size={10} color={categoryColor} />
               <Text style={[styles.compactCategoryText, { color: categoryColor }]}>{post.category}</Text>
             </View>
             <Text style={styles.compactTime}>{timeAgo(post.publishedAt)}</Text>
@@ -95,6 +97,7 @@ export const FeedPostCard: React.FC<Props> = ({ post, onPress, compact }) => {
         <Text style={styles.time}>{timeAgo(post.publishedAt)}</Text>
         <View style={styles.spacer} />
         <View style={[styles.categoryPill, { backgroundColor: categoryColor + '18' }]}>
+          <Ionicons name={categoryIcon as any} size={10} color={categoryColor} />
           <Text style={[styles.categoryText, { color: categoryColor }]}>{post.category}</Text>
         </View>
         <Ionicons name="chevron-forward" size={13} color={colors.border} />
@@ -114,9 +117,6 @@ const styles = StyleSheet.create({
     ...shadow,
     shadowOpacity: 0.07,
   },
-  compactColorBar: {
-    height: 4,
-  },
   compactContent: {
     padding: spacing.sm + 2,
   },
@@ -127,6 +127,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   compactCategoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -270,6 +273,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 5,

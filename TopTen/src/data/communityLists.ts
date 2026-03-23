@@ -3,7 +3,8 @@ export interface CommunityItem {
   title: string;
   seedScore: number;
   artist?: string;
-  location?: string; // "City, ST" — shown as small secondary text for place-based items
+  location?: string;  // Street address (e.g. "2121 Market St") — shown as secondary text for place-based items
+  dataVersion?: string; // Set by fetchPlacesForConfig — used to detect stale cached data
 }
 
 export interface Sponsored {

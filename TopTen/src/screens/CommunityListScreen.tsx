@@ -24,7 +24,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { resolveCommunityList } from '../data/dynamicListRegistry';
-import { TOP_500_CITY_SLUG_SET } from '../data/topCities';
 import { useCommunity } from '../context/CommunityContext';
 import { fetchCommunityImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
@@ -45,6 +44,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const {
     userRankings,
     liveScoreCache,
+    itemLocations,
     participantCounts,
     fetchLiveScores,
     setUserSlots,
@@ -158,32 +158,36 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   if (!list) return null;
 
-  // A "seeded" list is an In Your Area list for one of the top-500 cities.
-  // Only these show pre-populated vote counts and scores.
-  // Any other city or any national community list starts from zero.
-  const citySlug = (list.region ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  const isSeededList = communityListId.startsWith('local-') && TOP_500_CITY_SLUG_SET.has(citySlug);
-
-  // Score lookup: live Supabase scores take priority.
-  // Non-seeded lists ignore seedScore entirely — they start from scratch.
+  // Score lookup: real votes from Supabase only — no seed score fallback.
   const cachedScores = liveScoreCache[communityListId];
+
+  // Normalize for matching: lowercase + strip diacritics so "Fogo de Chão" matches "fogo de chao"
+  const normalizeKey = (s: string) =>
+    s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
   const getScore = (itemTitle: string): number => {
-    const key = itemTitle.toLowerCase().trim();
-    if (cachedScores && cachedScores[key] !== undefined) return cachedScores[key];
-    if (!isSeededList) return 0;
-    const item = list.items.find((i) => i.title.toLowerCase().trim() === key);
-    return item?.seedScore ?? 0;
+    if (!cachedScores) return 0;
+    const norm = normalizeKey(itemTitle);
+    // Try exact key first, then accent-normalized fallback
+    return cachedScores[itemTitle.toLowerCase().trim()]
+      ?? cachedScores[norm]
+      ?? Object.entries(cachedScores).find(([k]) => normalizeKey(k) === norm)?.[1]
+      ?? 0;
   };
 
   // Merge seed items with any live-voted items not already in the list (e.g. user-added golf courses)
   const allItems = useMemo(() => {
     const base = [...list.items];
     if (cachedScores) {
+      const locMap = itemLocations[communityListId] ?? {};
       Object.keys(cachedScores).forEach((key) => {
-        if (!base.find((i) => i.title.toLowerCase().trim() === key)) {
+        if (!base.find((i) => normalizeKey(i.title) === normalizeKey(key))) {
           // Title-case user-submitted items so "parc" → "Parc", "jean-georges" → "Jean-Georges"
-          const display = key.replace(/\b\w/g, (c) => c.toUpperCase());
-          base.push({ id: `live-${key}`, title: display, seedScore: 0 });
+          // Use space/hyphen boundaries only — \b would incorrectly capitalize after apostrophes
+          // e.g. "raven's claw" → "Raven's Claw" not "Raven'S Claw"
+          const display = key.replace(/(^|[\s-])(\w)/g, (_, sep, c) => sep + c.toUpperCase());
+          const location = locMap[normalizeKey(key)];
+          base.push({ id: `live-${key}`, title: display, seedScore: 0, location });
         }
       });
     }
@@ -194,18 +198,9 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const communityRanked = [...allItems].sort((a, b) => getScore(b.title) - getScore(a.title));
   const maxScore = communityRanked.length > 0 ? (getScore(communityRanked[0].title) || 1) : 1;
-  // Seeded lists (top-500 In Your Area): use seed count as fallback.
-  // Everything else: only real Supabase votes count.
-  const rawParticipantCount = isSeededList
-    ? (participantCounts[communityListId] ?? list.participantCount)
-    : (participantCounts[communityListId] ?? 0);
+  const rawParticipantCount = participantCounts[communityListId] ?? 0;
   // Force to 0 when no items exist — catches stale cached data with a non-zero seed count
   const participantCount = communityRanked.length === 0 ? 0 : rawParticipantCount;
-  // Normalize to leader then scale by votes × 8 — gives ~40–70 pts for 5–8 voters,
-  // works regardless of whether seed data is old (100-based) or new (28-based).
-  const displayScore = (raw: number) =>
-    participantCount > 0 ? Math.round((raw / maxScore) * participantCount * 8) : 0;
-
   const participantDisplay = participantCount.toLocaleString();
 
   // ── Yours tab helpers ────────────────────────────────────────────────────
@@ -415,7 +410,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
                     </View>
                     <View style={styles.scoreCol}>
                       <View style={[styles.scoreBar, { width: barWidth, backgroundColor: list.color }]} />
-                      <Text style={styles.scorePts}>{displayScore(score)} pts</Text>
+                      <Text style={styles.scorePts}>{score} pts</Text>
                     </View>
                   </View>
                 );
