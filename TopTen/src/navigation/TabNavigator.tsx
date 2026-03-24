@@ -25,6 +25,7 @@ import { AuthScreen } from '../screens/AuthScreen';
 import { CreateAccountScreen } from '../screens/CreateAccountScreen';
 import { ProfileSetupScreen } from '../screens/ProfileSetupScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
+import { VotingPreferencesScreen } from '../screens/VotingPreferencesScreen';
 import { CommunityFeedScreen } from '../screens/CommunityFeedScreen';
 import { PublishedListScreen } from '../screens/PublishedListScreen';
 import { colors } from '../theme';
@@ -307,6 +308,11 @@ const SettingsStack = () => (
       name="EditProfile"
       component={EditProfileScreen}
       options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="VotingPreferences"
+      component={VotingPreferencesScreen}
+      options={{ title: 'Voting Preferences', headerLargeTitle: false }}
     />
     <Stack.Screen
       name="AuthScreen"

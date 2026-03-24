@@ -608,6 +608,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Sports',
     description: (city) => `The best places to play pickleball near ${city}.`,
     imageQuery: () => 'pickleball court outdoor sport players wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1669684899238-64c4abe4d3cc?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -620,6 +621,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Arts',
     description: (city) => `The most visited and highly rated museums near ${city}.`,
     imageQuery: (city) => `${city} museum art gallery interior exhibit wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1764253340515-7a29ad70c22b?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -631,6 +633,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Nature',
     description: (city) => `The best trails, paths, and walkways near ${city}.`,
     imageQuery: (city) => `${city} walking trail path nature outdoor scenic wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1765465604915-59786f45f583?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -643,6 +646,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `The most romantic and memorable dinner spots near ${city}, ranked by locals.`,
     imageQuery: () => 'romantic restaurant candles dim light intimate dinner couple wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1668637067785-69216bc51dd3?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -654,6 +658,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `The best deals on drinks and bites after work near ${city}.`,
     imageQuery: () => 'happy hour cocktails bar drinks specials crowd wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1770670644204-b6d1e5be9ffd?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -665,6 +670,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Still hungry after midnight? The best late-night spots near ${city}.`,
     imageQuery: () => 'late night diner food neon lights city street night wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1652152489449-21ca83c76b41?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -676,6 +682,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Nature',
     description: (city) => `Parks, patios, and places where your dog is always welcome near ${city}.`,
     imageQuery: () => 'dog park outdoor patio pet friendly nature green wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1632772341241-51e975ae8f65?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -687,6 +694,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Health',
     description: (city) => `The highest-rated barber shops near ${city}, ranked by locals.`,
     imageQuery: () => 'barber shop haircut vintage pole chair interior wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1759408174071-f2971472dc73?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -699,6 +707,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Health',
     description: (city) => `The highest-rated hair and beauty salons near ${city}, ranked by locals.`,
     imageQuery: () => 'hair salon beauty styling interior modern elegant wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1771865600306-d4ef4c06ae16?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -711,6 +720,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Health',
     description: (city) => `From big-box gyms to boutique studios — the top fitness spots near ${city}.`,
     imageQuery: () => 'gym fitness studio workout equipment modern interior wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1761971975769-97e598bf526b?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -723,6 +733,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Miscellaneous',
     description: (city) => `The most trusted mechanics and auto repair shops near ${city}.`,
     imageQuery: () => 'auto mechanic car repair shop garage tools wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1702146713882-2579afb0bfba?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -734,6 +745,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Fresh produce, local vendors, and weekend vibes — the best farmers markets near ${city}.`,
     imageQuery: () => 'farmers market fresh produce vegetables outdoor stalls vendors wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1761839257664-ecba169506c1?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -746,6 +758,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Whole Foods or local gem? The top-rated grocery stores near ${city}, ranked.`,
     imageQuery: () => 'grocery store produce fresh market interior specialty wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1725208961001-d6335cd7bfdc?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
 
@@ -786,6 +799,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `The best patios, terraces, and al fresco dining near ${city}.`,
     imageQuery: () => 'outdoor patio restaurant al fresco dining terrace string lights wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1772521340908-9f9a0bc775dc?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -811,6 +825,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Fresh catches and ocean flavors — the top seafood restaurants near ${city}.`,
     imageQuery: () => 'seafood lobster shrimp oysters fresh restaurant food wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1768725845685-b88ca2aa192a?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -823,6 +838,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Pasta, risotto, and more — the top Italian restaurants near ${city}.`,
     imageQuery: () => 'Italian restaurant pasta risotto interior rustic cozy wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1555396273-bf91798d792e?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -848,6 +864,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Pad thai, curries, and more — the top Thai restaurants near ${city}.`,
     imageQuery: () => 'Thai food restaurant pad thai curry colorful dishes wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1562802378-063ec186a863?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -860,6 +877,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Dim sum to Peking duck — the top Chinese restaurants near ${city}.`,
     imageQuery: () => 'Chinese restaurant dim sum dumplings noodles food wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -872,6 +890,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Curries, naan, and tandoor — the best Indian restaurants near ${city}.`,
     imageQuery: () => 'Indian food restaurant curry naan colorful spices wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -883,6 +902,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `From hoagies to reubens — the best sandwich shops and delis near ${city}.`,
     imageQuery: () => 'sandwich deli shop hoagie sub food counter wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -895,6 +915,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Plant-based dining done right — the top vegan restaurants near ${city}.`,
     imageQuery: () => 'vegan restaurant plant based food healthy bowls colorful wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -906,6 +927,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Food',
     description: (city) => `Street food at its finest — the best food trucks near ${city}.`,
     imageQuery: () => 'food truck street food colorful vendor outdoor wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
 
@@ -947,6 +969,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Arts',
     description: (city) => `Stand-up, improv, and open mics — the best comedy venues near ${city}.`,
     imageQuery: () => 'comedy club stand up microphone stage audience laughing wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -972,6 +995,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Sports',
     description: (city) => `Classic lanes to boutique bowling bars — the best spots to bowl near ${city}.`,
     imageQuery: () => 'bowling alley lanes pins ball neon interior wide',
+    staticImageUrl: 'https://images.unsplash.com/photo-1646529709994-8ff25fa4dfa4?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
   {
@@ -984,6 +1008,7 @@ const PLACE_CONFIGS: PlaceConfig[] = [
     appCategory: 'Arts',
     description: (city) => `Contemporary, classic, and everything in between — the top art galleries near ${city}.`,
     imageQuery: (city) => `${city} art gallery contemporary exhibit interior wide`,
+    staticImageUrl: 'https://images.unsplash.com/photo-1536924940846-cb428b912da5?w=600&fit=crop&crop=center&auto=format&q=80',
     findItemMode: 'google-places-local',
   },
 ];
@@ -1014,14 +1039,21 @@ async function fetchPlacesForConfig(
   city: string,
   citySlug: string
 ): Promise<CommunityList | null> {
-  const localCacheKey = `@topten_places_v15_${citySlug}_${config.slug}`;
+  const localCacheKey = `@topten_places_v17_${citySlug}_${config.slug}`;
+
+  // Always stamps the current config's staticImageUrl onto any cached list so
+  // it can never be stale regardless of which cache layer served it.
+  const applyStaticImage = (list: CommunityList): CommunityList => {
+    list.staticImageUrl = config.staticImageUrl;
+    return list;
+  };
 
   // L1: Device AsyncStorage — fastest, no network
   try {
     const cached = await AsyncStorage.getItem(localCacheKey);
     if (cached) {
       const { timestamp, data } = JSON.parse(cached);
-      if (Date.now() - timestamp < CACHE_TTL_MS) return backfillListFields(data as CommunityList);
+      if (Date.now() - timestamp < CACHE_TTL_MS) return applyStaticImage(backfillListFields(data as CommunityList));
     }
   } catch { /* ignore */ }
 
@@ -1038,7 +1070,7 @@ async function fetchPlacesForConfig(
       if (row) {
         const age = Date.now() - new Date(row.updated_at).getTime();
         if (age < CACHE_TTL_MS) {
-          const list = backfillListFields(row.data as CommunityList);
+          const list = applyStaticImage(backfillListFields(row.data as CommunityList));
           // Backfill L1 so next open is instant
           AsyncStorage.setItem(localCacheKey, JSON.stringify({ timestamp: Date.now(), data: list })).catch(() => {});
           return list;
@@ -1173,7 +1205,13 @@ export async function fetchLocalListsFromSupabase(city: string): Promise<Communi
     if (!queryResult) return [];
     const { data, error } = queryResult;
     if (error || !data) return [];
-    return data.map((row: any) => backfillListFields(row.data as CommunityList));
+    return data.map((row: any) => {
+      const list = backfillListFields(row.data as CommunityList);
+      // Always stamp current config's staticImageUrl so cached rows never serve a stale image
+      const config = PLACE_CONFIGS.find(c => list.id.startsWith(`local-${c.slug}-`));
+      if (config) list.staticImageUrl = config.staticImageUrl;
+      return list;
+    });
   } catch {
     return [];
   }

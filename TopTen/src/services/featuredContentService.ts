@@ -343,16 +343,17 @@ export async function fetchCommunityImage(
       imageUrl = results[0]?.backdropUrl ?? null;
     }
 
-    // Fall back to Unsplash for everything else
+    // Fall back to Unsplash for everything else — use search (not random) so the
+    // same query always returns the same #1 result regardless of city or device.
     if (!imageUrl && UNSPLASH_KEY && imageQuery) {
       const url =
-        `https://api.unsplash.com/photos/random` +
+        `https://api.unsplash.com/search/photos` +
         `?query=${encodeURIComponent(imageQuery)}` +
-        `&orientation=landscape&client_id=${UNSPLASH_KEY}`;
+        `&per_page=1&orientation=landscape&client_id=${UNSPLASH_KEY}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        imageUrl = data.urls?.regular ?? null;
+        imageUrl = data.results?.[0]?.urls?.regular ?? null;
       }
     }
   } catch {}

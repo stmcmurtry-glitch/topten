@@ -210,6 +210,33 @@ const FeedbackCard: React.FC = () => {
 export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { user, userProfile, signOut, updateAvatar } = useAuth();
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This permanently deletes your account and all your data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (!user || !supabase) return;
+              await Promise.all([
+                supabase.from('user_profiles').delete().eq('id', user.id),
+                supabase.from('user_lists').delete().eq('user_id', user.id),
+                supabase.from('community_feed_posts').delete().eq('user_id', user.id),
+              ]);
+              await signOut();
+            } catch {
+              Alert.alert('Error', 'Could not delete account. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
   const [plansVisible, setPlansVisible] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
@@ -239,9 +266,16 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   }, [user]);
 
   const pickAvatarImage = async (source: 'library' | 'camera') => {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Allow camera access to take a photo.');
+        return;
+      }
+    }
     const result = source === 'library'
       ? await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8 })
-      : await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+      : await ImagePicker.launchCameraAsync({ quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
       setUploadingAvatar(true);
       const err = await updateAvatar(result.assets[0].uri);
@@ -286,6 +320,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       title: 'Preferences',
       data: [
         { label: 'Location', value: user ? locationLabel : '', isLocation: true },
+        { label: 'Voting Preferences', route: 'VotingPreferences' },
         { label: 'Your Data', route: 'YourData', requiresAuth: true },
       ],
     },
@@ -294,6 +329,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       data: [
         { label: 'FAQ', route: 'FAQ' },
         { label: 'Privacy Policy', route: 'PrivacyPolicy' },
+        { label: 'Terms of Use', onPress: () => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/') },
         { label: 'About', route: 'About' },
         { label: 'Contact Us', route: 'Contact' },
       ],
@@ -372,6 +408,14 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                     activeOpacity={0.7}
                   >
                     <Text style={styles.signOutText}>Sign Out</Text>
+                  </TouchableOpacity>
+                  <View style={styles.profileDivider} />
+                  <TouchableOpacity
+                    style={styles.signOutRow}
+                    onPress={handleDeleteAccount}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.deleteAccountText}>Delete Account</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -686,6 +730,11 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 16,
     fontWeight: '500',
+    color: '#FF3B30',
+  },
+  deleteAccountText: {
+    fontSize: 14,
+    fontWeight: '400',
     color: '#FF3B30',
   },
   signInCard: {

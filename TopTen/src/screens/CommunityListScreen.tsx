@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { resolveCommunityList } from '../data/dynamicListRegistry';
+import { VOTE_PROMPT_COMMUNITY_KEY, VOTE_PROMPT_LOCAL_KEY } from './VotingPreferencesScreen';
 import { useCommunity } from '../context/CommunityContext';
 import { fetchCommunityImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
@@ -122,22 +123,19 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     return () => { cancelled = true; clearTimeout(timeout); };
   }, [communityListId, fetchLiveScores]);
 
-  // Vote-order preference: show once, then remember choice
-  // Skip entirely if user has already voted on this list
+  // Show vote-order modal on every first open of a list the user hasn't voted on yet,
+  // unless the user has disabled the prompt in Settings.
   useEffect(() => {
-    if (submitted) return; // already voted — go straight to community tab
-    AsyncStorage.getItem('@topten_vote_order_pref').then(pref => {
-      if (pref === 'vote_first') {
-        setActiveTab('yours');
-      } else if (!pref) {
-        setShowVoteOrderModal(true);
-      }
-      // 'see_first' → stay on community (default)
+    if (submitted) return;
+    const prefKey = communityListId.startsWith('local-')
+      ? VOTE_PROMPT_LOCAL_KEY
+      : VOTE_PROMPT_COMMUNITY_KEY;
+    AsyncStorage.getItem(prefKey).then((pref) => {
+      if (pref !== 'disabled') setShowVoteOrderModal(true);
     });
   }, []);
 
   const handleVoteOrderChoice = useCallback((choice: 'vote_first' | 'see_first') => {
-    AsyncStorage.setItem('@topten_vote_order_pref', choice);
     setShowVoteOrderModal(false);
     if (choice === 'vote_first') setActiveTab('yours');
   }, []);

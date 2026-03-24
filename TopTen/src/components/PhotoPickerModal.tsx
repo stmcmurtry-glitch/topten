@@ -49,6 +49,10 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const gifHintText = title.toLowerCase().includes('cover')
+    ? '✨ GIFs animate as your list cover!\nSave one to your library, then pick it here.'
+    : '✨ GIFs animate as your profile photo!\nSave one to your library, then pick it here.';
+
   // Reset state when modal closes
   useEffect(() => {
     if (!visible) {
@@ -124,8 +128,6 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect,
       quality: 0.8,
     });
     if (!result.canceled) {
@@ -209,12 +211,15 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
         {/* Device actions */}
         <Text style={styles.sectionLabel}>OR CHOOSE FROM DEVICE</Text>
         <View style={styles.actionCard}>
-          <TouchableOpacity style={styles.actionRow} onPress={handleLibrary} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.actionRow, { alignItems: 'flex-start' }]} onPress={handleLibrary} activeOpacity={0.7}>
             <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(204,0,0,0.08)' }]}>
               <Ionicons name="image-outline" size={20} color={colors.activeTab} />
             </View>
-            <Text style={styles.actionLabel}>Photo Library</Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.border} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.actionLabel}>Photo Library</Text>
+              <Text style={styles.gifHint}>{gifHintText}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.border} style={{ marginTop: 3 }} />
           </TouchableOpacity>
 
           <View style={styles.actionDivider} />
@@ -260,7 +265,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.md,
   },
   headerTitle: {
@@ -358,10 +363,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionLabel: {
-    flex: 1,
     fontSize: 16,
     fontWeight: '500',
     color: colors.primaryText,
+  },
+  gifHint: {
+    fontSize: 11,
+    color: colors.secondaryText,
+    marginTop: 5,
+    lineHeight: 16,
   },
   actionDivider: {
     height: StyleSheet.hairlineWidth,
