@@ -1218,13 +1218,38 @@ export async function fetchLocalListsFromSupabase(city: string): Promise<Communi
 }
 
 export async function fetchLocalPlacesLists(city: string): Promise<CommunityList[]> {
+  if (!city) return [];
+  const citySlug = slugify(city);
+
+  // L0: Check all per-config AsyncStorage entries in parallel before any network call.
+  // On second+ session this is instant (<20ms) and skips Supabase entirely.
+  const l0Results = await Promise.all(
+    PLACE_CONFIGS.map(async (config) => {
+      const key = `@topten_places_v17_${citySlug}_${config.slug}`;
+      try {
+        const cached = await AsyncStorage.getItem(key);
+        if (!cached) return null;
+        const { timestamp, data } = JSON.parse(cached);
+        if (Date.now() - timestamp >= CACHE_TTL_MS) return null;
+        const list = backfillListFields(data as CommunityList);
+        if (config.staticImageUrl) list.staticImageUrl = config.staticImageUrl;
+        return list;
+      } catch { return null; }
+    })
+  );
+  const l0Lists = l0Results.filter((l): l is CommunityList => l !== null);
+  if (l0Lists.length === PLACE_CONFIGS.length) {
+    return l0Lists.sort((a, b) => {
+      const ai = PLACE_CONFIGS.findIndex((c) => a.id.startsWith(`local-${c.slug}-`));
+      const bi = PLACE_CONFIGS.findIndex((c) => b.id.startsWith(`local-${c.slug}-`));
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+  }
+
   const serverLists = await fetchLocalListsFromSupabase(city);
 
-  if (!GOOGLE_PLACES_KEY || !city) return serverLists;
+  if (!GOOGLE_PLACES_KEY) return serverLists;
 
-  // Find configs that are absent OR have stale data (no current dataVersion).
-  // Stale rows lack street-level addresses — re-generating them writes fresh data back
-  // to local_lists and places_cache so all future users benefit immediately.
   const missingConfigs = PLACE_CONFIGS.filter(
     (config) => !serverLists.some(
       (l) => l.id.startsWith(`local-${config.slug}-`) && l.dataVersion === DATA_VERSION
@@ -1233,9 +1258,27 @@ export async function fetchLocalPlacesLists(city: string): Promise<CommunityList
 
   if (missingConfigs.length === 0) return serverLists;
 
-  const citySlug = slugify(city);
+  // Separate truly absent configs from stale ones (present but old dataVersion).
+  const absentConfigs = missingConfigs.filter(
+    (config) => !serverLists.some((l) => l.id.startsWith(`local-${config.slug}-`))
+  );
+  const staleConfigs = missingConfigs.filter(
+    (config) => serverLists.some((l) => l.id.startsWith(`local-${config.slug}-`))
+  );
+
+  // Stale configs: refresh silently in the background — never block the UI on them.
+  if (staleConfigs.length > 0) {
+    staleConfigs.forEach((config, i) => {
+      setTimeout(() => fetchPlacesForConfig(config, city, citySlug).catch(() => {}), i * 80);
+    });
+  }
+
+  // If nothing is truly absent, return existing Supabase data right away.
+  if (absentConfigs.length === 0) return serverLists;
+
+  // New city: fetch absent configs (first time this city is loaded)
   const results = await Promise.allSettled(
-    missingConfigs.map((config, i) =>
+    absentConfigs.map((config, i) =>
       new Promise<CommunityList | null>(resolve =>
         setTimeout(() => fetchPlacesForConfig(config, city, citySlug).then(resolve).catch(() => resolve(null)), i * 80)
       )
@@ -1253,7 +1296,7 @@ export async function fetchLocalPlacesLists(city: string): Promise<CommunityList
   for (const newList of newLists) {
     const existingIdx = combined.findIndex((l) => l.id === newList.id);
     if (existingIdx >= 0) {
-      combined[existingIdx] = newList; // replace stale v1 with fresh v2
+      combined[existingIdx] = newList;
     } else {
       combined.push(newList);
     }

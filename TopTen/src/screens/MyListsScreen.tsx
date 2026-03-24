@@ -201,24 +201,22 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       }
       setLocalListsReady(true);
     }
+    // Refresh all participant counts (community + local) on every pull-to-refresh
+    refreshParticipantCounts();
     // Apply card reordering right as spinner disappears
     setViewedIds(new Set(storedIds));
     setVotedIds(new Set(Object.keys(userRankings).filter(id => userRankings[id]?.submitted)));
     setFeedRefreshKey(k => k + 1);
     setRefreshing(false);
-  }, [detectedLocation?.city, userRankings]);
+  }, [detectedLocation?.city, userRankings, refreshParticipantCounts]);
 
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
       getDetectedLocation().then(setDetectedLocation);
       setFeedRefreshKey(k => k + 1);
-      if (localPlacesLists.length > 0) {
-        refreshParticipantCounts(localPlacesLists.map(l => l.id));
-      } else {
-        refreshParticipantCounts();
-      }
-    }, [user, refreshParticipantCounts, localPlacesLists])
+      refreshParticipantCounts();
+    }, [user, refreshParticipantCounts])
   );
 
 

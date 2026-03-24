@@ -75,7 +75,12 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }).catch(() => {});
   }, []);
 
-  useEffect(() => { refreshParticipantCounts(); }, []);
+  // Wait until auth has settled before fetching — ensures the Supabase connection
+  // is established on cold start (firing at mount races the network on first Expo Go load).
+  useEffect(() => {
+    if (authLoading) return;
+    refreshParticipantCounts();
+  }, [authLoading]);
 
   // Load/reload rankings whenever the signed-in user changes
   useEffect(() => {
