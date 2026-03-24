@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth, ProfileData } from '../context/AuthContext';
+import { supabase } from '../services/supabase';
 import { CATEGORIES } from '../data/categories';
 import { DetectedLocation } from '../services/locationService';
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
@@ -47,7 +48,7 @@ interface Props {
 }
 
 export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
-  const { updateProfile, updateAvatar, userProfile, user } = useAuth();
+  const { updateProfile, updateAvatar, userProfile, user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(userProfile?.favorite_categories ?? []);
@@ -100,7 +101,7 @@ export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
   const pickAvatarImage = async (source: 'library' | 'camera') => {
     const result = source === 'library'
       ? await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8 })
-      : await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+      : await ImagePicker.launchCameraAsync({ quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
       setUploadingAvatar(true);
       const err = await updateAvatar(result.assets[0].uri);
@@ -155,6 +156,33 @@ export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
         if (gender && idx === options.length - 1) { setGender(null); return; }
         setGender(GENDERS[idx - 1]);
       }
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This permanently deletes your account and all your data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (!user || !supabase) return;
+              await Promise.all([
+                supabase.from('user_profiles').delete().eq('id', user.id),
+                supabase.from('user_lists').delete().eq('user_id', user.id),
+                supabase.from('community_feed_posts').delete().eq('user_id', user.id),
+              ]);
+              await signOut();
+            } catch {
+              Alert.alert('Error', 'Could not delete account. Please try again.');
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -316,6 +344,10 @@ export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         <TouchableOpacity style={styles.changeUsernameRow} onPress={openUsernameModal} activeOpacity={0.6}>
           <Text style={styles.changeUsernameText}>Change username ›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteAccountRow} onPress={handleDeleteAccount} activeOpacity={0.6}>
+          <Text style={styles.deleteAccountText}>Delete Account</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -484,6 +516,15 @@ const styles = StyleSheet.create({
   changeUsernameText: {
     fontSize: 13,
     color: colors.secondaryText,
+  },
+  deleteAccountRow: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  deleteAccountText: {
+    fontSize: 13,
+    color: '#FF3B30',
   },
   // Modal
   modalOverlay: {

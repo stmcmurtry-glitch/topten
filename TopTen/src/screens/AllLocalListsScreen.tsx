@@ -244,7 +244,7 @@ export const AllLocalListsScreen: React.FC<{ route: any; navigation: any }> = ({
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No local lists found.</Text>
+            <Text style={styles.emptyText}>Request didn't go through — try searching again.</Text>
           </View>
         }
       />

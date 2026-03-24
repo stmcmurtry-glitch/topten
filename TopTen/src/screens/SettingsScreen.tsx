@@ -124,6 +124,10 @@ const FeedbackCard: React.FC = () => {
       Alert.alert('Select a rating', 'Tap a star before sending.');
       return;
     }
+    if (!text.trim()) {
+      Alert.alert('Add a message', 'Please share a few words about your experience.');
+      return;
+    }
     setSending(true);
     try {
       await sendFeedbackEmail({ rating, ratingLabel: RATING_LABELS[rating], message: text.trim() });
@@ -184,7 +188,7 @@ const FeedbackCard: React.FC = () => {
         style={styles.textInput}
         value={text}
         onChangeText={setText}
-        placeholder="Tell us more… (optional)"
+        placeholder="Tell us more…"
         placeholderTextColor={colors.secondaryText}
         multiline
         textAlignVertical="top"
@@ -192,7 +196,7 @@ const FeedbackCard: React.FC = () => {
       />
 
       <TouchableOpacity
-        style={[styles.submitButton, (rating === 0 || sending) && styles.submitButtonDisabled]}
+        style={[styles.submitButton, (rating === 0 || !text.trim() || sending) && styles.submitButtonDisabled]}
         onPress={handleSubmit}
         activeOpacity={0.8}
         disabled={sending}
@@ -211,32 +215,6 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const insets = useSafeAreaInsets();
   const { user, userProfile, signOut, updateAvatar } = useAuth();
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This permanently deletes your account and all your data. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Account',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (!user || !supabase) return;
-              await Promise.all([
-                supabase.from('user_profiles').delete().eq('id', user.id),
-                supabase.from('user_lists').delete().eq('user_id', user.id),
-                supabase.from('community_feed_posts').delete().eq('user_id', user.id),
-              ]);
-              await signOut();
-            } catch {
-              Alert.alert('Error', 'Could not delete account. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  };
   const [plansVisible, setPlansVisible] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
@@ -408,14 +386,6 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                     activeOpacity={0.7}
                   >
                     <Text style={styles.signOutText}>Sign Out</Text>
-                  </TouchableOpacity>
-                  <View style={styles.profileDivider} />
-                  <TouchableOpacity
-                    style={styles.signOutRow}
-                    onPress={handleDeleteAccount}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.deleteAccountText}>Delete Account</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -730,11 +700,6 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#FF3B30',
-  },
-  deleteAccountText: {
-    fontSize: 14,
-    fontWeight: '400',
     color: '#FF3B30',
   },
   signInCard: {

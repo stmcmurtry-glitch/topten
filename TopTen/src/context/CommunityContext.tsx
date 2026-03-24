@@ -168,9 +168,11 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       [listId]: { ...(prev[listId] ?? {}), [key]: location },
     }));
     if (supabase) {
-      supabase.from('community_item_locations').upsert(
-        { list_id: listId, normalized_title: key, location, updated_at: new Date().toISOString() },
-        { onConflict: 'list_id,normalized_title' }
+      Promise.resolve(
+        supabase.from('community_item_locations').upsert(
+          { list_id: listId, normalized_title: key, location, updated_at: new Date().toISOString() },
+          { onConflict: 'list_id,normalized_title' }
+        )
       ).catch(() => {});
     }
   }, []);
@@ -273,7 +275,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             posthog?.capture('community_vote_saved_to_supabase', { list_id: listId });
             // Refresh aggregated scores for this list only — fire-and-forget so
             // a slow rebuild never blocks vote confirmation or causes a timeout.
-            supabase.rpc('refresh_community_scores_for_list', { p_list_id: listId }).catch(() => {});
+            Promise.resolve(supabase.rpc('refresh_community_scores_for_list', { p_list_id: listId })).catch(() => {});
           }
         } catch (err: unknown) {
           posthog?.capture('community_vote_exception', {

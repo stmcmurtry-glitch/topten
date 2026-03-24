@@ -234,19 +234,20 @@ export async function searchPlacesGlobal(
   // L2: Supabase shared cache (24h)
   if (supabase) {
     try {
-      const { data: row } = await supabase
-        .from('places_cache')
-        .select('data, updated_at')
-        .eq('city_slug', 'global')
-        .eq('config_slug', configSlug)
-        .single();
-      if (row) {
-        const age = Date.now() - new Date(row.updated_at).getTime();
-        if (age < CACHE_TTL_MS) {
-          const results = row.data as Array<{ title: string; location?: string }>;
-          setCachedSearch(memKey, results);
-          AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: results })).catch(() => {});
-          return results;
+      const l2Result = await Promise.race([
+        supabase.from('places_cache').select('data, updated_at').eq('city_slug', 'global').eq('config_slug', configSlug).single(),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
+      ]);
+      if (l2Result) {
+        const { data: row } = l2Result;
+        if (row) {
+          const age = Date.now() - new Date(row.updated_at).getTime();
+          if (age < CACHE_TTL_MS) {
+            const results = row.data as Array<{ title: string; location?: string }>;
+            setCachedSearch(memKey, results);
+            AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: results })).catch(() => {});
+            return results;
+          }
         }
       }
     } catch { /* supabase unavailable */ }
@@ -268,10 +269,10 @@ export async function searchPlacesGlobal(
     setCachedSearch(memKey, mapped);
     AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: mapped })).catch(() => {});
     if (supabase) {
-      supabase.from('places_cache').upsert(
+      Promise.resolve(supabase.from('places_cache').upsert(
         { city_slug: 'global', config_slug: configSlug, data: mapped, updated_at: new Date().toISOString() },
         { onConflict: 'city_slug,config_slug' }
-      ).catch(() => {});
+      )).catch(() => {});
     }
     return mapped;
   } catch {
@@ -311,19 +312,20 @@ export async function searchLocalPlaces(
   // L2: Supabase shared cache (24h) — one API call per city+query across all users
   if (supabase) {
     try {
-      const { data: row } = await supabase
-        .from('places_cache')
-        .select('data, updated_at')
-        .eq('city_slug', citySlug)
-        .eq('config_slug', configSlug)
-        .single();
-      if (row) {
-        const age = Date.now() - new Date(row.updated_at).getTime();
-        if (age < CACHE_TTL_MS) {
-          const results = row.data as Array<{ title: string; location?: string }>;
-          setCachedSearch(memKey, results);
-          AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: results })).catch(() => {});
-          return results;
+      const l2Result = await Promise.race([
+        supabase.from('places_cache').select('data, updated_at').eq('city_slug', citySlug).eq('config_slug', configSlug).single(),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
+      ]);
+      if (l2Result) {
+        const { data: row } = l2Result;
+        if (row) {
+          const age = Date.now() - new Date(row.updated_at).getTime();
+          if (age < CACHE_TTL_MS) {
+            const results = row.data as Array<{ title: string; location?: string }>;
+            setCachedSearch(memKey, results);
+            AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: results })).catch(() => {});
+            return results;
+          }
         }
       }
     } catch { /* supabase unavailable — fall through */ }
@@ -346,10 +348,10 @@ export async function searchLocalPlaces(
     // Write L1 + L2 without blocking return
     AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: mapped })).catch(() => {});
     if (supabase) {
-      supabase.from('places_cache').upsert(
+      Promise.resolve(supabase.from('places_cache').upsert(
         { city_slug: citySlug, config_slug: configSlug, data: mapped, updated_at: new Date().toISOString() },
         { onConflict: 'city_slug,config_slug' }
-      ).catch(() => {});
+      )).catch(() => {});
     }
     return mapped;
   } catch {
@@ -1061,19 +1063,20 @@ async function fetchPlacesForConfig(
   const cacheConfigSlug = `${config.slug}-${DATA_VERSION}`;
   if (supabase) {
     try {
-      const { data: row } = await supabase
-        .from('places_cache')
-        .select('data, updated_at')
-        .eq('city_slug', citySlug)
-        .eq('config_slug', cacheConfigSlug)
-        .single();
-      if (row) {
-        const age = Date.now() - new Date(row.updated_at).getTime();
-        if (age < CACHE_TTL_MS) {
-          const list = applyStaticImage(backfillListFields(row.data as CommunityList));
-          // Backfill L1 so next open is instant
-          AsyncStorage.setItem(localCacheKey, JSON.stringify({ timestamp: Date.now(), data: list })).catch(() => {});
-          return list;
+      const l2Result = await Promise.race([
+        supabase.from('places_cache').select('data, updated_at').eq('city_slug', citySlug).eq('config_slug', cacheConfigSlug).single(),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 3000)),
+      ]);
+      if (l2Result) {
+        const { data: row } = l2Result;
+        if (row) {
+          const age = Date.now() - new Date(row.updated_at).getTime();
+          if (age < CACHE_TTL_MS) {
+            const list = applyStaticImage(backfillListFields(row.data as CommunityList));
+            // Backfill L1 so next open is instant
+            AsyncStorage.setItem(localCacheKey, JSON.stringify({ timestamp: Date.now(), data: list })).catch(() => {});
+            return list;
+          }
         }
       }
     } catch { /* supabase unavailable — fall through to API */ }
@@ -1086,15 +1089,22 @@ async function fetchPlacesForConfig(
     const typeParam = config.placeType ? `&type=${config.placeType}` : '';
     const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
 
-    const response = await fetch(url);
+    let response: Response;
+    try {
+      response = await fetch(url);
+    } catch {
+      return null; // network error — don't cache, retry next load
+    }
     if (!response.ok) return null;
 
     const json = await response.json();
-    if (json.status && json.status !== 'OK' && json.status !== 'ZERO_RESULTS') {
-      console.warn('[Places] API error', { config: config.slug, city, status: json.status, message: json.error_message });
+    // Hard API errors (bad key, quota) → don't cache, retry next load
+    if (json.status === 'REQUEST_DENIED' || json.status === 'OVER_QUERY_LIMIT' || json.status === 'INVALID_REQUEST') {
+      console.warn('[Places] API error', { config: config.slug, city, status: json.status });
+      return null;
     }
+    // ZERO_RESULTS is a legitimate "no venues here" — fall through and cache an empty list
     const results: Array<{ name: string; formatted_address?: string }> = json.results ?? [];
-    if (results.length === 0) return null;
 
     items = results.slice(0, 10).map((result, rank) => ({
       id: `${config.slug}-${citySlug}-${rank}`,
@@ -1126,7 +1136,7 @@ async function fetchPlacesForConfig(
   AsyncStorage.setItem(localCacheKey, JSON.stringify({ timestamp: Date.now(), data: list })).catch(() => {});
   if (supabase) {
     const sortIndex = PLACE_CONFIGS.indexOf(config);
-    supabase.from('local_lists').upsert(
+    Promise.resolve(supabase.from('local_lists').upsert(
       {
         id: list.id,
         city_slug: citySlug,
@@ -1137,12 +1147,12 @@ async function fetchPlacesForConfig(
         generated_at: new Date().toISOString(),
         sort_index: sortIndex,
       },
-      { onConflict: 'id' }
-    ).catch(() => {});
-    supabase.from('places_cache').upsert(
+      { onConflict: 'id', ignoreDuplicates: true }
+    )).catch(() => {});
+    Promise.resolve(supabase.from('places_cache').upsert(
       { city_slug: citySlug, config_slug: cacheConfigSlug, data: list, updated_at: new Date().toISOString() },
       { onConflict: 'city_slug,config_slug' }
-    ).catch(() => {});
+    )).catch(() => {});
   }
 
   return list;
