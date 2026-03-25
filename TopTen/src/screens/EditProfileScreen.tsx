@@ -99,6 +99,19 @@ export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const pickAvatarImage = async (source: 'library' | 'camera') => {
+    if (source === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Camera Access', 'Please allow camera access in Settings to take a photo.');
+        return;
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Photo Access', 'Please allow photo library access in Settings to choose a photo.');
+        return;
+      }
+    }
     const result = source === 'library'
       ? await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8 })
       : await ImagePicker.launchCameraAsync({ quality: 0.8 });

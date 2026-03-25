@@ -247,7 +247,13 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     if (source === 'camera') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Allow camera access to take a photo.');
+        Alert.alert('Camera Access', 'Please allow camera access in Settings to take a photo.');
+        return;
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Photo Access', 'Please allow photo library access in Settings to choose a photo.');
         return;
       }
     }
