@@ -58,7 +58,6 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
   const [hasSuggestedOptions, setHasSuggestedOptions] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showRecommendations, setShowRecommendations] = useState(false);
   const [apiError, setApiError] = useState(false);
   // undefined = still detecting, null = unavailable, string = city name
   const [placesCity, setPlacesCity] = useState<string | null | undefined>(
@@ -116,25 +115,31 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       setResults([]); // intentionally empty — user types first
       setLoading(false);
     } else if (findItemMode === 'google-places-local') {
-      // Resolve city but don't fire API — recommendations load on user request
+      // Explicit local Places mode — city comes from region param or device location.
+      // If the community list already has items (fetched by fetchPlacesForConfig), use
+      // those directly as initial results — avoids a redundant Google Places API call.
       if (region) {
         setPlacesCity(region);
-        setLoading(false);
+        doPlacesSearch('', region);
       } else {
         getDetectedLocation().then((loc) => {
-          setPlacesCity(loc?.city ?? null);
-          setLoading(false);
+          const city = loc?.city || null;
+          setPlacesCity(city);
+          if (city) doPlacesSearch('', city);
+          else doSearch('');
         });
       }
     } else if (!findItemMode && isVenueList(listTitle, category)) {
-      // Personal venue list — same: resolve city, wait for user to request recs
+      // Legacy fallback for personal venue lists without findItemMode
       if (region) {
         setPlacesCity(region);
-        setLoading(false);
+        doPlacesSearch('', region);
       } else {
         getDetectedLocation().then((loc) => {
-          setPlacesCity(loc?.city ?? null);
-          setLoading(false);
+          const city = loc?.city || null;
+          setPlacesCity(city);
+          if (city) doPlacesSearch('', city);
+          else doSearch('');
         });
       }
     } else {
@@ -277,10 +282,8 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
         {query.length > 0 && (
           <TouchableOpacity onPress={() => {
             setQuery('');
-            if (placesCity && showRecommendations) {
-              setResults(allPlacesItems); // restore recommendations
-            } else if (placesCity) {
-              setResults([]);
+            if (placesCity) {
+              setResults(allPlacesItems); // instantly restore full list
             } else {
               doSearch('');
             }
@@ -320,18 +323,6 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
             size={13}
             color={colors.secondaryText}
           />
-        </TouchableOpacity>
-      ) : placesCity && !showRecommendations ? (
-        <TouchableOpacity
-          style={styles.browseToggle}
-          onPress={() => {
-            setShowRecommendations(true);
-            doPlacesSearch('', placesCity);
-          }}
-          activeOpacity={0.6}
-        >
-          <Text style={styles.browseToggleText}>Show recommendations</Text>
-          <Ionicons name="chevron-forward" size={13} color={colors.secondaryText} />
         </TouchableOpacity>
       ) : (
         <Text style={styles.hint}>
