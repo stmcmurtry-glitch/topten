@@ -32,8 +32,7 @@ import { ReportIssueModal } from '../components/ReportIssueModal';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
 import { CATEGORIES } from '../data/categories';
-import { isVenueList, derivePlacesQuery, derivePlacesType, searchLocalPlaces } from '../services/googlePlacesService';
-import { getDetectedLocation } from '../services/locationService';
+import { isVenueList } from '../services/googlePlacesService';
 
 const DESCRIPTION_LIMIT = 120;
 
@@ -106,9 +105,6 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const { user } = useAuth();
   const [typedArtist, setTypedArtist] = useState('');
   const [typedAlbum, setTypedAlbum] = useState('');
-  const [typedSuggestions, setTypedSuggestions] = useState<Array<{ title: string; location?: string }>>([]);
-  const [suggestionsCity, setSuggestionsCity] = useState<string | null>(null);
-  const placesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isMusicList = list?.category === 'Music';
   const isCurrentVenueList = list ? isVenueList(list.title, list.category) : false;
@@ -146,21 +142,6 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
   useEffect(() => { if (!showPublishModal) checkExistingPost(); }, [showPublishModal]);
 
-  // Fetch nearby place suggestions when the type modal opens for a venue list
-  useEffect(() => {
-    if (!showTypeModal || !isCurrentVenueList || !list) {
-      setTypedSuggestions([]);
-      return;
-    }
-    getDetectedLocation().then((loc) => {
-      const city = loc?.city || null;
-      setSuggestionsCity(city);
-      if (!city) return;
-      const q = derivePlacesQuery(list.title, list.category);
-      const t = derivePlacesType(list.title, list.category);
-      searchLocalPlaces(city, q, t).then((r) => setTypedSuggestions(r.slice(0, 5)));
-    });
-  }, [showTypeModal, isCurrentVenueList]);
 
   const persistSlots = (updated: string[]) => {
     setSlots(updated);
@@ -512,17 +493,8 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
               <TextInput
                 style={styles.typeInput}
                 value={typedValue}
-                onChangeText={(text) => {
-                  setTypedValue(text);
-                  if (!isCurrentVenueList || !suggestionsCity) return;
-                  if (placesDebounceRef.current) clearTimeout(placesDebounceRef.current);
-                  placesDebounceRef.current = setTimeout(() => {
-                    const q = text.trim() || derivePlacesQuery(list.title, list.category);
-                    const t = text.trim() ? undefined : derivePlacesType(list.title, list.category);
-                    searchLocalPlaces(suggestionsCity, q, t).then((r) => setTypedSuggestions(r.slice(0, 5)));
-                  }, 350);
-                }}
-                placeholder={isMusicList ? 'Song title…' : isCurrentVenueList ? 'Type or pick from suggestions…' : 'Type a name…'}
+                onChangeText={setTypedValue}
+                placeholder={isMusicList ? 'Song title…' : 'Type a name…'}
                 placeholderTextColor={colors.secondaryText}
                 autoFocus
                 returnKeyType={isMusicList ? 'next' : 'done'}
@@ -534,37 +506,6 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                   }
                 }}
               />
-              {isCurrentVenueList && typedSuggestions.length > 0 && (
-                <View style={styles.suggestionsContainer}>
-                  {suggestionsCity && (
-                    <View style={styles.suggestionsHeader}>
-                      <Ionicons name="location-sharp" size={11} color={colors.activeTab} />
-                      <Text style={styles.suggestionsHeaderText}>Near {suggestionsCity}</Text>
-                    </View>
-                  )}
-                  {typedSuggestions.slice(0, 3).map((s, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={styles.suggestionRow}
-                      onPress={() => {
-                        if (typeSlotIndex !== null) {
-                          setSlotValue(typeSlotIndex, s.title);
-                          setShowTypeModal(false);
-                          setTypedValue('');
-                          setTypedSuggestions([]);
-                        }
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.suggestionBody}>
-                        <Text style={styles.suggestionTitle} numberOfLines={1}>{s.title}</Text>
-                        {s.location && <Text style={styles.suggestionLocation}>{s.location}</Text>}
-                      </View>
-                      <Ionicons name="add-circle-outline" size={18} color={colors.activeTab} />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
               {isMusicList && (
                 <>
                   <TextInput

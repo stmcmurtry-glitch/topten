@@ -160,39 +160,25 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
         i.title.toLowerCase().includes(text.toLowerCase())
       );
       setResults(seededMatches);
-      // Debounced augmentation — source depends on list type:
-      //  • useGlobalPlaces  → Google Places (BBQ joints, sandwich shops, bakeries, etc.)
-      //  • hasSuggestedOptions → no API needed; suggestedOptions already in allCommunityItems
-      //  • everything else  → searchSuggestions (MusicBrainz for songs, TMDB for movies, etc.)
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(async () => {
-        let extra: SearchResult[] = [];
-        const seededTitles = new Set(seededMatches.map((i) => i.title.toLowerCase()));
-        if (useGlobalPlaces) {
-          const placesResults = await searchPlacesGlobal(text);
-          extra = (placesResults as SearchResult[]).filter(
-            (r) => !seededTitles.has(r.title.toLowerCase())
-          );
-        } else if (!hasSuggestedOptions) {
+      // Debounced augmentation for non-Places lists only (MusicBrainz, TMDB, etc.)
+      // Google Places (useGlobalPlaces) fires on submit instead — see onSubmitEditing.
+      if (!useGlobalPlaces && !hasSuggestedOptions) {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(async () => {
+          const seededTitles = new Set(seededMatches.map((i) => i.title.toLowerCase()));
           const apiResults = await searchSuggestions(category, text, listTitle);
-          extra = apiResults.filter((r) => !seededTitles.has(r.title.toLowerCase()));
-        }
-        if (extra.length > 0) setResults([...seededMatches, ...extra]);
-      }, 400);
+          const extra = apiResults.filter((r) => !seededTitles.has(r.title.toLowerCase()));
+          if (extra.length > 0) setResults([...seededMatches, ...extra]);
+        }, 400);
+      }
       return;
     }
     if (placesCity) {
-      // Filter the pre-loaded Places list client-side first
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      // Filter the pre-loaded Places list client-side — API only fires on submit (return key)
       const q = text.toLowerCase();
       const filtered = allPlacesItems.filter((r) => r.title.toLowerCase().includes(q));
       setResults(filtered);
-      // Only call Google Places if nothing matched locally
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (filtered.length === 0 && text.trim().length > 0) {
-        debounceRef.current = setTimeout(() => {
-          doPlacesSearch(text, placesCity);
-        }, 500);
-      }
     } else {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
@@ -274,6 +260,24 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
           placeholder={placesCity ? `Search places in ${placesCity}…` : `Search ${category.toLowerCase()}…`}
           placeholderTextColor={colors.secondaryText}
           returnKeyType="search"
+          onSubmitEditing={async () => {
+            if (!query.trim()) return;
+            if (placesCity) {
+              doPlacesSearch(query, placesCity);
+            } else if (useGlobalPlaces) {
+              setLoading(true);
+              const placesResults = await searchPlacesGlobal(query);
+              const seededTitles = new Set(allCommunityItems.map((i) => i.title.toLowerCase()));
+              const extra = (placesResults as SearchResult[]).filter(
+                (r) => !seededTitles.has(r.title.toLowerCase())
+              );
+              const seededMatches = allCommunityItems.filter((i) =>
+                i.title.toLowerCase().includes(query.toLowerCase())
+              );
+              setResults(extra.length > 0 ? [...seededMatches, ...extra] : seededMatches);
+              setLoading(false);
+            }
+          }}
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={() => {
