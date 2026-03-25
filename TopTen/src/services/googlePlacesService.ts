@@ -1267,32 +1267,43 @@ export async function fetchLocalPlacesLists(city: string): Promise<CommunityList
 
   const serverLists = await fetchLocalListsFromSupabase(city);
 
-  if (!GOOGLE_PLACES_KEY) return serverLists;
-
-  // Only call Google Places if a config is completely absent from local_lists.
-  // Existing rows are always served as-is — local_lists is permanent seed data.
-  // dataVersion stale-refresh was removed: it caused 59 API calls per user per session
-  // because ignoreDuplicates:true prevents dataVersion from ever being written back.
+  // For any configs not yet in local_lists, generate empty placeholder lists from
+  // PLACE_CONFIGS metadata — no Google Places API call. Community votes are the
+  // sole source of items for In Your Area lists going forward.
   const missingConfigs = PLACE_CONFIGS.filter(
     (config) => !serverLists.some((l) => l.id.startsWith(`local-${config.slug}-`))
   );
 
   if (missingConfigs.length === 0) return serverLists;
 
-  // New city: fetch absent configs (first time this city is loaded)
-  const results = await Promise.allSettled(
-    missingConfigs.map((config, i) =>
-      new Promise<CommunityList | null>(resolve =>
-        setTimeout(() => fetchPlacesForConfig(config, city, citySlug).then(resolve).catch(() => resolve(null)), i * 80)
-      )
-    )
-  );
+  const newLists: CommunityList[] = missingConfigs.map((config) => ({
+    id: `local-${config.slug}-${citySlug}`,
+    title: config.title(city),
+    category: config.appCategory,
+    color: config.color,
+    icon: config.icon,
+    description: config.description(city),
+    imageQuery: config.imageQuery(city),
+    staticImageUrl: config.staticImageUrl,
+    participantCount: 0,
+    items: [],
+    region: city,
+    findItemMode: config.findItemMode,
+    dataVersion: DATA_VERSION,
+  }));
 
-  const newLists = results
-    .map((r) => (r.status === 'fulfilled' ? r.value : null))
-    .filter((l): l is CommunityList => l !== null);
-
-  if (newLists.length === 0) return serverLists;
+  // Persist to local_lists so future loads skip this step entirely
+  if (supabase) {
+    newLists.forEach((list, i) => {
+      const sortIndex = PLACE_CONFIGS.indexOf(missingConfigs[i]);
+      Promise.resolve(supabase.from('local_lists').upsert(
+        { id: list.id, city_slug: citySlug, city_name: city, neighborhood: null,
+          config_slug: missingConfigs[i].slug, data: list,
+          generated_at: new Date().toISOString(), sort_index: sortIndex },
+        { onConflict: 'id', ignoreDuplicates: true }
+      )).catch(() => {});
+    });
+  }
 
   const combined = [...serverLists, ...newLists];
   combined.sort((a, b) => {

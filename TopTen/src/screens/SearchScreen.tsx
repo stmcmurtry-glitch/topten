@@ -118,21 +118,15 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       // Explicit local Places mode — city comes from region param or device location.
       // If the community list already has items (fetched by fetchPlacesForConfig), use
       // those directly as initial results — avoids a redundant Google Places API call.
-      const seedItems = resolvedCommunityList?.items?.length
-        ? resolvedCommunityList.items.map(i => ({ title: i.title, location: i.location }))
-        : null;
       if (region) {
         setPlacesCity(region);
-        if (seedItems) { setAllPlacesItems(seedItems); setResults(seedItems); setLoading(false); }
-        else doPlacesSearch('', region);
+        doPlacesSearch('', region);
       } else {
         getDetectedLocation().then((loc) => {
           const city = loc?.city || null;
           setPlacesCity(city);
-          if (city) {
-            if (seedItems) { setAllPlacesItems(seedItems); setResults(seedItems); setLoading(false); }
-            else doPlacesSearch('', city);
-          } else doSearch('');
+          if (city) doPlacesSearch('', city);
+          else doSearch('');
         });
       }
     } else if (!findItemMode && isVenueList(listTitle, category)) {
