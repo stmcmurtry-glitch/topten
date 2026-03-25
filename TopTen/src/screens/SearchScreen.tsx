@@ -115,32 +115,27 @@ export const SearchScreen: React.FC<{ route: any; navigation: any }> = ({
       setResults([]); // intentionally empty — user types first
       setLoading(false);
     } else if (findItemMode === 'google-places-local') {
-      // Explicit local Places mode — city comes from region param or device location.
-      // If the community list already has items (fetched by fetchPlacesForConfig), use
-      // those directly as initial results — avoids a redundant Google Places API call.
+      // Use existing community items as initial browse — zero API cost.
+      // Google Places only fires when the user submits a typed search.
+      const communityItems: SearchResult[] = (resolvedCommunityList?.items ?? []).map(i => ({
+        title: i.title,
+        ...(i.location ? { location: i.location } : {}),
+      }));
+      setAllPlacesItems(communityItems);
+      setResults(communityItems);
+      setLoading(false);
       if (region) {
         setPlacesCity(region);
-        doPlacesSearch('', region);
       } else {
-        getDetectedLocation().then((loc) => {
-          const city = loc?.city || null;
-          setPlacesCity(city);
-          if (city) doPlacesSearch('', city);
-          else doSearch('');
-        });
+        getDetectedLocation().then((loc) => setPlacesCity(loc?.city ?? null));
       }
     } else if (!findItemMode && isVenueList(listTitle, category)) {
-      // Legacy fallback for personal venue lists without findItemMode
+      // Personal venue list — no community data; resolve city, wait for typed search
+      setLoading(false);
       if (region) {
         setPlacesCity(region);
-        doPlacesSearch('', region);
       } else {
-        getDetectedLocation().then((loc) => {
-          const city = loc?.city || null;
-          setPlacesCity(city);
-          if (city) doPlacesSearch('', city);
-          else doSearch('');
-        });
+        getDetectedLocation().then((loc) => setPlacesCity(loc?.city ?? null));
       }
     } else {
       doSearch('');

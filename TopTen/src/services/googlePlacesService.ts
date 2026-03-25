@@ -262,18 +262,17 @@ export async function searchPlacesGlobal(
     } catch { /* supabase unavailable */ }
   }
 
-  // L3: Google Places API
+  // L3: Places Autocomplete API (11x cheaper than Text Search)
   const q = encodeURIComponent(query);
-  const typeParam = placeType ? `&type=${placeType}` : '';
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${q}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
+  const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${q}&types=establishment&key=${GOOGLE_PLACES_KEY}`;
   try {
     const response = await fetch(url);
     if (!response.ok) return [];
     const json = await response.json();
-    const results: Array<{ name: string; formatted_address?: string }> = json.results ?? [];
-    const mapped = results.slice(0, 10).map((r) => ({
-      title: r.name,
-      location: r.formatted_address ? parseLocationWithStreet(r.formatted_address) : undefined,
+    const predictions: Array<any> = json.predictions ?? [];
+    const mapped = predictions.slice(0, 10).map((p: any) => ({
+      title: p.structured_formatting?.main_text ?? p.description,
+      location: p.structured_formatting?.secondary_text ?? undefined,
     }));
     setCachedSearch(memKey, mapped);
     AsyncStorage.setItem(asyncKey, JSON.stringify({ timestamp: Date.now(), data: mapped })).catch(() => {});
@@ -340,18 +339,17 @@ export async function searchLocalPlaces(
     } catch { /* supabase unavailable — fall through */ }
   }
 
-  // L3: Google Places API
-  const q = encodeURIComponent(`${query} in ${city}`);
-  const typeParam = placeType ? `&type=${placeType}` : '';
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${q}${typeParam}&key=${GOOGLE_PLACES_KEY}`;
+  // L3: Places Autocomplete API (11x cheaper than Text Search)
+  const q = encodeURIComponent(`${query} ${city}`);
+  const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${q}&types=establishment&key=${GOOGLE_PLACES_KEY}`;
   try {
     const response = await fetch(url);
     if (!response.ok) return [];
     const json = await response.json();
-    const results: Array<{ name: string; formatted_address?: string }> = json.results ?? [];
-    const mapped = results.slice(0, 20).map((r) => ({
-      title: r.name,
-      location: r.formatted_address ? parseLocation(r.formatted_address) : undefined,
+    const predictions: Array<any> = json.predictions ?? [];
+    const mapped = predictions.slice(0, 10).map((p: any) => ({
+      title: p.structured_formatting?.main_text ?? p.description,
+      location: p.structured_formatting?.secondary_text ?? undefined,
     }));
     setCachedSearch(memKey, mapped);
     // Write L1 + L2 without blocking return
