@@ -9,6 +9,10 @@ const SEARCH_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 type SearchCacheEntry = { results: Array<{ title: string; location?: string }>; ts: number };
 const searchCache = new Map<string, SearchCacheEntry>();
 
+// Separate cache for city autocomplete results (different return shape)
+type CityCacheEntry = { results: Array<{ name: string; secondary: string }>; ts: number };
+const citySearchCache = new Map<string, CityCacheEntry>();
+
 function getCachedSearch(key: string): Array<{ title: string; location?: string }> | null {
   const entry = searchCache.get(key);
   if (!entry) return null;
@@ -156,6 +160,9 @@ export async function searchCities(
   query: string
 ): Promise<Array<{ name: string; secondary: string }>> {
   if (!GOOGLE_PLACES_KEY || !query.trim()) return [];
+  const cacheKey = query.trim().toLowerCase();
+  const cached = citySearchCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < SEARCH_CACHE_TTL_MS) return cached.results;
   const url =
     `https://maps.googleapis.com/maps/api/place/autocomplete/json` +
     `?input=${encodeURIComponent(query)}&types=(cities)&key=${GOOGLE_PLACES_KEY}`;
@@ -163,10 +170,12 @@ export async function searchCities(
     const res = await fetch(url);
     if (!res.ok) return [];
     const json = await res.json();
-    return (json.predictions ?? []).slice(0, 8).map((p: any) => ({
+    const results = (json.predictions ?? []).slice(0, 8).map((p: any) => ({
       name: p.structured_formatting?.main_text ?? p.description,
       secondary: p.structured_formatting?.secondary_text ?? '',
     }));
+    citySearchCache.set(cacheKey, { results, ts: Date.now() });
+    return results;
   } catch {
     return [];
   }
