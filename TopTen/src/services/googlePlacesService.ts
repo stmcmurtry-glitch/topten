@@ -1260,35 +1260,19 @@ export async function fetchLocalPlacesLists(city: string): Promise<CommunityList
 
   if (!GOOGLE_PLACES_KEY) return serverLists;
 
+  // Only call Google Places if a config is completely absent from local_lists.
+  // Existing rows are always served as-is — local_lists is permanent seed data.
+  // dataVersion stale-refresh was removed: it caused 59 API calls per user per session
+  // because ignoreDuplicates:true prevents dataVersion from ever being written back.
   const missingConfigs = PLACE_CONFIGS.filter(
-    (config) => !serverLists.some(
-      (l) => l.id.startsWith(`local-${config.slug}-`) && l.dataVersion === DATA_VERSION
-    )
+    (config) => !serverLists.some((l) => l.id.startsWith(`local-${config.slug}-`))
   );
 
   if (missingConfigs.length === 0) return serverLists;
 
-  // Separate truly absent configs from stale ones (present but old dataVersion).
-  const absentConfigs = missingConfigs.filter(
-    (config) => !serverLists.some((l) => l.id.startsWith(`local-${config.slug}-`))
-  );
-  const staleConfigs = missingConfigs.filter(
-    (config) => serverLists.some((l) => l.id.startsWith(`local-${config.slug}-`))
-  );
-
-  // Stale configs: refresh silently in the background — never block the UI on them.
-  if (staleConfigs.length > 0) {
-    staleConfigs.forEach((config, i) => {
-      setTimeout(() => fetchPlacesForConfig(config, city, citySlug).catch(() => {}), i * 80);
-    });
-  }
-
-  // If nothing is truly absent, return existing Supabase data right away.
-  if (absentConfigs.length === 0) return serverLists;
-
   // New city: fetch absent configs (first time this city is loaded)
   const results = await Promise.allSettled(
-    absentConfigs.map((config, i) =>
+    missingConfigs.map((config, i) =>
       new Promise<CommunityList | null>(resolve =>
         setTimeout(() => fetchPlacesForConfig(config, city, citySlug).then(resolve).catch(() => resolve(null)), i * 80)
       )
@@ -1301,16 +1285,7 @@ export async function fetchLocalPlacesLists(city: string): Promise<CommunityList
 
   if (newLists.length === 0) return serverLists;
 
-  // Merge: new lists replace stale server lists with the same ID; genuinely new ones are appended.
-  const combined = [...serverLists];
-  for (const newList of newLists) {
-    const existingIdx = combined.findIndex((l) => l.id === newList.id);
-    if (existingIdx >= 0) {
-      combined[existingIdx] = newList;
-    } else {
-      combined.push(newList);
-    }
-  }
+  const combined = [...serverLists, ...newLists];
   combined.sort((a, b) => {
     const aIdx = PLACE_CONFIGS.findIndex((c) => a.id.startsWith(`local-${c.slug}-`));
     const bIdx = PLACE_CONFIGS.findIndex((c) => b.id.startsWith(`local-${c.slug}-`));
