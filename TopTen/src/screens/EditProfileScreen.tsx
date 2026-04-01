@@ -51,6 +51,7 @@ export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
   const { updateProfile, updateAvatar, userProfile, user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
 
+  const [nickname, setNickname] = useState(userProfile?.nickname ?? '');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(userProfile?.favorite_categories ?? []);
   const [dob, setDob] = useState<Date>(parseDob(userProfile?.date_of_birth));
   const [dobSet, setDobSet] = useState(!!userProfile?.date_of_birth);
@@ -75,6 +76,7 @@ export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
   useEffect(() => {
     if (!userProfile || synced.current) return;
     synced.current = true;
+    setNickname(userProfile.nickname ?? '');
     setSelectedCategories(userProfile.favorite_categories ?? []);
     setDob(parseDob(userProfile.date_of_birth));
     setDobSet(!!userProfile.date_of_birth);
@@ -203,6 +205,7 @@ export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
     setFieldError(null);
     setSaving(true);
     const profileData: ProfileData = {
+      nickname: nickname.trim() || '',
       date_of_birth: dobSet ? toDateString(dob) : undefined,
       gender: gender ?? undefined,
       favorite_categories: selectedCategories,
@@ -260,10 +263,30 @@ export const EditProfileScreen: React.FC<Props> = ({ navigation }) => {
         {/* Info rows */}
         <View style={styles.card}>
 
-          {/* Email */}
+          {/* Nickname */}
           <View style={[styles.row, styles.rowFirst]}>
+            <Text style={styles.rowLabel}>Nickname</Text>
+            <TextInput
+              style={styles.rowInput}
+              value={nickname}
+              onChangeText={(t) => setNickname(t.slice(0, 40))}
+              placeholder="Display name"
+              placeholderTextColor={colors.border}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="done"
+              maxLength={40}
+              textAlign="right"
+            />
+          </View>
+
+          {/* Email */}
+          <View style={styles.rowDivider} />
+          <View style={styles.row}>
             <Text style={styles.rowLabel}>Email</Text>
-            <Text style={styles.rowValue} numberOfLines={1}>{user?.email}</Text>
+            <Text style={styles.rowValue} numberOfLines={1}>
+              {user?.email?.includes('privaterelay.appleid.com') ? 'Hidden by Apple' : user?.email}
+            </Text>
           </View>
 
           {/* Username — read-only */}
@@ -517,6 +540,13 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     textAlign: 'right',
     flexShrink: 1,
+  },
+  rowInput: {
+    fontSize: 16,
+    color: colors.primaryText,
+    textAlign: 'right',
+    flex: 1,
+    paddingVertical: 0,
   },
   datePicker: {
     width: '100%',

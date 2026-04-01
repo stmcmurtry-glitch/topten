@@ -9,6 +9,7 @@ const SUPABASE_URL = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').trim();
 
 export interface ProfileData {
   username?: string;
+  nickname?: string;
   date_of_birth?: string;
   gender?: string;
   favorite_categories?: string[];
@@ -18,6 +19,7 @@ export interface ProfileData {
 
 export interface UserProfile {
   username?: string | null;
+  nickname?: string | null;
   date_of_birth?: string | null;
   gender?: string | null;
   favorite_categories?: string[] | null;
@@ -49,13 +51,14 @@ const fetchProfileData = async (userId: string): Promise<{ needsOnboarding: bool
   if (!supabase) return { needsOnboarding: false, profile: {} };
   const { data } = await supabase
     .from('user_profiles')
-    .select('has_completed_onboarding, username, date_of_birth, gender, favorite_categories, location_city, location_region, avatar_url')
+    .select('has_completed_onboarding, username, nickname, date_of_birth, gender, favorite_categories, location_city, location_region, avatar_url')
     .eq('id', userId)
     .single();
   return {
     needsOnboarding: !data?.has_completed_onboarding,
     profile: {
       username: data?.username ?? null,
+      nickname: data?.nickname ?? null,
       date_of_birth: data?.date_of_birth ?? null,
       gender: data?.gender ?? null,
       favorite_categories: data?.favorite_categories ?? null,
@@ -264,6 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       has_completed_onboarding: true,
     };
     if (data.username) payload.username = data.username.toLowerCase();
+    if (data.nickname !== undefined) payload.nickname = data.nickname || null;
     if (data.date_of_birth !== undefined) payload.date_of_birth = data.date_of_birth;
     if (data.gender !== undefined) payload.gender = data.gender;
     if (data.favorite_categories !== undefined) payload.favorite_categories = data.favorite_categories;
