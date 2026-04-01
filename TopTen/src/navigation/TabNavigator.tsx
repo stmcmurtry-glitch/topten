@@ -24,6 +24,7 @@ import { CityListsScreen } from '../screens/CityListsScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { CreateAccountScreen } from '../screens/CreateAccountScreen';
 import { ProfileSetupScreen } from '../screens/ProfileSetupScreen';
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { VotingPreferencesScreen } from '../screens/VotingPreferencesScreen';
 import { CommunityFeedScreen } from '../screens/CommunityFeedScreen';
@@ -113,6 +114,11 @@ const HomeStack = () => (
       options={{ presentation: 'modal', headerShown: false }}
     />
     <Stack.Screen
+      name="ForgotPassword"
+      component={ForgotPasswordScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
+    <Stack.Screen
       name="CommunityFeed"
       component={CommunityFeedScreen}
       options={{ headerShown: false }}
@@ -192,6 +198,11 @@ const MyListsStack = () => (
     <Stack.Screen
       name="ProfileSetup"
       component={ProfileSetupScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
+    <Stack.Screen
+      name="ForgotPassword"
+      component={ForgotPasswordScreen}
       options={{ presentation: 'modal', headerShown: false }}
     />
     <Stack.Screen
@@ -327,6 +338,11 @@ const SettingsStack = () => (
     <Stack.Screen
       name="ProfileSetup"
       component={ProfileSetupScreen}
+      options={{ presentation: 'modal', headerShown: false }}
+    />
+    <Stack.Screen
+      name="ForgotPassword"
+      component={ForgotPasswordScreen}
       options={{ presentation: 'modal', headerShown: false }}
     />
   </Stack.Navigator>

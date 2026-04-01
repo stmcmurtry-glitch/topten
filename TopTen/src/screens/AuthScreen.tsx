@@ -151,6 +151,11 @@ export const AuthScreen: React.FC<Props> = ({ navigation }) => {
             }
           </TouchableOpacity>
 
+          {/* Forgot password */}
+          <TouchableOpacity style={styles.forgotRow} onPress={() => navigation.navigate('ForgotPassword')} activeOpacity={0.7}>
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
+
           {/* Create Account link */}
           <View style={styles.createRow}>
             <Text style={styles.createLabel}>New here?</Text>
@@ -320,6 +325,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.1,
+  },
+  forgotRow: {
+    alignItems: 'flex-end',
+    marginTop: -spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  forgotText: {
+    fontSize: 14,
+    color: colors.activeTab,
+    fontWeight: '500',
   },
   createRow: {
     flexDirection: 'row',

@@ -1,9 +1,12 @@
 import 'react-native-url-polyfill/auto';
 import * as Sentry from '@sentry/react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Linking, Modal } from 'react-native';
 import Purchases from 'react-native-purchases';
 import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import * as Crypto from 'expo-crypto';
+import { supabase } from './src/services/supabase';
+import { ResetPasswordScreen } from './src/screens/ResetPasswordScreen';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
@@ -40,6 +43,24 @@ function PostHogIdentifier() {
 export default function App() {
   // undefined = still checking, false = show onboarding, true = go to app
   const [onboarded, setOnboarded] = useState<boolean | undefined>(undefined);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
+  const handleDeepLink = useCallback(async (url: string) => {
+    if (!url.includes('auth/reset')) return;
+    try {
+      const code = new URL(url).searchParams.get('code');
+      if (code && supabase) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) setShowResetPassword(true);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    Linking.getInitialURL().then((url) => { if (url) handleDeepLink(url); });
+    const sub = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    return () => sub.remove();
+  }, [handleDeepLink]);
 
   useEffect(() => {
     try {
@@ -103,6 +124,11 @@ export default function App() {
               </ListProvider>
             </PostHogProvider>
           </NavigationContainer>
+
+          {/* Root-level modal for password reset deep links */}
+          <Modal visible={showResetPassword} animationType="slide" presentationStyle="pageSheet">
+            <ResetPasswordScreen onDone={() => setShowResetPassword(false)} />
+          </Modal>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
