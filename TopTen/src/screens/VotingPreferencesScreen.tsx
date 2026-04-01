@@ -39,9 +39,9 @@ export const VotingPreferencesScreen: React.FC = () => {
       <View style={styles.card}>
         <View style={styles.row}>
           <View style={styles.rowText}>
-            <Text style={styles.label}>Community Lists</Text>
+            <Text style={styles.label}>TopX People's Choice</Text>
             <Text style={styles.description}>
-              Show a prompt when opening community lists, like "Best Movies of All Time."
+              Show a prompt when opening TopX People's Choice lists, like "Best Movies of All Time."
             </Text>
           </View>
           <Switch

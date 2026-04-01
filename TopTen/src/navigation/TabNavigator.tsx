@@ -80,7 +80,7 @@ const HomeStack = () => (
     <Stack.Screen
       name="AllCommunityLists"
       component={AllCommunityListsScreen}
-      options={{ headerShown: false, title: 'Community Lists' }}
+      options={{ headerShown: false, title: "TopX People's Choice" }}
     />
     <Stack.Screen
       name="AllLocalLists"

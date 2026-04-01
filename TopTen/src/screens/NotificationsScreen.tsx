@@ -21,7 +21,7 @@ const TOGGLES = [
   {
     key: 'discovery',
     label: 'Discovery & Trends',
-    sub: 'New community lists and trending topics',
+    sub: 'New TopX People\'s Choice lists and trending topics',
   },
   {
     key: 'account',

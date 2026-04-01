@@ -36,7 +36,7 @@ const SLIDES = [
     icon: 'people-outline' as const,
     isLogo: false,
     title: 'See how you\ncompare.',
-    subtitle: 'Vote on community lists and discover how your picks stack up against everyone else.',
+    subtitle: 'Vote on TopX People\'s Choice lists and discover how your picks stack up against everyone else.',
   },
 ];
 

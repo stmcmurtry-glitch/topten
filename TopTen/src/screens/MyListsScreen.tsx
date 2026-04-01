@@ -443,36 +443,6 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         </TouchableOpacity>
       )}
 
-      {/* Community Lists */}
-      {filteredCommunity.length > 0 && (
-        <>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.sectionHeaderLink}
-            onPress={() => navigation.navigate('AllCommunityLists')}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.sectionHeaderInline}>Community Lists</Text>
-            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
-          </TouchableOpacity>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carousel}
-          >
-            {filteredCommunity.map((cl) => (
-              <CommunityCard
-                key={cl.id}
-                list={cl}
-                submitted={userRankings[cl.id]?.submitted ?? false}
-                onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
-                liveCount={participantCounts[cl.id]}
-              />
-            ))}
-          </ScrollView>
-        </>
-      )}
-
       {/* In your area */}
       {(!user || (user && detectedLocation?.city) || allLocalLists.length > 0 || refreshing) && (
         <>
@@ -539,6 +509,36 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
               )}
             </>
           )}
+        </>
+      )}
+
+      {/* TopX People's Choice */}
+      {filteredCommunity.length > 0 && (
+        <>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.sectionHeaderLink}
+            onPress={() => navigation.navigate('AllCommunityLists')}
+            activeOpacity={0.6}
+          >
+            <Text style={styles.sectionHeaderInline}>TopX People's Choice</Text>
+            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
+          </TouchableOpacity>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carousel}
+          >
+            {filteredCommunity.map((cl) => (
+              <CommunityCard
+                key={cl.id}
+                list={cl}
+                submitted={userRankings[cl.id]?.submitted ?? false}
+                onPress={() => navigation.navigate('CommunityList', { communityListId: cl.id })}
+                liveCount={participantCounts[cl.id]}
+              />
+            ))}
+          </ScrollView>
         </>
       )}
 

@@ -129,7 +129,7 @@ export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigat
         >
           <Ionicons name="chevron-back" size={22} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.screenTitle}>Community Lists</Text>
+        <Text style={styles.screenTitle}>TopX People's Choice</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -140,7 +140,7 @@ export const AllCommunityListsScreen: React.FC<{ navigation: any }> = ({ navigat
           style={styles.searchInput}
           value={query}
           onChangeText={setQuery}
-          placeholder="Search community lists…"
+          placeholder="Search TopX People's Choice…"
           placeholderTextColor={colors.secondaryText}
           returnKeyType="search"
         />
