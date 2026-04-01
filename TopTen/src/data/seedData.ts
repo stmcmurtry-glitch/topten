@@ -28,22 +28,4 @@ export const seedLists: TopTenList[] = [
     createdAt: new Date().toISOString(),
     isCustom: false,
   },
-  {
-    id: '4',
-    category: 'Arts',
-    title: 'My Top 10 Favorite Colors',
-    icon: 'color-palette-outline',
-    items: [],
-    createdAt: new Date().toISOString(),
-    isCustom: false,
-  },
-  {
-    id: '5',
-    category: 'TV',
-    title: 'My Top 10 TV Shows',
-    icon: 'tv-outline',
-    items: [],
-    createdAt: new Date().toISOString(),
-    isCustom: false,
-  },
 ];
