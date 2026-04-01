@@ -22,7 +22,7 @@ export const seedLists: TopTenList[] = [
   {
     id: '3',
     category: 'Travel',
-    title: 'My Top 10 Bucket List',
+    title: 'My Top 10 Bucket List Travel Destinations',
     icon: 'airplane-outline',
     items: [],
     createdAt: new Date().toISOString(),
