@@ -239,12 +239,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    // Always clear local state first — even if the network call fails the
+    // user should be able to get out of a signed-in state.
     setUser(null);
     setUserProfile(null);
     setNeedsOnboarding(false);
     setProfileChecked(true);
+    if (supabase) {
+      try { await supabase.auth.signOut(); } catch { /* ignore — local state already cleared */ }
+    }
   };
 
   const updateProfile = async (data: ProfileData): Promise<string | null> => {

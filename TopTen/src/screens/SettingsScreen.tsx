@@ -217,6 +217,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
   const [plansVisible, setPlansVisible] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
   const [changeLocationVisible, setChangeLocationVisible] = useState(false);
@@ -394,10 +395,31 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                   <View style={styles.profileDivider} />
                   <TouchableOpacity
                     style={styles.signOutRow}
-                    onPress={signOut}
+                    onPress={() => {
+                      Alert.alert(
+                        'Sign Out',
+                        'Are you sure you want to sign out?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Sign Out',
+                            style: 'destructive',
+                            onPress: async () => {
+                              setSigningOut(true);
+                              await signOut();
+                              setSigningOut(false);
+                            },
+                          },
+                        ],
+                      );
+                    }}
                     activeOpacity={0.7}
+                    disabled={signingOut}
                   >
-                    <Text style={styles.signOutText}>Sign Out</Text>
+                    {signingOut
+                      ? <ActivityIndicator size="small" color="#FF3B30" />
+                      : <Text style={styles.signOutText}>Sign Out</Text>
+                    }
                   </TouchableOpacity>
                 </View>
               ) : (
