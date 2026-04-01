@@ -154,7 +154,10 @@ export const CreateAccountScreen: React.FC<Props> = ({ navigation }) => {
             />
           </View>
 
-          <Text style={styles.usernameHint}>Used to identify you in community rankings. 3–20 chars, letters/numbers/underscores.</Text>
+          <Text style={styles.usernameHint}>
+            Your email is used to sign in and recover your account. We never share it or send marketing emails.
+            {'\n'}Your username is how others see you in community rankings. 3–20 chars, letters/numbers/underscores.
+          </Text>
 
           {!!displayError && <Text style={styles.errorText}>{displayError}</Text>}
 
