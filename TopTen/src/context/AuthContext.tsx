@@ -215,24 +215,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    if (!supabase || !SUPABASE_URL) { setError('Auth not configured'); return; }
+    if (!supabase) { setError('Auth not configured'); return; }
     setError(null);
     try {
       const redirectTo = 'topten://auth/callback';
-      const authUrl = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectTo);
-      if (result.type === 'success' && result.url) {
-        const hash = result.url.includes('#') ? result.url.split('#')[1] : '';
-        const params = new URLSearchParams(hash);
-        const access_token = params.get('access_token');
-        const refresh_token = params.get('refresh_token');
-        if (access_token && refresh_token) {
-          const { error: err } = await supabase.auth.setSession({ access_token, refresh_token });
-          if (err) setError(err.message);
-        } else {
-          setError('Google Sign In failed — could not extract tokens.');
-        }
+
+      // signInWithOAuth with skipBrowserRedirect handles PKCE setup
+      // (code_verifier / code_challenge) automatically.
+      const { data, error: urlError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (urlError || !data.url) {
+        setError(urlError?.message ?? 'Google Sign In failed — could not build auth URL.');
+        return;
       }
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (result.type !== 'success' || !result.url) return; // user cancelled
+
+      // PKCE flow: Supabase returns ?code= in query params
+      const code = new URL(result.url).searchParams.get('code');
+      if (code) {
+        const { error: err } = await supabase.auth.exchangeCodeForSession(code);
+        if (err) setError(err.message);
+        return;
+      }
+
+      // Fallback: implicit flow (tokens in hash) — older Supabase projects
+      const hashParams = new URLSearchParams(result.url.split('#')[1] ?? '');
+      const access_token = hashParams.get('access_token');
+      const refresh_token = hashParams.get('refresh_token');
+      if (access_token && refresh_token) {
+        const { error: err } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (err) setError(err.message);
+        return;
+      }
+
+      setError('Google Sign In failed — please try again.');
     } catch (e: any) {
       setError(e?.message ?? 'Google Sign In failed');
     }
