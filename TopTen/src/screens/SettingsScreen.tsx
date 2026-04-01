@@ -369,7 +369,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                         <Text style={styles.profileEmail}>@{userProfile.username}</Text>
                       ) : null}
                       <Text style={[styles.profileSince, !userProfile?.username && styles.profileEmail]} numberOfLines={1}>
-                        {user.email}
+                        {user.email?.includes('privaterelay.appleid.com') ? 'Signed in with Apple' : user.email}
                       </Text>
                       <Text style={styles.profileSince}>
                         Member since {new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}

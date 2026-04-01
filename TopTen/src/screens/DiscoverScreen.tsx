@@ -214,7 +214,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             ))}
           </ScrollView>
 
-          {/* Community Feed teaser — any city */}
+          {/* Local Feed teaser — any city */}
           {discoverCity && (
             <>
               <View style={styles.sectionHeaderRow}>
@@ -226,7 +226,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                   })}
                   activeOpacity={0.6}
                 >
-                  <Text style={styles.sectionHeaderInline}>Community Feed</Text>
+                  <Text style={styles.sectionHeaderInline}>Local Feed</Text>
                   <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
                 </TouchableOpacity>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -257,7 +257,7 @@ export const DiscoverScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                       Be the first to post in {discoverCity.name}!
                     </Text>
                     <Text style={{ fontSize: 12, color: colors.secondaryText }}>
-                      Open any list → tap Post to Community Feed
+                      Open any list → tap Post to Local Feed
                     </Text>
                   </View>
                 </View>

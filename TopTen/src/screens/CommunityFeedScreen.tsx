@@ -149,7 +149,7 @@ export const CommunityFeedScreen: React.FC<{ route: any; navigation: any }> = ({
           <Ionicons name="chevron-back" size={24} color={colors.primaryText} />
         </TouchableOpacity>
         <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>Community Feed</Text>
+          <Text style={styles.headerTitle}>Local Feed</Text>
           <Text style={styles.headerSub}>{cityName}</Text>
         </View>
       </View>

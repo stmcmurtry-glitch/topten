@@ -569,7 +569,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
               activeOpacity={0.85}
             >
               <Ionicons name="megaphone-outline" size={15} color={list.color} />
-              <Text style={[styles.postToFeedText, { color: list.color }]}>Post my rankings to Community Feed</Text>
+              <Text style={[styles.postToFeedText, { color: list.color }]}>Post my rankings to Local Feed</Text>
             </TouchableOpacity>
           )}
         </View>

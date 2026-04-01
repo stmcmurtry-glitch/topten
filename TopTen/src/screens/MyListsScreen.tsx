@@ -575,7 +575,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         </>
       )}
 
-      {/* Community Feed teaser — any city with a detected location */}
+      {/* Local Feed teaser — any city with a detected location */}
       {citySlugForFeed && detectedLocation?.city && (
         <>
           <View style={styles.divider} />
@@ -588,7 +588,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
               })}
               activeOpacity={0.6}
             >
-              <Text style={styles.sectionHeaderInline}>Community Feed</Text>
+              <Text style={styles.sectionHeaderInline}>Local Feed</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
             </TouchableOpacity>
             <TouchableOpacity
@@ -620,7 +620,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
               <Ionicons name="megaphone-outline" size={22} color={colors.border} />
               <View>
                 <Text style={styles.feedEmptyText}>Be the first to post in {detectedLocation.city}!</Text>
-                <Text style={styles.feedEmptyHint}>Open any list → tap Post to Community Feed</Text>
+                <Text style={styles.feedEmptyHint}>Open any list → tap Post to Local Feed</Text>
               </View>
             </View>
           ) : null}

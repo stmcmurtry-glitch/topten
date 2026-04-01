@@ -119,7 +119,7 @@ export const PublishModal: React.FC<Props> = ({ visible, onClose, list }) => {
                   <View style={styles.iconWrap}>
                     <Ionicons name="megaphone-outline" size={28} color={colors.activeTab} />
                   </View>
-                  <Text style={styles.title}>Community Feed</Text>
+                  <Text style={styles.title}>Local Feed</Text>
                   <Text style={styles.subtitle}>
                     Share your lists with your city — available to TopX Premium members.
                   </Text>
@@ -140,7 +140,7 @@ export const PublishModal: React.FC<Props> = ({ visible, onClose, list }) => {
                   <View style={styles.iconWrap}>
                     <Ionicons name="megaphone-outline" size={28} color={categoryColor} />
                   </View>
-                  <Text style={styles.title}>Post to Community Feed</Text>
+                  <Text style={styles.title}>Post to Local Feed</Text>
                   {city && (
                     <View style={styles.cityPill}>
                       <Ionicons name="location-sharp" size={12} color={colors.activeTab} />
@@ -187,7 +187,7 @@ export const PublishModal: React.FC<Props> = ({ visible, onClose, list }) => {
                     {publishing
                       ? <ActivityIndicator color="#FFF" />
                       : <Text style={styles.ctaText}>
-                          {city ? `Post to ${city.name} Feed` : 'Post to Community Feed'}
+                          {city ? `Post to ${city.name} Feed` : 'Post to Local Feed'}
                         </Text>
                     }
                   </TouchableOpacity>

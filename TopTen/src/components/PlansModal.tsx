@@ -19,7 +19,7 @@ const PREMIUM_FEATURES = [
   'Unlimited lists',
   'Lists beyond 10 items',
   'Unlimited custom cover photos',
-  'Post lists to your city\'s Community Feed',
+  'Post lists to your city\'s Local Feed',
   'No ads',
 ];
 
