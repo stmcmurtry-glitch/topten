@@ -116,13 +116,6 @@ export const ProfileSetupScreen: React.FC<Props> = ({ navigation }) => {
     navigation.popToTop();
   };
 
-  const handleSkip = async () => {
-    setSaving(true);
-    await updateProfile({});
-    setSaving(false);
-    navigation.popToTop();
-  };
-
   const toggleCategory = (label: string) => {
     setSelectedCategories((prev) => {
       if (prev.includes(label)) return prev.filter((c) => c !== label);
@@ -322,10 +315,6 @@ export const ProfileSetupScreen: React.FC<Props> = ({ navigation }) => {
           {!isLast && <Ionicons name="arrow-forward" size={16} color="#FFF" />}
         </TouchableOpacity>
 
-        {/* Skip entire setup */}
-        <TouchableOpacity style={styles.skip} onPress={handleSkip} activeOpacity={0.6} disabled={saving}>
-          <Text style={styles.skipText}>Skip for now</Text>
-        </TouchableOpacity>
       </View>
 
       <ChangeLocationModal
@@ -538,15 +527,5 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: '#FFF',
-  },
-  skip: {
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  skipText: {
-    fontSize: 15,
-    color: colors.secondaryText,
-    fontWeight: '500',
   },
 });
