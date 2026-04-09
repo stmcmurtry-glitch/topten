@@ -14,12 +14,14 @@ import { TopTenList } from '../data/schema';
 import { ListThumbnail } from '../components/ListThumbnail';
 import { PhotoPickerModal } from '../components/PhotoPickerModal';
 import { CATEGORIES, CATEGORY_COLORS } from '../data/categories';
+import { useAuth } from '../context/AuthContext';
 
 const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 const ALL_PILLS = ['All', ...ALL_CATEGORY_LABELS];
 import { colors, spacing, borderRadius, shadow } from '../theme';
 
 export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { user } = useAuth();
   const { lists, reorderLists, updateListMeta } = useListContext();
 
   const [activeCategory, setActiveCategory] = useState('All');
@@ -158,6 +160,7 @@ export const AllListsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         visible={editingListId !== null}
         onClose={() => setEditingListId(null)}
         title="Profile Image"
+        userId={user?.id}
         currentUri={editingList?.profileImageUri}
         onSelectUri={(uri) => {
           if (editingListId) updateListMeta(editingListId, { profileImageUri: uri });

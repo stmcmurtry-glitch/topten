@@ -2,7 +2,7 @@
   "expo": {
     "name": "TopX",
     "slug": "TopTen",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "scheme": "topten",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -39,7 +39,15 @@
       "expo-localization",
       "expo-web-browser",
       "expo-apple-authentication",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#CC0000",
+          "sounds": []
+        }
+      ]
     ],
     "extra": {
       "eas": {

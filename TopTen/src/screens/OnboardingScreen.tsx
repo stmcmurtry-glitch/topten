@@ -26,10 +26,10 @@ const SLIDES = [
   },
   {
     id: '2',
-    icon: 'list-outline' as const,
+    icon: 'location-outline' as const,
     isLogo: false,
-    title: 'Build your\nrankings.',
-    subtitle: 'Movies, food, travel, music — create ranked lists for anything across 16 categories.',
+    title: 'Hear from your\ncommunity.',
+    subtitle: 'See and vote on local lists and polls from people in your city. Real opinions from real voices near you.',
   },
   {
     id: '3',
@@ -37,6 +37,13 @@ const SLIDES = [
     isLogo: false,
     title: 'See how you\ncompare.',
     subtitle: 'Vote on TopX People\'s Choice lists and discover how your picks stack up against everyone else.',
+  },
+  {
+    id: '4',
+    icon: 'shield-checkmark-outline' as const,
+    isLogo: false,
+    title: 'Your data stays\nyours.',
+    subtitle: 'We do not sell your data — ever. We don\'t build ad profiles or share your information with third parties. What we collect is used only to personalize your experience.',
   },
 ];
 
@@ -92,7 +99,13 @@ export const OnboardingScreen: React.FC<Props> = ({ onDone }) => {
               </View>
             )}
             <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.subtitle}>{item.subtitle}</Text>
+            {item.id === '4' ? (
+              <Text style={styles.subtitle}>
+                We do <Text style={{ fontWeight: '800', color: colors.primaryText }}>not</Text> sell your data — ever. We don't build ad profiles or share your information with third parties. What we collect is used only to personalize your experience.
+              </Text>
+            ) : (
+              <Text style={styles.subtitle}>{item.subtitle}</Text>
+            )}
           </View>
         )}
       />

@@ -24,6 +24,9 @@ function rowToPost(row: any): FeedPost {
     avatarUrl: row.avatar_url ?? null,
     publishedAt: new Date(row.published_at).getTime(),
     likeCount: row.like_count ?? 0,
+    reactionCounts: { like: 0, hot: 0, debatable: 0, agree: 0 },
+    commentCount: 0,
+    myReaction: null,
   };
 }
 

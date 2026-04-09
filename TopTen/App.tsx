@@ -21,6 +21,7 @@ import { ListProvider } from './src/data/ListContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { CommunityProvider } from './src/context/CommunityContext';
 import { ViewedListsProvider } from './src/context/ViewedListsContext';
+import { FollowRequestProvider } from './src/context/FollowRequestContext';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 
@@ -108,6 +109,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
+          <FollowRequestProvider>
           <NavigationContainer>
             <PostHogProvider
               apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY ?? ''}
@@ -129,6 +131,7 @@ export default function App() {
           <Modal visible={showResetPassword} animationType="slide" presentationStyle="pageSheet">
             <ResetPasswordScreen onDone={() => setShowResetPassword(false)} />
           </Modal>
+          </FollowRequestProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

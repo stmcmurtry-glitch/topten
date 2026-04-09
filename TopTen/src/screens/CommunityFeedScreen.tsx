@@ -39,12 +39,12 @@ interface RouteParams {
   cityName: string;
 }
 
-const PostRow: React.FC<{ item: FeedPost; onPress: () => void }> = ({ item, onPress }) => {
+const PostRow: React.FC<{ item: FeedPost; onPress: () => void; onUserPress: () => void }> = ({ item, onPress, onUserPress }) => {
   const categoryColor = CATEGORY_COLORS[item.category] ?? '#CC0000';
   return (
     <TouchableOpacity style={styles.postRow} onPress={onPress} activeOpacity={0.7}>
       {/* Left: avatar */}
-      <View style={styles.avatarCol}>
+      <TouchableOpacity style={styles.avatarCol} onPress={onUserPress} activeOpacity={0.8}>
         {item.avatarUrl ? (
           <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
         ) : (
@@ -52,13 +52,15 @@ const PostRow: React.FC<{ item: FeedPost; onPress: () => void }> = ({ item, onPr
             <Ionicons name="person" size={18} color={colors.secondaryText} />
           </View>
         )}
-      </View>
+      </TouchableOpacity>
 
       {/* Right: content */}
       <View style={styles.contentCol}>
         {/* Username · time · category */}
         <View style={styles.postMeta}>
-          <Text style={styles.username} numberOfLines={1}>{item.username ?? 'Anonymous'}</Text>
+          <TouchableOpacity onPress={onUserPress} activeOpacity={0.8}>
+            <Text style={styles.username} numberOfLines={1}>{item.username ?? 'Anonymous'}</Text>
+          </TouchableOpacity>
           <Text style={styles.metaSep}>·</Text>
           <Text style={styles.metaTime}>{timeAgo(item.publishedAt)}</Text>
           <View style={styles.metaSpacer} />
@@ -181,6 +183,7 @@ export const CommunityFeedScreen: React.FC<{ route: any; navigation: any }> = ({
             <PostRow
               item={item}
               onPress={() => navigation.navigate('PublishedList', { postId: item.id })}
+              onUserPress={() => navigation.navigate('UserProfile', { userId: item.userId })}
             />
           )}
         />

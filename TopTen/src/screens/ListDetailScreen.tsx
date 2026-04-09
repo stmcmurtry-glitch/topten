@@ -28,6 +28,7 @@ import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
 import { PublishModal, PublishableList } from '../components/PublishModal';
+import { PersonalPublishModal } from '../components/PersonalPublishModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
@@ -102,6 +103,8 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [existingPostId, setExistingPostId] = useState<string | null>(null);
+  const [existingPersonalPostId, setExistingPersonalPostId] = useState<string | null>(null);
+  const [showPersonalPublishModal, setShowPersonalPublishModal] = useState(false);
   const { user } = useAuth();
   const [typedArtist, setTypedArtist] = useState('');
   const [typedAlbum, setTypedAlbum] = useState('');
@@ -129,18 +132,18 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const checkExistingPost = useCallback(async () => {
     if (!user || !supabase) return;
-    const { data } = await supabase
-      .from('community_feed_posts')
-      .select('id')
-      .eq('list_id', list?.id)
-      .eq('user_id', user.id)
-      .maybeSingle();
-    setExistingPostId(data?.id ?? null);
+    const [{ data: localData }, { data: personalData }] = await Promise.all([
+      supabase.from('community_feed_posts').select('id').eq('list_id', list?.id).eq('user_id', user.id).maybeSingle(),
+      supabase.from('community_feed_posts').select('id').eq('list_id', list?.id).eq('user_id', user.id).is('city_slug', null).maybeSingle(),
+    ]);
+    setExistingPostId(localData?.id ?? null);
+    setExistingPersonalPostId(personalData?.id ?? null);
   }, [user, list?.id]);
 
   useEffect(() => { checkExistingPost(); }, [checkExistingPost]);
 
   useEffect(() => { if (!showPublishModal) checkExistingPost(); }, [showPublishModal]);
+  useEffect(() => { if (!showPersonalPublishModal) checkExistingPost(); }, [showPersonalPublishModal]);
 
 
   const persistSlots = (updated: string[]) => {
@@ -237,6 +240,9 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
 
   if (!list) return null;
 
+  const filledItems = slots.filter(s => s.trim());
+  const showStickyBar = filledItems.length > 0 && !!user;
+
   const categoryColor = CATEGORY_COLORS[list.category] ?? '#CC0000';
   const coverImageUri = list.coverImageUri ?? null;
 
@@ -306,7 +312,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
       <FlatList
         data={slots}
         keyExtractor={(_, i) => i.toString()}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing.xxl }]}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + (showStickyBar ? 84 : spacing.xxl) }]}
         ListHeaderComponent={Hero}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item, index }) => {
@@ -430,7 +436,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
                 ) : (
                   <TouchableOpacity style={styles.actionTile} onPress={() => setShowPublishModal(true)} activeOpacity={0.7}>
                     <Ionicons name="megaphone-outline" size={18} color={categoryColor} />
-                    <Text style={styles.actionTileLabel}>Post to Feed</Text>
+                    <Text style={styles.actionTileLabel}>Post to Local Feed</Text>
                   </TouchableOpacity>
                 )
               )}
@@ -463,6 +469,52 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           </>
         }
       />
+
+      {/* Sticky bottom bar — Share + Post to Feed */}
+      {showStickyBar && (
+        <View style={[styles.stickyBar, { paddingBottom: spacing.sm }]}>
+          <TouchableOpacity style={styles.stickyBarBtn} onPress={() => setShowShareModal(true)} activeOpacity={0.85}>
+            <Ionicons name="share-outline" size={16} color={colors.primaryText} />
+            <Text style={styles.stickyBarBtnText}>Share</Text>
+          </TouchableOpacity>
+          <View style={styles.stickyBarDivider} />
+          <TouchableOpacity
+            style={styles.stickyBarBtn}
+            onPress={() => {
+              if (existingPersonalPostId) {
+                Alert.alert('Delete Post', 'Remove this post from your personal feed?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => {
+                      Promise.resolve(
+                        supabase!.from('community_feed_posts').delete().eq('id', existingPersonalPostId)
+                      ).catch(() => {});
+                      setExistingPersonalPostId(null);
+                    },
+                  },
+                ]);
+              } else {
+                setShowPersonalPublishModal(true);
+              }
+            }}
+            activeOpacity={0.85}
+          >
+            {existingPersonalPostId ? (
+              <>
+                <Ionicons name="checkmark-circle" size={16} color="#2ECC71" />
+                <Text style={styles.stickyBarBtnText}>Posted</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="person-outline" size={16} color={colors.primaryText} />
+                <Text style={styles.stickyBarBtnText}>Post to My Feed</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Choice sheet */}
       <Modal visible={activeSlot !== null} transparent animationType="fade">
@@ -596,6 +648,18 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
           coverImageUri: list.coverImageUri,
         }}
       />
+      <PersonalPublishModal
+        visible={showPersonalPublishModal}
+        onClose={() => setShowPersonalPublishModal(false)}
+        list={{
+          id: list.id,
+          title: list.title,
+          category: list.category,
+          items: [...list.items].sort((a, b) => a.rank - b.rank),
+          coverImageUri: list.coverImageUri,
+        }}
+        onPublished={(id) => setExistingPersonalPostId(id)}
+      />
       <ReportIssueModal
         visible={showReportModal}
         onClose={() => setShowReportModal(false)}
@@ -611,6 +675,7 @@ export const ListDetailScreen: React.FC<{ route: any; navigation: any }> = ({
         currentUri={photoPickerTarget === 'cover' ? list.coverImageUri : list.profileImageUri}
         aspect={photoPickerTarget === 'cover' ? [16, 9] : [1, 1]}
         orientation={photoPickerTarget === 'cover' ? 'landscape' : 'squarish'}
+        userId={user?.id}
         onSelectUri={(uri) => {
           if (photoPickerTarget === 'cover') {
             updateListMeta(listId, { coverImageUri: uri });
@@ -1036,6 +1101,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: colors.secondaryText,
+  },
+
+  /* ── Sticky bottom bar ── */
+  stickyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    backgroundColor: colors.cardBackground,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#C7C7CC',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  stickyBarBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  stickyBarBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primaryText,
+  },
+  stickyBarDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 28,
+    backgroundColor: colors.border,
   },
 
   /* ── Inline Places suggestions ── */

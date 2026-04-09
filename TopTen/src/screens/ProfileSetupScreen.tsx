@@ -49,8 +49,9 @@ export const ProfileSetupScreen: React.FC<Props> = ({ navigation }) => {
 
   const needsUsername = !userProfile?.username;
 
-  // Slide IDs — username slide only for Apple/Google users
+  // Slide IDs — intro always first, username slide only for Apple/Google users
   const SLIDE_IDS = [
+    'intro',
     ...(needsUsername ? ['username'] : []),
     'age',
     'gender',
@@ -101,6 +102,19 @@ export const ProfileSetupScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleFinish = async () => {
+    // Final guard — catches edge cases where username slide was somehow bypassed
+    if (needsUsername) {
+      if (!username.trim()) {
+        setFieldError('Please choose a username.');
+        carouselRef.current?.scrollToIndex({ index: 0, animated: true });
+        return;
+      }
+      if (!USERNAME_REGEX.test(username)) {
+        setFieldError('3–20 characters: letters, numbers, and underscores only.');
+        carouselRef.current?.scrollToIndex({ index: 0, animated: true });
+        return;
+      }
+    }
     setSaving(true);
     const profileData: ProfileData = {
       ...(needsUsername && username ? { username: username.trim().toLowerCase() } : {}),
@@ -130,6 +144,32 @@ export const ProfileSetupScreen: React.FC<Props> = ({ navigation }) => {
     : detectedLocation === null ? 'Unable to detect' : 'Detecting…';
 
   const renderSlide = ({ item: slideId }: { item: string }) => {
+    if (slideId === 'intro') {
+      return (
+        <View style={styles.slide}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="shield-checkmark-outline" size={48} color={colors.activeTab} />
+          </View>
+          <Text style={styles.title}>A few quick{'\n'}questions.</Text>
+          <Text style={styles.subtitle}>
+            We'll use your answers to personalize your TopX experience.
+          </Text>
+          <View style={styles.privacyPoints}>
+            {[
+              'We do not sell your data — ever',
+              'Your information is protected and private',
+              'Used only to improve your experience',
+            ].map((point) => (
+              <View key={point} style={styles.privacyPoint}>
+                <Ionicons name="checkmark-circle" size={18} color="#34C759" />
+                <Text style={styles.privacyPointText}>{point}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      );
+    }
+
     if (slideId === 'username') {
       return (
         <View style={styles.slide}>
@@ -293,7 +333,7 @@ export const ProfileSetupScreen: React.FC<Props> = ({ navigation }) => {
           showsHorizontalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          scrollEnabled={SLIDE_IDS[activeIndex] !== 'categories'}
+          scrollEnabled={false}
           renderItem={renderSlide}
         />
 
@@ -379,6 +419,23 @@ const styles = StyleSheet.create({
   datePicker: {
     width: '100%',
   },
+  /* Privacy points */
+  privacyPoints: {
+    width: '100%',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
+  privacyPoint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  privacyPointText: {
+    fontSize: 15,
+    color: colors.primaryText,
+    fontWeight: '500',
+  },
+
   /* Username */
   usernameInputGroup: {
     flexDirection: 'row',

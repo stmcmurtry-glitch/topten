@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { CATEGORY_COLORS } from './FeedRow';
 
+const LOGO = require('../../assets/icon-transparent.png');
+
 const SCREEN_W = Dimensions.get('window').width;
 export const CARD_WIDTH = SCREEN_W - 48;
 export const CARD_HEIGHT = Math.round(CARD_WIDTH * (16 / 9));
@@ -15,7 +17,7 @@ interface Props {
 
 export const ShareCard = React.forwardRef<View, Props>(({ title, category, items, coverImageUri }, ref) => {
   const accentColor = CATEGORY_COLORS[category] ?? '#CC0000';
-  const filled = items.filter((t) => t.trim());
+  const filled = items.filter((t) => t.trim()).slice(0, 10);
 
   return (
     <View ref={ref} style={styles.card} collapsable={false}>
@@ -30,10 +32,8 @@ export const ShareCard = React.forwardRef<View, Props>(({ title, category, items
 
       {/* Logo */}
       <View style={styles.logoRow}>
-        <View style={styles.logoMark}>
-          <Text style={styles.logoMarkText}>TX</Text>
-        </View>
-        <Text style={styles.logoLabel}>TOP X</Text>
+        <Image source={LOGO} style={styles.logoImage} />
+        <Text style={styles.logoLabel}>TopX</Text>
       </View>
 
       {/* Divider */}
@@ -61,7 +61,7 @@ export const ShareCard = React.forwardRef<View, Props>(({ title, category, items
       {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.divider} />
-        <Text style={styles.footerText}>TopX - Your Ranked Lists</Text>
+        <Text style={styles.footerText}>topx.app — rank everything that matters</Text>
       </View>
     </View>
   );
@@ -94,28 +94,19 @@ const styles = StyleSheet.create({
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     marginBottom: 20,
   },
-  logoMark: {
-    width: 30,
-    height: 30,
+  logoImage: {
+    width: 36,
+    height: 36,
     borderRadius: 8,
-    backgroundColor: '#CC0000',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoMarkText: {
-    color: '#FFF',
-    fontWeight: '900',
-    fontSize: 12,
-    letterSpacing: 0.5,
   },
   logoLabel: {
     color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 14,
-    letterSpacing: 3,
+    fontSize: 18,
+    letterSpacing: -0.3,
   },
 
   /* Divider */

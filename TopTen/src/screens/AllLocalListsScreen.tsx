@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
+import { SuggestListModal } from '../components/SuggestListModal';
 import {
   View,
   Text,
@@ -90,20 +91,22 @@ const LocalFeedRow: React.FC<{
 interface RouteParams {
   lists: CommunityList[];
   city?: string;
+  initialCategory?: string;
 }
 
 export const AllLocalListsScreen: React.FC<{ route: any; navigation: any }> = ({
   route,
   navigation,
 }) => {
-  const { lists, city } = route.params as RouteParams;
+  const { lists, city, initialCategory } = route.params as RouteParams;
   const insets = useSafeAreaInsets();
   const { userRankings, participantCounts } = useCommunity();
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState(initialCategory ?? 'All');
   const [sheetVisible, setSheetVisible] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'vote-now' | 'voted'>('all');
   const [changeLocationVisible, setChangeLocationVisible] = useState(false);
   const [query, setQuery] = useState('');
+  const [showSuggest, setShowSuggest] = useState(false);
 
   const statusOptions = [
     { key: 'all', label: 'All' },
@@ -247,7 +250,15 @@ export const AllLocalListsScreen: React.FC<{ route: any; navigation: any }> = ({
             <Text style={styles.emptyText}>Request didn't go through — try searching again.</Text>
           </View>
         }
+        ListHeaderComponent={
+          <TouchableOpacity style={styles.suggestRow} onPress={() => setShowSuggest(true)} activeOpacity={0.7}>
+            <Ionicons name="bulb-outline" size={14} color={colors.secondaryText} />
+            <Text style={styles.suggestText}>Suggest a list for your area</Text>
+            <Ionicons name="chevron-forward" size={13} color={colors.border} />
+          </TouchableOpacity>
+        }
       />
+      <SuggestListModal visible={showSuggest} context="local" onClose={() => setShowSuggest(false)} />
 
       <CategoryFilterSheet
         visible={sheetVisible}
@@ -472,5 +483,19 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: colors.secondaryText,
+  },
+  suggestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginTop: spacing.sm,
+  },
+  suggestText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.secondaryText,
+    fontWeight: '500',
   },
 });

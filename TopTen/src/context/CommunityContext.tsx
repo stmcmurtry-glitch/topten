@@ -75,8 +75,12 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }).catch(() => {});
   }, []);
 
-  // Wait until auth has settled before fetching — ensures the Supabase connection
-  // is established on cold start (firing at mount races the network on first Expo Go load).
+  // Fire immediately — community_scores is public, no need to wait for auth.
+  // A second fetch fires once auth settles to pick up any auth-scoped changes.
+  useEffect(() => {
+    refreshParticipantCounts();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (authLoading) return;
     refreshParticipantCounts();

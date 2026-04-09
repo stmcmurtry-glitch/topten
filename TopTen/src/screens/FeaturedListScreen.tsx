@@ -67,7 +67,7 @@ export const FeaturedListScreen: React.FC<{ route: any; navigation: any }> = ({ 
       case 'People':
         return `https://en.wikipedia.org/wiki/${encodeURIComponent(name.replace(/ /g, '_'))}`;
       case 'Books':
-        return `https://www.goodreads.com/search?q=${q}`;
+        return `https://www.google.com/search?q=${q}+book`;
       default:
         return null;
     }

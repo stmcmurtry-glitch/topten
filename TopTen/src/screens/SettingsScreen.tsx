@@ -24,6 +24,7 @@ import { useListContext } from '../data/ListContext';
 import { PlansModal } from '../components/PlansModal';
 import { sendFeedbackEmail } from '../services/emailService';
 import { supabase } from '../services/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getDetectedLocation,
   DetectedLocation,
@@ -31,6 +32,7 @@ import {
 } from '../services/locationService';
 import { ChangeLocationModal } from '../components/ChangeLocationModal';
 import { useAuth } from '../context/AuthContext';
+import { useFollowRequests } from '../context/FollowRequestContext';
 
 const BASIC_LIMIT = 50;
 
@@ -214,6 +216,7 @@ const FeedbackCard: React.FC = () => {
 export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { user, userProfile, signOut, updateAvatar } = useAuth();
+  const { pendingCount: pendingFollowCount, refetch: refetchFollowRequests } = useFollowRequests();
 
   const [plansVisible, setPlansVisible] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -221,6 +224,8 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const [isPremium, setIsPremium] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null | undefined>(undefined);
   const [changeLocationVisible, setChangeLocationVisible] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   const [devPremiumOverride, setDevPremiumOverrideState] = useState<boolean | null>(null);
 
@@ -243,6 +248,25 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     if (user) getDetectedLocation().then(setDetectedLocation);
     checkPremium();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !supabase) return;
+    Promise.resolve(
+      supabase
+        .from('user_follows')
+        .select('id', { count: 'exact', head: true })
+        .eq('following_id', user.id)
+        .eq('status', 'accepted')
+    ).then(({ count }: any) => setFollowerCount(count ?? 0)).catch(() => {});
+
+    Promise.resolve(
+      supabase
+        .from('user_follows')
+        .select('id', { count: 'exact', head: true })
+        .eq('follower_id', user.id)
+        .eq('status', 'accepted')
+    ).then(({ count }: any) => setFollowingCount(count ?? 0)).catch(() => {});
+  }, [user?.id]);
 
   const pickAvatarImage = async (source: 'library' | 'camera') => {
     if (source === 'camera') {
@@ -326,6 +350,13 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
           label: `Premium override: ${devPremiumOverride === true ? 'ON' : devPremiumOverride === false ? 'OFF' : 'unset (uses RevenueCat)'}`,
           onPress: toggleDevPremium,
         } as SettingItem,
+        {
+          label: 'Reset Onboarding (shake to reload)',
+          onPress: async () => {
+            await AsyncStorage.removeItem('@topten_onboarded');
+            Alert.alert('Done', 'Onboarding reset. Shake → Reload to see it again.');
+          },
+        } as SettingItem,
       ],
     }] : []),
   ];
@@ -375,7 +406,7 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                           {user.email?.includes('privaterelay.appleid.com') ? 'Signed in with Apple' : user.email}
                         </Text>
                       )}
-                      {userProfile?.nickname && userProfile?.username ? (
+                      {userProfile?.username && userProfile?.nickname ? (
                         <Text style={styles.profileSince}>@{userProfile.username}</Text>
                       ) : null}
                       <Text style={styles.profileSince}>
@@ -392,6 +423,36 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                     <Text style={styles.editProfileText}>Edit Profile</Text>
                     <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
                   </TouchableOpacity>
+                  <View style={styles.profileDivider} />
+                  <TouchableOpacity
+                    style={styles.editProfileRow}
+                    onPress={() => navigation.navigate('FollowRequests')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.editProfileText}>Follow Requests</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      {pendingFollowCount > 0 && (
+                        <View style={styles.followBadge}>
+                          <Text style={styles.followBadgeText}>{pendingFollowCount}</Text>
+                        </View>
+                      )}
+                      <Ionicons name="chevron-forward" size={16} color={colors.secondaryText} />
+                    </View>
+                  </TouchableOpacity>
+                  <View style={styles.profileDivider} />
+                  <View style={styles.followCountsRow}>
+                    <Text style={styles.followCountItem}>
+                      <Text style={styles.followCountNum}>{followerCount}</Text>
+                      {'  '}
+                      <Text style={styles.followCountLabel}>Followers</Text>
+                    </Text>
+                    <Text style={styles.followCountSep}>·</Text>
+                    <Text style={styles.followCountItem}>
+                      <Text style={styles.followCountNum}>{followingCount}</Text>
+                      {'  '}
+                      <Text style={styles.followCountLabel}>Following</Text>
+                    </Text>
+                  </View>
                   <View style={styles.profileDivider} />
                   <TouchableOpacity
                     style={styles.signOutRow}
@@ -730,6 +791,42 @@ const styles = StyleSheet.create({
   signOutRow: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
+  },
+  followBadge: {
+    backgroundColor: colors.activeTab,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  followBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  followCountsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    gap: spacing.md,
+  },
+  followCountItem: {
+    fontSize: 13,
+    color: colors.secondaryText,
+  },
+  followCountNum: {
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  followCountLabel: {
+    color: colors.secondaryText,
+  },
+  followCountSep: {
+    fontSize: 13,
+    color: colors.border,
   },
   signOutText: {
     fontSize: 16,

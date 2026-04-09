@@ -11,7 +11,7 @@ const STORAGE_KEY = '@topten_lists';
 interface ListContextType {
   lists: TopTenList[];
   listsLoading: boolean;
-  addList: (category: string, title?: string, description?: string) => string;
+  addList: (category: string, title?: string, description?: string, profileImageUri?: string, coverImageUri?: string) => string;
   updateListItems: (listId: string, items: TopTenItem[]) => void;
   updateListMeta: (listId: string, meta: { title?: string; description?: string; customIcon?: string; category?: string; coverImageUri?: string; profileImageUri?: string }) => void;
   deleteList: (listId: string) => void;
@@ -234,7 +234,7 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLists));
   }, []);
 
-  const addList = useCallback((category: string, title?: string, description?: string): string => {
+  const addList = useCallback((category: string, title?: string, description?: string, profileImageUri?: string, coverImageUri?: string): string => {
     const id = Date.now().toString();
     const now = new Date().toISOString();
     const newList: TopTenList = {
@@ -247,6 +247,8 @@ export const ListProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: now,
       isCustom: true,
       description,
+      ...(profileImageUri && { profileImageUri }),
+      ...(coverImageUri && { coverImageUri }),
     };
     const updated = [...lists, newList];
     persistLocal(updated);

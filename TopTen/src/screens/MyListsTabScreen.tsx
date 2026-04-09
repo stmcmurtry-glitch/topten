@@ -214,6 +214,7 @@ export const MyListsTabScreen: React.FC<{ navigation: any }> = ({ navigation }) 
         visible={editingListId !== null}
         onClose={() => setEditingListId(null)}
         title="Profile Image"
+        userId={user?.id}
         currentUri={editingList?.profileImageUri}
         onSelectUri={(uri) => {
           if (editingListId) updateListMeta(editingListId, { profileImageUri: uri });

@@ -22,9 +22,10 @@ interface Props {
   post: FeedPost;
   onPress: () => void;
   compact?: boolean;
+  onUserPress?: () => void;
 }
 
-export const FeedPostCard: React.FC<Props> = ({ post, onPress, compact }) => {
+export const FeedPostCard: React.FC<Props> = ({ post, onPress, compact, onUserPress }) => {
   const categoryColor = CATEGORY_COLORS[post.category] ?? '#CC0000';
   const categoryIcon = CATEGORIES.find(c => c.label === post.category)?.icon ?? 'list-outline';
 
@@ -48,7 +49,12 @@ export const FeedPostCard: React.FC<Props> = ({ post, onPress, compact }) => {
               </View>
             ))}
           </View>
-          <View style={styles.compactFooter}>
+          <TouchableOpacity
+            style={styles.compactFooter}
+            onPress={onUserPress}
+            activeOpacity={onUserPress ? 0.8 : 1}
+            disabled={!onUserPress}
+          >
             {post.avatarUrl ? (
               <Image source={{ uri: post.avatarUrl }} style={styles.compactAvatar} />
             ) : (
@@ -57,7 +63,7 @@ export const FeedPostCard: React.FC<Props> = ({ post, onPress, compact }) => {
               </View>
             )}
             <Text style={styles.compactUsername} numberOfLines={1}>{post.username ?? 'Anonymous'}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -85,14 +91,21 @@ export const FeedPostCard: React.FC<Props> = ({ post, onPress, compact }) => {
 
       {/* Footer: avatar + username · time + category pill + chevron */}
       <View style={styles.footer}>
-        {post.avatarUrl ? (
-          <Image source={{ uri: post.avatarUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Ionicons name="person" size={12} color={colors.secondaryText} />
-          </View>
-        )}
-        <Text style={styles.username}>{post.username ?? 'Anonymous'}</Text>
+        <TouchableOpacity
+          onPress={onUserPress}
+          activeOpacity={onUserPress ? 0.8 : 1}
+          disabled={!onUserPress}
+          style={styles.footerUserArea}
+        >
+          {post.avatarUrl ? (
+            <Image source={{ uri: post.avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Ionicons name="person" size={12} color={colors.secondaryText} />
+            </View>
+          )}
+          <Text style={styles.username}>{post.username ?? 'Anonymous'}</Text>
+        </TouchableOpacity>
         <Text style={styles.sep}>·</Text>
         <Text style={styles.time}>{timeAgo(post.publishedAt)}</Text>
         <View style={styles.spacer} />
@@ -245,6 +258,11 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
+  },
+  footerUserArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   avatar: {
     width: 22,

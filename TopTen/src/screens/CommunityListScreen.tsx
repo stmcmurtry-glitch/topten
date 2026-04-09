@@ -30,6 +30,7 @@ import { fetchCommunityImage } from '../services/featuredContentService';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { ShareModal } from '../components/ShareModal';
 import { PublishModal, PublishableList } from '../components/PublishModal';
+import { PersonalPublishModal } from '../components/PersonalPublishModal';
 import { ReportIssueModal } from '../components/ReportIssueModal';
 import { useAuth } from '../context/AuthContext';
 import { usePostHog } from 'posthog-react-native';
@@ -61,8 +62,11 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
   const [submitConfirmed, setSubmitConfirmed] = useState(false);
   const [showVoteHint, setShowVoteHint] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showMyVoteShareModal, setShowMyVoteShareModal] = useState(false);
+  const [showSubmitInterstitial, setShowSubmitInterstitial] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showPersonalPublishModal, setShowPersonalPublishModal] = useState(false);
   const [showAllItems, setShowAllItems] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const hasFetched = useRef(false);
@@ -156,7 +160,6 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   if (!list) return null;
 
-  // Score lookup: real votes from Supabase only — no seed score fallback.
   const cachedScores = liveScoreCache[communityListId];
 
   // Normalize for matching: lowercase + strip diacritics so "Fogo de Chão" matches "fogo de chao"
@@ -164,9 +167,12 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
   const getScore = (itemTitle: string): number => {
-    if (!cachedScores) return 0;
+    if (!cachedScores) {
+      // No live votes yet — fall back to seed score so the results tab matches the card count
+      const seedItem = list.items.find(i => normalizeKey(i.title) === normalizeKey(itemTitle));
+      return seedItem?.seedScore ?? 0;
+    }
     const norm = normalizeKey(itemTitle);
-    // Try exact key first, then accent-normalized fallback
     return cachedScores[itemTitle.toLowerCase().trim()]
       ?? cachedScores[norm]
       ?? Object.entries(cachedScores).find(([k]) => normalizeKey(k) === norm)?.[1]
@@ -196,7 +202,7 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
   const communityRanked = [...allItems].sort((a, b) => getScore(b.title) - getScore(a.title));
   const maxScore = communityRanked.length > 0 ? (getScore(communityRanked[0].title) || 1) : 1;
-  const rawParticipantCount = participantCounts[communityListId] ?? 0;
+  const rawParticipantCount = participantCounts[communityListId] ?? list.participantCount;
   // Force to 0 when no items exist — catches stale cached data with a non-zero seed count
   const participantCount = communityRanked.length === 0 ? 0 : rawParticipantCount;
   const participantDisplay = participantCount.toLocaleString();
@@ -260,8 +266,8 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
     setSubmitConfirmed(true);
     setTimeout(() => {
       setSubmitConfirmed(false);
-      setActiveTab('community');
-    }, 2500);
+      setShowSubmitInterstitial(true);
+    }, 1000);
   };
 
   // ── Hero ─────────────────────────────────────────────────────────────────
@@ -540,37 +546,62 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
 
       {/* ── Sticky submit footer (Yours tab only) ── */}
       {activeTab === 'yours' && (
-        <View style={[styles.stickyFooter, { paddingBottom: 8 }]}>
-          <TouchableOpacity onPress={handleSubmit} activeOpacity={0.9} disabled={submitConfirmed}>
-            <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: submitConfirmed ? '#2ECC71' : list.color }]}>
-              <Text style={styles.submitButtonText}>
-                {submitConfirmed ? '✓ Submitted!' : submitted ? 'Update My Vote' : 'Submit My Vote'}
-              </Text>
-            </Animated.View>
-          </TouchableOpacity>
+        <View style={[styles.stickyFooter, { paddingBottom: insets.bottom + 4 }]}>
           {submitConfirmed ? (
-            <Text style={styles.batchNotice}>
-              Community scores update overnight — check back tomorrow!
-            </Text>
-          ) : showVoteHint && filledCount < 10 ? (
-            <View style={styles.voteHintRow}>
-              <Ionicons name="bulb-outline" size={13} color={colors.secondaryText} />
-              <Text style={styles.voteHint}>
-                {filledCount === 0
-                  ? "No need to fill all 10 — submit with as few as 1 pick."
-                  : `${filledCount} pick${filledCount === 1 ? '' : 's'} · submit now or keep adding`}
-              </Text>
-            </View>
-          ) : null}
-          {user && filledCount > 0 && (
-            <TouchableOpacity
-              style={styles.postToFeedButton}
-              onPress={() => setShowPublishModal(true)}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="megaphone-outline" size={15} color={list.color} />
-              <Text style={[styles.postToFeedText, { color: list.color }]}>Post my rankings to Local Feed</Text>
-            </TouchableOpacity>
+            /* ── Just submitted ── */
+            <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: '#2ECC71' }]}>
+              <Text style={styles.submitButtonText}>✓ Vote counted!</Text>
+            </Animated.View>
+          ) : submitted ? (
+            /* ── Already submitted: share-first layout ── */
+            <>
+              <TouchableOpacity
+                style={[styles.shareMyVoteButton, { backgroundColor: list.color }]}
+                onPress={handleSubmit}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.shareMyVoteButtonText}>Update My Vote</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.updateVoteButton}
+                onPress={() => setShowMyVoteShareModal(true)}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="share-outline" size={15} color={list.color} />
+                <Text style={[styles.updateVoteButtonText, { color: list.color }]}>Share My Vote</Text>
+              </TouchableOpacity>
+              {user && filledCount > 0 && (
+                <TouchableOpacity style={styles.postToFeedButton} onPress={() => setShowPublishModal(true)} activeOpacity={0.85}>
+                  <Ionicons name="megaphone-outline" size={13} color={colors.secondaryText} />
+                  <Text style={styles.postToFeedText}>Post to Local Feed</Text>
+                </TouchableOpacity>
+              )}
+              {user && filledCount > 0 && (
+                <TouchableOpacity style={styles.postToFeedButton} onPress={() => setShowPersonalPublishModal(true)} activeOpacity={0.85}>
+                  <Ionicons name="person-outline" size={13} color={colors.secondaryText} />
+                  <Text style={styles.postToFeedText}>Post to Personal Feed</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          ) : (
+            /* ── Not yet submitted ── */
+            <>
+              <TouchableOpacity onPress={handleSubmit} activeOpacity={0.9}>
+                <Animated.View style={[styles.submitButton, { transform: [{ scale: buttonScale }], backgroundColor: list.color }]}>
+                  <Text style={styles.submitButtonText}>Submit My Vote</Text>
+                </Animated.View>
+              </TouchableOpacity>
+              {showVoteHint && filledCount < 10 && (
+                <View style={styles.voteHintRow}>
+                  <Ionicons name="bulb-outline" size={13} color={colors.secondaryText} />
+                  <Text style={styles.voteHint}>
+                    {filledCount === 0
+                      ? "No need to fill all 10 — submit with as few as 1 pick."
+                      : `${filledCount} pick${filledCount === 1 ? '' : 's'} · submit now or keep adding`}
+                  </Text>
+                </View>
+              )}
+            </>
           )}
         </View>
       )}
@@ -582,6 +613,63 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
         category={list.category}
         items={communityRanked.map((i) => i.title)}
       />
+      <ShareModal
+        visible={showMyVoteShareModal}
+        onClose={() => setShowMyVoteShareModal(false)}
+        title={list.title}
+        category={list.category}
+        items={userSlots.filter((s) => s.trim())}
+      />
+
+      {/* ── Post-submit interstitial ── */}
+      <Modal
+        visible={showSubmitInterstitial}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSubmitInterstitial(false)}
+      >
+        <Pressable style={styles.interstitialOverlay} onPress={() => setShowSubmitInterstitial(false)}>
+          <Pressable style={[styles.interstitialCard, { paddingBottom: insets.bottom + spacing.lg }]} onPress={() => {}}>
+            {/* Handle bar */}
+            <View style={styles.interstitialHandle} />
+
+            {/* Icon */}
+            <View style={[styles.interstitialIcon, { backgroundColor: list.color + '22' }]}>
+              <Ionicons name="checkmark-circle" size={44} color={list.color} />
+            </View>
+
+            <Text style={styles.interstitialTitle}>Vote counted!</Text>
+            <Text style={styles.interstitialSub}>
+              Community scores update overnight.{'\n'}Come back tomorrow to see the results.
+            </Text>
+
+            {/* Primary: Share */}
+            <TouchableOpacity
+              style={[styles.interstitialShareBtn, { backgroundColor: list.color }]}
+              onPress={() => { setShowSubmitInterstitial(false); setShowMyVoteShareModal(true); }}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="share-outline" size={18} color="#FFF" />
+              <Text style={styles.interstitialShareBtnText}>Share My Vote</Text>
+            </TouchableOpacity>
+
+            {/* Secondary: See community */}
+            <TouchableOpacity
+              style={styles.interstitialCommunityBtn}
+              onPress={() => { setShowSubmitInterstitial(false); setActiveTab('community'); }}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.interstitialCommunityBtnText, { color: list.color }]}>See Community Results</Text>
+              <Ionicons name="arrow-forward" size={15} color={list.color} />
+            </TouchableOpacity>
+
+            {/* Dismiss */}
+            <TouchableOpacity onPress={() => setShowSubmitInterstitial(false)} activeOpacity={0.6} style={styles.interstitialDismiss}>
+              <Text style={styles.interstitialDismissText}>Maybe later</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
       <PublishModal
         visible={showPublishModal}
         onClose={() => setShowPublishModal(false)}
@@ -592,6 +680,18 @@ export const CommunityListScreen: React.FC<{ route: any; navigation: any }> = ({
           items: userSlots.filter(s => s.trim()).map(title => ({ title })),
           coverImageUri: heroImageUrl,
         }}
+      />
+      <PersonalPublishModal
+        visible={showPersonalPublishModal}
+        onClose={() => setShowPersonalPublishModal(false)}
+        list={{
+          id: list.id,
+          title: list.title,
+          category: list.category,
+          items: userSlots.filter(s => s.trim()).map(title => ({ title })),
+          coverImageUri: heroImageUrl,
+        }}
+        onPublished={() => {}}
       />
       <ReportIssueModal
         visible={showReportModal}
@@ -1031,17 +1131,129 @@ const styles = StyleSheet.create({
     color: colors.secondaryText,
     fontWeight: '500',
   },
-  postToFeedButton: {
+  /* Share-first footer (already submitted) */
+  shareMyVoteButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    marginTop: spacing.sm,
+    borderRadius: borderRadius.sm,
+    paddingVertical: spacing.md + 2,
+    marginBottom: spacing.sm,
+  },
+  shareMyVoteButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  updateVoteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: borderRadius.sm,
+    paddingVertical: spacing.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    marginBottom: spacing.xs,
+  },
+  updateVoteButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  postToFeedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
     paddingVertical: spacing.sm,
   },
   postToFeedText: {
     fontSize: 13,
+    fontWeight: '500',
+    color: colors.secondaryText,
+  },
+
+  /* Post-submit interstitial */
+  interstitialOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
+  },
+  interstitialCard: {
+    backgroundColor: colors.cardBackground,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    alignItems: 'center',
+  },
+  interstitialHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginBottom: spacing.xl,
+  },
+  interstitialIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  interstitialTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: colors.primaryText,
+    letterSpacing: -0.4,
+    marginBottom: spacing.sm,
+  },
+  interstitialSub: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: spacing.xl,
+  },
+  interstitialShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    width: '100%',
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md + 2,
+    marginBottom: spacing.sm,
+  },
+  interstitialShareBtnText: {
+    color: '#FFF',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  interstitialCommunityBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    width: '100%',
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    marginBottom: spacing.md,
+  },
+  interstitialCommunityBtnText: {
+    fontSize: 16,
     fontWeight: '600',
+  },
+  interstitialDismiss: {
+    paddingVertical: spacing.sm,
+  },
+  interstitialDismissText: {
+    fontSize: 14,
+    color: colors.secondaryText,
   },
   reportButton: {
     flexDirection: 'row',

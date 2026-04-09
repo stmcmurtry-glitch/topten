@@ -16,6 +16,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, borderRadius, shadow } from '../theme';
+import { supabase } from '../services/supabase';
 
 const UNSPLASH_KEY =
   process.env.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY ||
@@ -32,6 +33,8 @@ interface PhotoPickerModalProps {
   aspect?: [number, number];
   /** Unsplash orientation filter. Defaults to 'squarish' */
   orientation?: 'squarish' | 'landscape' | 'portrait';
+  /** When provided, device photos are uploaded to Supabase Storage for cross-device sync */
+  userId?: string;
 }
 
 export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
@@ -42,11 +45,13 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
   title = 'Choose Photo',
   aspect = [1, 1],
   orientation = 'squarish',
+  userId,
 }) => {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const gifHintText = title.toLowerCase().includes('cover')
@@ -102,6 +107,36 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
     return dest;
   };
 
+  // Upload a device photo to Supabase Storage and return a public https:// URL
+  // that works across all devices. Falls back to local persistUri if upload fails.
+  const uploadToStorage = async (tempUri: string): Promise<string> => {
+    if (!supabase || !userId) return persistUri(tempUri);
+    try {
+      const ext = tempUri.split('.').pop()?.split('?')[0]?.toLowerCase() ?? 'jpg';
+      const contentType =
+        ext === 'gif' ? 'image/gif' :
+        ext === 'png' ? 'image/png' :
+        'image/jpeg';
+      const path = `${userId}/${Date.now()}.${ext}`;
+      // Use FileSystem instead of fetch() — fetch() can hang when called from
+      // inside stacked modal contexts on iOS.
+      const base64 = await FileSystem.readAsStringAsync(tempUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const { error: uploadErr } = await supabase.storage
+        .from('list-images')
+        .upload(path, bytes.buffer, { contentType, upsert: false });
+      if (uploadErr) return persistUri(tempUri); // fallback
+      const { data: urlData } = supabase.storage.from('list-images').getPublicUrl(path);
+      return urlData.publicUrl;
+    } catch {
+      return persistUri(tempUri); // fallback on any error
+    }
+  };
+
   const handleLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -115,9 +150,16 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
       quality: 0.8,
     });
     if (!result.canceled) {
-      const uri = await persistUri(result.assets[0].uri);
-      onSelectUri(uri);
-      onClose();
+      setUploading(true);
+      try {
+        const uri = await (userId ? uploadToStorage(result.assets[0].uri) : persistUri(result.assets[0].uri));
+        onSelectUri(uri);
+        onClose();
+      } catch {
+        Alert.alert('Error', 'Could not save the photo. Please try again.');
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -131,9 +173,16 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
       quality: 0.8,
     });
     if (!result.canceled) {
-      const uri = await persistUri(result.assets[0].uri);
-      onSelectUri(uri);
-      onClose();
+      setUploading(true);
+      try {
+        const uri = await (userId ? uploadToStorage(result.assets[0].uri) : persistUri(result.assets[0].uri));
+        onSelectUri(uri);
+        onClose();
+      } catch {
+        Alert.alert('Error', 'Could not save the photo. Please try again.');
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -249,6 +298,14 @@ export const PhotoPickerModal: React.FC<PhotoPickerModalProps> = ({
           )}
         </View>
       </View>
+
+      {/* Upload overlay */}
+      {uploading && (
+        <View style={styles.uploadOverlay}>
+          <ActivityIndicator size="large" color="#FFF" />
+          <Text style={styles.uploadText}>Saving photo…</Text>
+        </View>
+      )}
     </Modal>
   );
 };
@@ -377,5 +434,17 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginLeft: spacing.lg + 34 + spacing.md,
+  },
+  uploadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+  },
+  uploadText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

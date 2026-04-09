@@ -26,6 +26,46 @@ interface FAQItem {
 
 const FAQ_SECTIONS: { title: string; items: FAQItem[] }[] = [
   {
+    title: 'The Name',
+    items: [
+      {
+        question: 'Why is it called TopX?',
+        answer:
+          'TopX started as "Top Ten" — a simple app for ranking your personal top 10s. The name evolved to TopX for two reasons: X is the Roman numeral for ten, keeping that original spirit alive. But X also stands for any number — so whether you\'re ranking your top 3, top 5, or top 10, you\'re always ranking the top of X. It\'s your list, your number.',
+      },
+    ],
+  },
+  {
+    title: 'Sign-In & Account',
+    items: [
+      {
+        question: 'Can I use TopX without an account?',
+        answer:
+          'Yes — you can create personal lists, browse Featured Lists, and explore Discover without signing in. An account is required for community voting, In Your Area local picks, the Local Feed, and syncing your lists across devices.',
+      },
+      {
+        question: 'What sign-in options are available?',
+        answer:
+          'You can sign in with Apple, Google, or email and password. Apple Sign In is the easiest option on iPhone — it takes one tap and keeps your email private if you choose. All three methods give you the same full account.',
+      },
+      {
+        question: 'I forgot my password. How do I reset it?',
+        answer:
+          'On the sign-in screen, tap "Forgot password?" and enter your email address. You\'ll receive a reset link within a few minutes. Tap the link on your iPhone (not a desktop) and you\'ll be taken directly into the app to set a new password.',
+      },
+      {
+        question: 'What is a username, and can I change it?',
+        answer:
+          'Your username is your unique @handle — it\'s how you appear in the Local Feed and future social features. Usernames are 3–20 characters (letters, numbers, and underscores) and must be unique. You can update it any time from Account → Edit Profile.',
+      },
+      {
+        question: 'What\'s the difference between username and nickname?',
+        answer:
+          'Your username is your permanent @handle used in the Local Feed and future social features (e.g. @alex_k). Your nickname is a free-form display name shown on your profile card (e.g. "Alex"). The nickname is optional and changeable; the username is your unique identifier.',
+      },
+    ],
+  },
+  {
     title: 'Community & Rankings',
     items: [
       {
@@ -47,6 +87,21 @@ const FAQ_SECTIONS: { title: string; items: FAQItem[] }[] = [
         question: 'Is my vote anonymous?',
         answer:
           'Yes. Community rankings show aggregated scores only — no one can see how you personally voted on any individual item.',
+      },
+      {
+        question: 'What is the Local Feed?',
+        answer:
+          'The Local Feed shows lists published by TopX users in your city. You\'ll see it on the Home screen and in Discover. It\'s a great way to find local recommendations — favorite restaurants, hidden gems, things to do — from people who actually live there.',
+      },
+      {
+        question: 'How do I post a list to the Local Feed?',
+        answer:
+          'Posting to the Local Feed requires a Premium account. Open any personal list, scroll to the bottom, and tap "Post to Local Feed." You can add a short blurb and a cover photo before publishing. Your post will appear in the feed for your detected city.',
+      },
+      {
+        question: 'Can I delete something I posted?',
+        answer:
+          'Yes. You can delete a post two ways: from the list detail page, tap the "Posted to Feed" tile and confirm deletion — or open the post in the Local Feed and tap the trash icon in the top-right corner. Only you can delete your own posts.',
       },
     ],
   },

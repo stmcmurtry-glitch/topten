@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
+import { registerForPushNotifications } from '../services/notificationService';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -104,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { needsOnboarding: needs, profile } = await fetchProfileData(u.id);
         setNeedsOnboarding(needs);
         setUserProfile(profile);
+        registerForPushNotifications(u.id).catch(() => {});
       }
       settled = true;
       clearTimeout(safetyTimer);
@@ -121,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setNeedsOnboarding(needs);
         setUserProfile(profile);
         setProfileChecked(true);
+        registerForPushNotifications(u.id).catch(() => {});
       } else {
         setUserProfile(null);
         setNeedsOnboarding(false);

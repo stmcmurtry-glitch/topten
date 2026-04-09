@@ -13,6 +13,9 @@ export interface FeedPost {
   avatarUrl?: string | null;
   publishedAt: number;      // epoch ms
   likeCount: number;
+  reactionCounts: { like: number; hot: number; debatable: number; agree: number };
+  commentCount: number;
+  myReaction: 'like' | 'hot' | 'debatable' | 'agree' | null;
 }
 
 export const FEED_MIN_POSTS = 1;

@@ -29,7 +29,13 @@ import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { VotingPreferencesScreen } from '../screens/VotingPreferencesScreen';
 import { CommunityFeedScreen } from '../screens/CommunityFeedScreen';
 import { PublishedListScreen } from '../screens/PublishedListScreen';
+import { UserProfileScreen } from '../screens/UserProfileScreen';
+import { FollowingFeedScreen } from '../screens/FollowingFeedScreen';
+import { FollowRequestsScreen } from '../screens/FollowRequestsScreen';
+import { FeedScreen } from '../screens/FeedScreen';
+import { PeopleSearchScreen } from '../screens/PeopleSearchScreen';
 import { colors } from '../theme';
+import { useFollowRequests } from '../context/FollowRequestContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -128,6 +134,16 @@ const HomeStack = () => (
       component={PublishedListScreen}
       options={{ headerShown: false }}
     />
+    <Stack.Screen
+      name="UserProfile"
+      component={UserProfileScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="FollowingFeed"
+      component={FollowingFeedScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -215,6 +231,46 @@ const MyListsStack = () => (
       component={PublishedListScreen}
       options={{ headerShown: false }}
     />
+    <Stack.Screen
+      name="UserProfile"
+      component={UserProfileScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="FollowingFeed"
+      component={FollowingFeedScreen}
+      options={{ headerShown: false }}
+    />
+  </Stack.Navigator>
+);
+
+const FeedStack = () => (
+  <Stack.Navigator screenOptions={sharedStackOptions}>
+    <Stack.Screen
+      name="FeedHome"
+      component={FeedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="PublishedList"
+      component={PublishedListScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="UserProfile"
+      component={UserProfileScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="FollowingFeed"
+      component={FollowingFeedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="PeopleSearch"
+      component={PeopleSearchScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
@@ -278,6 +334,26 @@ const DiscoverStack = () => (
     <Stack.Screen
       name="PublishedList"
       component={PublishedListScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="CreateList"
+      component={CreateListScreen}
+      options={{ presentation: 'modal', title: 'New List', headerLargeTitle: false }}
+    />
+    <Stack.Screen
+      name="UserProfile"
+      component={UserProfileScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="FollowingFeed"
+      component={FollowingFeedScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="PeopleSearch"
+      component={PeopleSearchScreen}
       options={{ headerShown: false }}
     />
   </Stack.Navigator>
@@ -345,10 +421,22 @@ const SettingsStack = () => (
       component={ForgotPasswordScreen}
       options={{ presentation: 'modal', headerShown: false }}
     />
+    <Stack.Screen
+      name="FollowRequests"
+      component={FollowRequestsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="UserProfile"
+      component={UserProfileScreen}
+      options={{ headerShown: false }}
+    />
   </Stack.Navigator>
 );
 
-export const TabNavigator = () => (
+export const TabNavigator = () => {
+  const { pendingCount } = useFollowRequests();
+  return (
   <Tab.Navigator
     screenOptions={{
       headerShown: false,
@@ -378,6 +466,16 @@ export const TabNavigator = () => (
       }}
     />
     <Tab.Screen
+      name="Feed"
+      component={FeedStack}
+      options={{
+        tabBarLabel: 'Feed',
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="newspaper-outline" size={size} color={color} />
+        ),
+      }}
+    />
+    <Tab.Screen
       name="Discover"
       component={DiscoverStack}
       options={{
@@ -392,10 +490,13 @@ export const TabNavigator = () => (
       component={SettingsStack}
       options={{
         tabBarLabel: 'Account',
+        tabBarBadge: pendingCount > 0 ? pendingCount : undefined,
+        tabBarBadgeStyle: { backgroundColor: '#CC0000', color: '#fff', fontSize: 11 },
         tabBarIcon: ({ color, size }) => (
           <Ionicons name="person-circle-outline" size={size} color={color} />
         ),
       }}
     />
   </Tab.Navigator>
-);
+  );
+};

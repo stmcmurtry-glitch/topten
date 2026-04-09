@@ -159,6 +159,14 @@ export const CreateAccountScreen: React.FC<Props> = ({ navigation }) => {
             {'\n'}Your username is how others see you in community rankings. 3–20 chars, letters/numbers/underscores.
           </Text>
 
+          {/* Privacy assurance */}
+          <View style={styles.privacyNote}>
+            <Ionicons name="shield-checkmark-outline" size={15} color={colors.secondaryText} />
+            <Text style={styles.privacyNoteText}>
+              We do <Text style={{ fontWeight: '700', color: colors.primaryText }}>not</Text> sell your data or share it with advertisers. What we collect is used only to personalize your experience.
+            </Text>
+          </View>
+
           {!!displayError && <Text style={styles.errorText}>{displayError}</Text>}
 
           <TouchableOpacity
@@ -261,6 +269,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.secondaryText,
     marginBottom: spacing.md,
+    lineHeight: 17,
+  },
+  privacyNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  privacyNoteText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.secondaryText,
     lineHeight: 17,
   },
   errorText: {
