@@ -13,7 +13,7 @@ export async function enrichPostsWithCounts(
   // Fetch all reactions for these posts
   const [reactionsResult, commentsResult, myReactionsResult] = await Promise.all([
     supabase.from('post_reactions').select('post_id, reaction_type').in('post_id', ids),
-    supabase.from('post_comments').select('post_id').in('post_id', ids),
+    supabase.from('post_comments').select('post_id').in('post_id', ids).eq('hidden', false),
     userId
       ? supabase
           .from('post_reactions')
