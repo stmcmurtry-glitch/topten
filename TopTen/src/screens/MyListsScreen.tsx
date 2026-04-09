@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  ActivityIndicator,
   RefreshControl,
   Animated,
   Modal,
@@ -42,6 +41,9 @@ import { InYourAreaLockCard } from '../components/InYourAreaLockCard';
 import { useAuth } from '../context/AuthContext';
 import { FeedPostCard } from '../components/FeedPostCard';
 import { useCityFeedPreview } from '../hooks/useCityFeedPreview';
+import { supabase } from '../services/supabase';
+import { FeedPost } from '../data/feedTypes';
+import { rowToPost } from '../hooks/useCityFeedPreview';
 
 const ALL_CATEGORY_LABELS = CATEGORIES.map((c) => c.label);
 
@@ -117,7 +119,7 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress,
 
   const citySlug = (list.region ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   const isSeeded = list.id.startsWith('local-') && TOP_500_CITY_SLUG_SET.has(citySlug);
-  const voteCount = list.items.length === 0 ? 0 : (liveCount ?? (isSeeded ? list.participantCount : 0));
+  const voteCount = list.items.length === 0 ? 0 : (liveCount ?? list.participantCount);
 
   return (
     <TouchableOpacity style={styles.communityCard} onPress={onPress} activeOpacity={0.85}>
@@ -155,8 +157,102 @@ const CommunityCard: React.FC<CommunityCardProps> = ({ list, submitted, onPress,
   );
 };
 
-export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+const SkeletonStoryCircle: React.FC = () => {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.85, duration: 750, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.4, duration: 750, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return (
+    <Animated.View style={[styles.storyWrap, { opacity }]}>
+      <View style={styles.skeletonCircle} />
+      <View style={styles.skeletonStoryLine} />
+    </Animated.View>
+  );
+};
+
+const FollowingSection: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user } = useAuth();
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user || !supabase) { setLoading(false); return; }
+    Promise.resolve(
+      supabase
+        .from('user_follows')
+        .select('following_id')
+        .eq('follower_id', user.id)
+        .eq('status', 'accepted')
+    ).then(({ data: followData }) => {
+      const ids = (followData ?? []).map((r: any) => r.following_id);
+      if (ids.length === 0) { setLoading(false); return; }
+      return Promise.resolve(
+        supabase!
+          .from('community_feed_posts')
+          .select('*')
+          .in('user_id', ids)
+          .order('published_at', { ascending: false })
+          .limit(5)
+      ).then(({ data }) => {
+        setPosts((data ?? []).map(rowToPost));
+        setLoading(false);
+      });
+    }).catch(() => setLoading(false));
+  }, [user?.id]);
+
+  // Hide entirely until we have confirmed posts to show
+  if (loading || posts.length === 0) return null;
+
+  return (
+    <>
+      <View style={styles.divider} />
+      <View style={styles.sectionHeaderRow}>
+        <TouchableOpacity
+          style={styles.titleWithIcon}
+          onPress={() => navigation.navigate('FollowingFeed')}
+          activeOpacity={0.6}
+        >
+          <Text style={styles.sectionHeaderInline}>Following</Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
+        </TouchableOpacity>
+      </View>
+      {loading ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carousel}
+          scrollEnabled={false}
+        >
+          {[0, 1, 2].map((i) => <SkeletonCard key={i} />)}
+        </ScrollView>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carousel}
+        >
+          {posts.map((post) => (
+            <FeedPostCard
+              key={post.id}
+              post={post}
+              compact
+              onPress={() => navigation.navigate('PublishedList', { postId: post.id })}
+              onUserPress={() => navigation.navigate('UserProfile', { userId: post.userId })}
+            />
+          ))}
+        </ScrollView>
+      )}
+    </>
+  );
+};
+
+export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { user, loading: authLoading } = useAuth();
   const { lists, listsLoading, updateListMeta } = useListContext();
   const { userRankings, participantCounts, refreshParticipantCounts } = useCommunity();
   const [activeCategory, setActiveCategory] = useState('All');
@@ -219,6 +315,20 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     }, [user, refreshParticipantCounts])
   );
 
+  // Detect location eagerly on mount — don't wait for auth to resolve.
+  // Without this, cold-start shows empty In Your Area / local feed until a reload.
+  useEffect(() => {
+    getDetectedLocation().then(setDetectedLocation);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-fetch when auth resolves — useFocusEffect won't re-run if the screen
+  // is already focused when the user state changes (cold-start race).
+  useEffect(() => {
+    if (!user) return;
+    refreshParticipantCounts();
+    setFeedRefreshKey(k => k + 1);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   useEffect(() => {
     if (!user || !detectedLocation?.city) return;
@@ -253,7 +363,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     });
 
     return () => clearTimeout(timeoutId);
-  }, [detectedLocation?.city]);
+  }, [detectedLocation?.city, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load persisted viewed featured IDs on mount — filter to valid list IDs only
   useEffect(() => {
@@ -402,36 +512,39 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         </TouchableOpacity>
       </View>
 
-      {user ? (
-        <>
-          {listsLoading ? (
-            <ActivityIndicator size="small" color={colors.activeTab} style={{ marginVertical: 24 }} />
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.storyStrip}
-            >
-              {displayLists.map((list) => (
-                <StoryCircle
-                  key={list.id}
-                  list={list}
-                  onPress={() => setStoryList(list)}
-                />
-              ))}
-              {displayLists.length === 0 && (
-                <Text style={styles.storyEmptyHint}>No lists yet — create your first one!</Text>
-              )}
-              {/* New List circle */}
-              <TouchableOpacity style={styles.storyWrap} onPress={() => navigation.navigate('CreateList')} activeOpacity={0.8}>
-                <View style={styles.storyCircleNew}>
-                  <Ionicons name="add" size={28} color={colors.activeTab} />
-                </View>
-                <Text style={styles.storyTitle}>New List</Text>
-              </TouchableOpacity>
-            </ScrollView>
+      {authLoading || listsLoading ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.storyStrip}
+          scrollEnabled={false}
+        >
+          {[0, 1, 2, 3, 4].map((i) => <SkeletonStoryCircle key={i} />)}
+        </ScrollView>
+      ) : user ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.storyStrip}
+        >
+          {displayLists.map((list) => (
+            <StoryCircle
+              key={list.id}
+              list={list}
+              onPress={() => setStoryList(list)}
+            />
+          ))}
+          {displayLists.length === 0 && (
+            <Text style={styles.storyEmptyHint}>No lists yet — create your first one!</Text>
           )}
-        </>
+          {/* New List circle */}
+          <TouchableOpacity style={styles.storyWrap} onPress={() => navigation.navigate('CreateList')} activeOpacity={0.8}>
+            <View style={styles.storyCircleNew}>
+              <Ionicons name="add" size={28} color={colors.activeTab} />
+            </View>
+            <Text style={styles.storyTitle}>New List</Text>
+          </TouchableOpacity>
+        </ScrollView>
       ) : (
         <TouchableOpacity style={styles.myListsLockCard} onPress={() => navigation.navigate('AuthScreen')} activeOpacity={0.85}>
           <Ionicons name="lock-closed-outline" size={18} color={colors.secondaryText} />
@@ -444,7 +557,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
       )}
 
       {/* In your area */}
-      {(!user || (user && detectedLocation?.city) || allLocalLists.length > 0 || refreshing) && (
+      {(!authLoading && !user) || (user && detectedLocation?.city) || allLocalLists.length > 0 || refreshing ? (
         <>
           <View style={styles.divider} />
           {!user ? (
@@ -510,20 +623,26 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
             </>
           )}
         </>
-      )}
+      ) : null}
 
       {/* TopX People's Choice */}
       {filteredCommunity.length > 0 && (
         <>
           <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.sectionHeaderLink}
-            onPress={() => navigation.navigate('AllCommunityLists')}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.sectionHeaderInline}>TopX People's Choice</Text>
-            <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
-          </TouchableOpacity>
+          <View style={styles.sectionHeaderRow}>
+            <TouchableOpacity
+              style={styles.titleWithIcon}
+              onPress={() => navigation.navigate('AllCommunityLists')}
+              activeOpacity={0.6}
+            >
+              <Text style={styles.sectionHeaderInline}>TopX People's Choice</Text>
+              <Ionicons name="chevron-forward" size={22} color={colors.secondaryText} />
+            </TouchableOpacity>
+            <View style={styles.areaHeaderLeft}>
+              <Ionicons name="globe-outline" size={13} color={colors.secondaryText} />
+              <Text style={styles.areaRegionLabel}>Global</Text>
+            </View>
+          </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -615,7 +734,16 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                 />
               ))}
             </ScrollView>
-          ) : !feedLoading ? (
+          ) : feedLoading ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carousel}
+              scrollEnabled={false}
+            >
+              {[0, 1, 2].map((i) => <SkeletonCard key={i} />)}
+            </ScrollView>
+          ) : (
             <View style={styles.feedEmptyState}>
               <Ionicons name="megaphone-outline" size={22} color={colors.border} />
               <View>
@@ -623,9 +751,12 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                 <Text style={styles.feedEmptyHint}>Open any list → tap Post to Local Feed</Text>
               </View>
             </View>
-          ) : null}
+          )}
         </>
       )}
+
+      {/* Following feed preview */}
+      {user && !authLoading && <FollowingSection navigation={navigation} />}
 
       {/* Story quick-view sheet */}
       {storyList && (() => {
@@ -723,6 +854,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         title="Profile Photo"
         aspect={[1, 1]}
         orientation="squarish"
+        userId={user?.id}
         currentUri={lists.find(l => l.id === photoTargetId)?.profileImageUri}
         onSelectUri={(uri) => {
           if (photoTargetId) updateListMeta(photoTargetId, { profileImageUri: uri });
@@ -743,6 +875,7 @@ export const MyListsScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         }}
       />
       </ScrollView>
+
     </View>
   );
 };
@@ -1230,6 +1363,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
+
   /* ── Skeleton loader ── */
   skeletonCard: {
     width: 155,
@@ -1251,5 +1385,18 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#D1D1D6',
     width: '90%',
+  },
+  skeletonCircle: {
+    width: STORY_CIRCLE_SIZE,
+    height: STORY_CIRCLE_SIZE,
+    borderRadius: STORY_CIRCLE_SIZE / 2,
+    backgroundColor: '#D1D1D6',
+    marginBottom: 6,
+  },
+  skeletonStoryLine: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#D1D1D6',
+    width: 52,
   },
 });

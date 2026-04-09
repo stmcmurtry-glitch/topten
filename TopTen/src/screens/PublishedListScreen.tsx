@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   ActivityIndicator,
   Share,
   Alert,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +23,8 @@ import { CATEGORY_COLORS } from '../components/FeedRow';
 import { colors, spacing, borderRadius, shadow } from '../theme';
 import { rowToPost } from '../hooks/useCityFeedPreview';
 import { useAuth } from '../context/AuthContext';
+import { FollowButton } from '../components/FollowButton';
+import { ReactionBar, ReactionType } from '../components/ReactionBar';
 
 function timeAgo(epochMs: number): string {
   const diff = Date.now() - epochMs;
@@ -33,12 +38,92 @@ function timeAgo(epochMs: number): string {
   return new Date(epochMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function timeAgoShort(epochMs: number): string {
+  const diff = Date.now() - epochMs;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(epochMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+interface Comment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  username: string | null;
+  avatar_url: string | null;
+  body: string;
+  created_at: string;
+  hidden?: boolean;
+}
+
+type CommentReactionState = {
+  counts: { like: number; hot: number; debatable: number; agree: number };
+  myReaction: ReactionType | null;
+};
+
+const ZERO_COUNTS = { like: 0, hot: 0, debatable: 0, agree: 0 };
+
+const REACTION_EMOJIS: { type: ReactionType; emoji: string }[] = [
+  { type: 'like', emoji: '❤️' },
+  { type: 'hot', emoji: '🔥' },
+  { type: 'debatable', emoji: '🤔' },
+  { type: 'agree', emoji: '💯' },
+];
+
+const CommentReactionRow: React.FC<{
+  state: CommentReactionState;
+  onReact: (type: ReactionType) => void;
+}> = ({ state, onReact }) => (
+  <View style={crStyles.row}>
+    {REACTION_EMOJIS.map(({ type, emoji }) => (
+      <TouchableOpacity key={type} onPress={() => onReact(type)} activeOpacity={0.6}>
+        <Text style={[crStyles.item, state.myReaction === type && crStyles.itemActive]}>
+          {emoji}{state.counts[type] > 0 ? ` ${state.counts[type]}` : ''}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+);
+
+const crStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 5,
+  },
+  item: {
+    fontSize: 13,
+    color: colors.secondaryText,
+  },
+  itemActive: {
+    color: colors.activeTab,
+    fontWeight: '700',
+  },
+});
+
 export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
   const { postId } = route.params as { postId: string };
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [post, setPost] = useState<FeedPost | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Reactions state
+  const [reactionCounts, setReactionCounts] = useState({ like: 0, hot: 0, debatable: 0, agree: 0 });
+  const [myReaction, setMyReaction] = useState<ReactionType | null>(null);
+
+  // Comments state
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentReactions, setCommentReactions] = useState<Record<string, CommentReactionState>>({});
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
@@ -52,6 +137,219 @@ export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({
         setLoading(false);
       });
   }, [postId]);
+
+  // Load reactions
+  useEffect(() => {
+    if (!supabase) return;
+    Promise.resolve(
+      supabase.from('post_reactions').select('reaction_type, user_id').eq('post_id', postId)
+    ).then(({ data }) => {
+      const rows = data ?? [];
+      const counts = { like: 0, hot: 0, debatable: 0, agree: 0 };
+      for (const row of rows) {
+        const t = row.reaction_type as ReactionType;
+        if (t in counts) counts[t]++;
+      }
+      setReactionCounts(counts);
+      if (user) {
+        const mine = rows.find((r: any) => r.user_id === user.id);
+        setMyReaction(mine ? (mine.reaction_type as ReactionType) : null);
+      }
+    }).catch(() => {});
+  }, [postId, user?.id]);
+
+  // Load comments + comment reactions
+  useEffect(() => {
+    if (!supabase) return;
+    Promise.resolve(
+      supabase
+        .from('post_comments')
+        .select('*')
+        .eq('post_id', postId)
+        .eq('hidden', false)
+        .order('created_at', { ascending: true })
+        .limit(50)
+    ).then(({ data }) => {
+      const loadedComments = (data ?? []) as Comment[];
+      setComments(loadedComments);
+      if (loadedComments.length === 0) return;
+      const ids = loadedComments.map((c) => c.id);
+      Promise.resolve(
+        supabase!.from('comment_reactions').select('comment_id, reaction_type, user_id').in('comment_id', ids)
+      ).then(({ data: rxData }) => {
+        const rows = rxData ?? [];
+        const map: Record<string, CommentReactionState> = {};
+        for (const id of ids) {
+          map[id] = { counts: { ...ZERO_COUNTS }, myReaction: null };
+        }
+        for (const row of rows) {
+          const cid = row.comment_id as string;
+          const t = row.reaction_type as ReactionType;
+          if (map[cid] && t in map[cid].counts) map[cid].counts[t]++;
+          if (user && row.user_id === user.id) map[cid].myReaction = t;
+        }
+        setCommentReactions(map);
+      }).catch(() => {});
+    }).catch(() => {});
+  }, [postId, user?.id]);
+
+  const handleReact = (type: ReactionType | null) => {
+    if (!user) { navigation.navigate('AuthScreen'); return; }
+
+    setReactionCounts((prev) => {
+      const next = { ...prev };
+      if (myReaction && myReaction in next) next[myReaction] = Math.max(0, next[myReaction] - 1);
+      if (type && type in next) next[type]++;
+      return next;
+    });
+    setMyReaction(type);
+
+    if (!supabase) return;
+    if (type === null) {
+      Promise.resolve(
+        supabase.from('post_reactions').delete().eq('post_id', postId).eq('user_id', user.id)
+      ).catch(() => {});
+    } else {
+      Promise.resolve(
+        supabase.from('post_reactions').upsert(
+          { post_id: postId, user_id: user.id, reaction_type: type },
+          { onConflict: 'post_id,user_id' }
+        )
+      ).catch(() => {});
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    const body = commentText.trim();
+    if (!body || !user || !supabase) return;
+    setSubmittingComment(true);
+
+    // AI pre-moderation — fail open
+    try {
+      const { data: mod } = await supabase.functions.invoke('moderate-comment', { body: { body } });
+      if (mod && !mod.allowed) {
+        Alert.alert('Comment not allowed', mod.reason ?? 'This violates our community guidelines.');
+        setSubmittingComment(false);
+        return;
+      }
+    } catch { /* fail open */ }
+
+    const newComment: Omit<Comment, 'id' | 'created_at' | 'hidden'> = {
+      post_id: postId,
+      user_id: user.id,
+      username: userProfile?.username ?? null,
+      avatar_url: userProfile?.avatar_url ?? null,
+      body,
+    };
+
+    const { data, error } = await supabase.from('post_comments').insert(newComment).select().single();
+    if (!error && data) {
+      const inserted = data as Comment;
+      setComments((prev) => [...prev, inserted]);
+      setCommentReactions((prev) => ({ ...prev, [inserted.id]: { counts: { ...ZERO_COUNTS }, myReaction: null } }));
+      setCommentText('');
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+    setSubmittingComment(false);
+  };
+
+  const handleCommentReact = (commentId: string, type: ReactionType) => {
+    if (!user) { navigation.navigate('AuthScreen'); return; }
+
+    let nextType: ReactionType | null = type;
+    setCommentReactions((prev) => {
+      const cur = prev[commentId] ?? { counts: { ...ZERO_COUNTS }, myReaction: null };
+      const next = { ...cur, counts: { ...cur.counts }, myReaction: cur.myReaction };
+      if (next.myReaction === type) {
+        next.counts[type] = Math.max(0, next.counts[type] - 1);
+        next.myReaction = null;
+        nextType = null;
+      } else {
+        if (next.myReaction && next.myReaction in next.counts) {
+          next.counts[next.myReaction] = Math.max(0, next.counts[next.myReaction] - 1);
+        }
+        next.counts[type]++;
+        next.myReaction = type;
+      }
+      return { ...prev, [commentId]: next };
+    });
+
+    if (!supabase) return;
+    if (nextType === null) {
+      Promise.resolve(supabase.from('comment_reactions').delete().eq('comment_id', commentId).eq('user_id', user.id)).catch(() => {});
+    } else {
+      Promise.resolve(supabase.from('comment_reactions').upsert({ comment_id: commentId, user_id: user.id, reaction_type: nextType }, { onConflict: 'comment_id,user_id' })).catch(() => {});
+    }
+  };
+
+  const handleLongPressComment = (comment: Comment) => {
+    const isOwn = user?.id === comment.user_id;
+    if (isOwn) {
+      Alert.alert('Comment', undefined, [
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert('Delete comment?', 'This cannot be undone.', [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => {
+                  setComments((prev) => prev.filter((c) => c.id !== comment.id));
+                  if (supabase) {
+                    Promise.resolve(
+                      supabase.from('post_comments').delete().eq('id', comment.id)
+                    ).catch(() => {});
+                  }
+                },
+              },
+            ]);
+          },
+        },
+        { text: 'Report', onPress: () => promptReport(comment.id) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    } else {
+      Alert.alert('Comment', undefined, [
+        { text: 'Report', onPress: () => promptReport(comment.id) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  };
+
+  const promptReport = (commentId: string) => {
+    Alert.alert('Report comment', 'Why are you reporting this comment?', [
+      {
+        text: 'Spam',
+        onPress: () => submitReport(commentId, 'Spam'),
+      },
+      {
+        text: 'Offensive language',
+        onPress: () => submitReport(commentId, 'Offensive language'),
+      },
+      {
+        text: 'Harassment',
+        onPress: () => submitReport(commentId, 'Harassment'),
+      },
+      {
+        text: 'Other',
+        onPress: () => submitReport(commentId, 'Other'),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const submitReport = (commentId: string, reason: string) => {
+    if (!user || !supabase) return;
+    Promise.resolve(
+      supabase.from('comment_reports').insert({ comment_id: commentId, reporter_id: user.id, reason })
+    ).then(() => {
+      Alert.alert('Thanks', "We'll review this comment.");
+    }).catch(() => {
+      Alert.alert('Error', 'Could not submit report. Please try again.');
+    });
+  };
 
   const isOwner = !!user && post?.userId === user.id;
 
@@ -106,9 +404,13 @@ export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({
   const categoryColor = CATEGORY_COLORS[post.category] ?? '#CC0000';
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}
+        ref={scrollRef}
+        contentContainerStyle={{ paddingBottom: spacing.xxl }}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero */}
@@ -159,17 +461,24 @@ export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({
 
         {/* Publisher row */}
         <View style={styles.publisherRow}>
-          {post.avatarUrl ? (
-            <Image source={{ uri: post.avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Ionicons name="person" size={16} color={colors.secondaryText} />
+          <TouchableOpacity
+            onPress={() => navigation.navigate('UserProfile', { userId: post.userId })}
+            activeOpacity={0.8}
+            style={styles.publisherTouchable}
+          >
+            {post.avatarUrl ? (
+              <Image source={{ uri: post.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Ionicons name="person" size={16} color={colors.secondaryText} />
+              </View>
+            )}
+            <View style={styles.publisherInfo}>
+              <Text style={styles.publisherName}>{post.username ?? 'Anonymous'}</Text>
+              <Text style={styles.publisherMeta}>{timeAgo(post.publishedAt)} · {post.cityName}</Text>
             </View>
-          )}
-          <View style={styles.publisherInfo}>
-            <Text style={styles.publisherName}>{post.username ?? 'Anonymous'}</Text>
-            <Text style={styles.publisherMeta}>{timeAgo(post.publishedAt)} · {post.cityName}</Text>
-          </View>
+          </TouchableOpacity>
+          <FollowButton targetUserId={post.userId} />
           <View style={styles.categoryPill}>
             <Text style={styles.categoryPillText}>{post.category}</Text>
           </View>
@@ -192,8 +501,79 @@ export const PublishedListScreen: React.FC<{ route: any; navigation: any }> = ({
             </React.Fragment>
           ))}
         </View>
+
+        {/* Reaction bar */}
+        <View style={styles.reactionSection}>
+          <ReactionBar
+            postId={postId}
+            counts={reactionCounts}
+            myReaction={myReaction}
+            onReact={handleReact}
+          />
+        </View>
+
+        {/* Comments section */}
+        <View style={styles.commentsSection}>
+          <Text style={styles.commentsHeader}>Comments</Text>
+          {comments.length === 0 && (
+            <Text style={styles.noComments}>No comments yet. Be the first!</Text>
+          )}
+          {comments.map((c) => (
+            <TouchableOpacity
+              key={c.id}
+              activeOpacity={0.85}
+              onLongPress={() => handleLongPressComment(c)}
+            >
+              <View style={styles.commentRow}>
+                {c.avatar_url ? (
+                  <Image source={{ uri: c.avatar_url }} style={styles.commentAvatar} />
+                ) : (
+                  <View style={[styles.commentAvatar, styles.commentAvatarFallback]}>
+                    <Ionicons name="person" size={13} color={colors.secondaryText} />
+                  </View>
+                )}
+                <View style={styles.commentBody}>
+                  <View style={styles.commentMeta}>
+                    <Text style={styles.commentUsername}>{c.username ?? 'Anonymous'}</Text>
+                    <Text style={styles.commentTime}>{timeAgoShort(new Date(c.created_at).getTime())}</Text>
+                  </View>
+                  <Text style={styles.commentText}>{c.body}</Text>
+                  <CommentReactionRow
+                    state={commentReactions[c.id] ?? { counts: ZERO_COUNTS, myReaction: null }}
+                    onReact={(type) => handleCommentReact(c.id, type)}
+                  />
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
-    </View>
+
+      {/* Comment input bar — only shown for signed-in users */}
+      {user && (
+        <View style={[styles.commentInputBar, { paddingBottom: insets.bottom + 4 }]}>
+          <TextInput
+            style={styles.commentInput}
+            value={commentText}
+            onChangeText={setCommentText}
+            placeholder="Add a comment…"
+            placeholderTextColor={colors.secondaryText}
+            returnKeyType="send"
+            onSubmitEditing={handleSubmitComment}
+            blurOnSubmit={false}
+            multiline={false}
+          />
+          <TouchableOpacity
+            style={[styles.sendBtn, (!commentText.trim() || submittingComment) && styles.sendBtnDisabled]}
+            onPress={handleSubmitComment}
+            disabled={!commentText.trim() || submittingComment}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="send" size={18} color={commentText.trim() ? colors.activeTab : colors.secondaryText} />
+          </TouchableOpacity>
+        </View>
+      )}
+    </KeyboardAvoidingView>
   );
 };
 
@@ -254,9 +634,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    gap: spacing.md,
+    gap: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
+  },
+  publisherTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.md,
   },
   avatar: {
     width: 36,
@@ -270,6 +656,7 @@ const styles = StyleSheet.create({
   },
   publisherInfo: {
     flex: 1,
+    flexShrink: 1,
   },
   publisherName: {
     fontSize: 14,
@@ -347,5 +734,102 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.cardBackground,
+  },
+
+  /* ── Reactions ── */
+  reactionSection: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    marginTop: spacing.lg,
+  },
+
+  /* ── Comments ── */
+  commentsSection: {
+    marginTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+  },
+  commentsHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primaryText,
+    marginBottom: spacing.md,
+  },
+  noComments: {
+    fontSize: 14,
+    color: colors.secondaryText,
+    paddingVertical: spacing.sm,
+  },
+  commentRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  commentAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginTop: 2,
+  },
+  commentAvatarFallback: {
+    backgroundColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  commentBody: {
+    flex: 1,
+  },
+  commentMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  commentUsername: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primaryText,
+  },
+  commentTime: {
+    fontSize: 12,
+    color: colors.secondaryText,
+  },
+  commentText: {
+    fontSize: 14,
+    color: colors.primaryText,
+    lineHeight: 20,
+  },
+
+  /* ── Comment input bar ── */
+  commentInputBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    backgroundColor: colors.cardBackground,
+    gap: spacing.sm,
+  },
+  commentInput: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.primaryText,
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    minHeight: 38,
+  },
+  sendBtn: {
+    padding: 8,
+  },
+  sendBtnDisabled: {
+    opacity: 0.4,
   },
 });
