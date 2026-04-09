@@ -30,6 +30,7 @@ import {
   DetectedLocation,
 } from '../services/locationService';
 import { colors, spacing, borderRadius } from '../theme';
+import { SignInPrompt } from '../components/SignInPrompt';
 
 const PAGE_SIZE = 20;
 
@@ -158,7 +159,7 @@ const UserRow: React.FC<{ user: UserResult; onPress: () => void }> = ({ user, on
 
 /* ── Following tab ── */
 const FollowingTab: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -265,6 +266,17 @@ const FollowingTab: React.FC<{ navigation: any }> = ({ navigation }) => {
       />
     </View>
   );
+
+  if (!authLoading && !user) {
+    return (
+      <SignInPrompt
+        icon="people"
+        title="Follow people you know"
+        message="Sign in to follow friends and see their top ten lists in your feed."
+        onSignIn={() => navigation.navigate('AuthScreen')}
+      />
+    );
+  }
 
   if (loading) {
     return <ActivityIndicator color={colors.activeTab} style={{ marginTop: spacing.xxl * 2 }} />;
