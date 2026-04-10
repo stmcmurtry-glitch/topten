@@ -15,6 +15,21 @@ export interface DetectedLocation {
 // In-memory fast path — undefined = not yet checked, null = failed/unavailable
 let memCache: DetectedLocation | null | undefined = undefined;
 
+// Prime memCache from AsyncStorage at module load time so it's ready before
+// any component mounts. This eliminates the cold-start gap where location is
+// undefined even though a valid cached value exists on disk.
+(async () => {
+  try {
+    const manual = await AsyncStorage.getItem(MANUAL_OVERRIDE_KEY);
+    if (manual) { memCache = JSON.parse(manual); return; }
+    const stored = await AsyncStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed: DetectedLocation = JSON.parse(stored);
+      if (Date.now() - parsed.detectedAt < CACHE_TTL_MS) memCache = parsed;
+    }
+  } catch {}
+})();
+
 /**
  * Returns the device's detected location via ipinfo.io.
  * Results are cached in AsyncStorage for 7 days and in-memory for the session.
