@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import Purchases from 'react-native-purchases';
 import { getIsPremium, setDevPremiumOverride, getDevPremiumOverride } from '../services/premiumService';
@@ -217,6 +218,8 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
   const insets = useSafeAreaInsets();
   const { user, userProfile, signOut, updateAvatar } = useAuth();
   const { pendingCount: pendingFollowCount, refetch: refetchFollowRequests } = useFollowRequests();
+
+  useFocusEffect(useCallback(() => { refetchFollowRequests(); }, [refetchFollowRequests]));
 
   const [plansVisible, setPlansVisible] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);

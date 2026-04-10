@@ -65,6 +65,7 @@ export const FollowRequestsScreen: React.FC<{ navigation: any }> = ({ navigation
 
   useEffect(() => {
     fetchRequests();
+    refetchBadge();
   }, [fetchRequests]);
 
   const acceptRequest = async (followId: string, followerId: string) => {
